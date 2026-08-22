@@ -70,11 +70,11 @@ jobs:
       - name: Copy Compose file and env to host
         uses: appleboy/scp-action@v1.0.0
         with:
-          host: 47.108.147.136
-          username: root
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           source: compose.yaml,.env
-          target: /opt/disaster-alert-web
+          target: ${{ secrets.DEPLOY_PATH }}
           overwrite: true
 
       - name: Deploy container
@@ -83,13 +83,13 @@ jobs:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IMAGE: ghcr.io/${{ github.repository }}:latest
         with:
-          host: 47.108.147.136
-          username: root
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           envs: GHCR_TOKEN,IMAGE
           script: |
             set -euo pipefail
-            cd /opt/disaster-alert-web
+            cd "${{ secrets.DEPLOY_PATH }}"
             chmod 600 .env
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.repository_owner }}" --password-stdin
             docker pull "$IMAGE"
