@@ -59,21 +59,18 @@ docker compose up -d --no-build
 3. 把 GitHub Secret `DEPLOY_ENV_FILE` 写成该目录下的 `.env`（未配置时使用 [.env.example](.env.example)）
 4. 用本次 job 的 `GITHUB_TOKEN` 登录 `ghcr.io`、拉取镜像，并以 `--no-build` 重启容器
 
+部署目标写在 [container workflow](.github/workflows/container.yml) 里：与 API 同一台 ECS，用户 `root`，目录 `/opt/disaster-alert-web`。该目录必须和 API 的 Compose 目录分开，否则会互相覆盖 `compose.yaml`。
+
 需要在本仓库 Settings → Secrets and variables → Actions 配置：
 
 | Secret | 用途 |
 | --- | --- |
-| `DEPLOY_HOST` | 与 API 相同的 ECS 公网 IP 或 SSH 主机名 |
-| `DEPLOY_USER` | SSH 用户 |
-| `DEPLOY_SSH_KEY` | 该用户的私钥（仅用于部署） |
-| `DEPLOY_PATH` | 主机上放置本仓库 `compose.yaml` 与 `.env` 的目录，例如 `/opt/disaster-alert-web`（不要与 API 的目录混用） |
+| `DEPLOY_SSH_KEY` | 部署用 SSH 私钥（与 API 仓库相同即可） |
 | `DEPLOY_ENV_FILE` | 可选。整份生产 `.env` 文本，结构见 [.env.example](.env.example) |
 
-`DEPLOY_PATH` 必须和 API 仓库分开，否则会互相覆盖 `compose.yaml`。SSH 登录信息可以与 `disaster-alert` 相同。
+首次在 ECS 上准备一次即可：安装 Docker 与 Compose 插件、把部署公钥写入 `authorized_keys`、创建 `/opt/disaster-alert-web`。容器和主机发布端口默认都是 `0.0.0.0:30011`。对外 HTTPS 仍由主机上的反向代理处理（配置不在本仓库）。
 
-首次在 ECS 上准备一次即可：安装 Docker 与 Compose 插件、把部署公钥写入 `authorized_keys`、创建可写的 `DEPLOY_PATH`。容器和主机发布端口默认都是 `0.0.0.0:30011`。对外 HTTPS 仍由主机上的反向代理处理（配置不在本仓库）。
-
-PR 不会部署、也不会写 `.env`。未配置 SSH secrets 时，合并后的 deploy job 会失败；镜像若已上传仍会留在 `ghcr.io`。
+PR 不会部署、也不会写 `.env`。未配置 `DEPLOY_SSH_KEY` 时，合并后的 deploy job 会失败；镜像若已上传仍会留在 `ghcr.io`。
 
 镜像内是 nginx 托管的静态资源。`/incidents/` 会回退到 `index.html`，Bark 深链刷新不会 404。
 
