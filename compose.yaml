@@ -1,0 +1,24 @@
+name: disaster-alert-web
+
+services:
+  disaster-alert-web:
+    image: ${DISASTER_ALERT_WEB_IMAGE:-ghcr.io/luyi2008/disaster-alert-web:latest}
+    build:
+      context: .
+    restart: unless-stopped
+    ports:
+      - target: 30011
+        published: ${SERVER_PORT:-30011}
+        host_ip: ${SERVER_PUBLISH_HOST:-0.0.0.0}
+        protocol: tcp
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - --quiet
+        - --spider
+        - http://127.0.0.1:30011/
+      interval: 30s
+      timeout: 5s
+      start_period: 5s
+      retries: 3
