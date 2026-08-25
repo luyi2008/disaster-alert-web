@@ -87,3 +87,5 @@ PR 不会部署、也不会写 `.env`。未配置上述 secrets 时，合并后�
 反代、CDN 和日志不要记录 `/incidents/` 的完整 URL（路径里含通知凭据）。
 
 契约快照见 [docs/openapi.yaml](docs/openapi.yaml)。API 变更后请人工同步，不要在 CI 里拉取服务端仓库。
+
+订阅页（`/`）的 DOM 工作区如何拆分、卸载和查询节点，见 [docs/subscribe-frontend.md](docs/subscribe-frontend.md)。
