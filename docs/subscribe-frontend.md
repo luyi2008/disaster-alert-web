@@ -18,6 +18,7 @@
 | --- | --- |
 | `shell.html` | 静态骨架（表单、地图容器、状态栏） |
 | `subscribeApp.ts` | 装配：Bark、提交/取消、配置加载、teardown |
+| `runtime.ts` | 宿主查询、`SubscribeRuntime`、监听清理表 |
 | `locations.ts` | Leaflet 地图与监测地点 |
 | `alerts.ts` | 灾害类别、来源、烈度规则 |
 | `status.ts` | `/api/status` 与顶部状态弹出层 |
