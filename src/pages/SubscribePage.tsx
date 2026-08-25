@@ -34,11 +34,12 @@ export function SubscribePage() {
       return;
     }
     host.innerHTML = shell;
-    mountSubscribeApp(host, {
+    const teardown = mountSubscribeApp(host, {
       api: apiUrl(""),
       instanceTermsAccepted: termsAccepted,
     });
     return () => {
+      teardown();
       host.innerHTML = "";
     };
   }, [termsAccepted]);
