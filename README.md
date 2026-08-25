@@ -88,4 +88,6 @@ PR 不会部署、也不会写 `.env`。未配置上述 secrets 时，合并后�
 
 契约快照见 [docs/openapi.yaml](docs/openapi.yaml)。API 变更后请人工同步，不要在 CI 里拉取服务端仓库。
 
+整体架构、模块划分、数据流与部署拓扑，见 [docs/architecture.md](docs/architecture.md)。
+
 订阅页（`/`）的 DOM 工作区如何拆分、卸载和查询节点，见 [docs/subscribe-frontend.md](docs/subscribe-frontend.md)。
