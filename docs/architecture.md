@@ -59,13 +59,14 @@ graph TB
 | 路由 | react-router-dom（`BrowserRouter`） | 7.18 |
 | 构建 | Vite | 8.2 |
 | 语言 | TypeScript | ~6.0 |
+| CSS | Tailwind CSS v4（`@tailwindcss/vite`） | 4.3 |
 | 地图 | Leaflet | 1.9.4 |
 | 测试 | Vitest + Testing Library + jsdom | 4.1 |
 | Lint | oxlint | 1.75 |
 | 运行时镜像 | nginx alpine | 1.27 |
 | 构建镜像 | node bookworm | 22 |
 
-没有引入状态管理库、UI 组件库或 CSS 框架。样式是手写 CSS（`subscribe.css` 814 行、`detail.css` 39 行），通过 ES import 交给 Vite 打包。
+没有引入状态管理库或 UI 组件库。存量样式仍是手写 CSS（`subscribe.css`、`detail.css`），通过 ES import 交给 Vite 打包；Tailwind 以「仅 theme + utilities、不含 Preflight」的方式接入，与存量 CSS 共存并按模块渐进替换。选型理由与迁移路线见 [ui-stack-and-miniprogram.md](ui-stack-and-miniprogram.md)。
 
 ---
 
@@ -532,3 +533,5 @@ oxlint 报 `react(set-state-in-effect)`。当前写法是 effect 内取数并 se
 4. `locations.ts` —— 最后做。Leaflet 命令式生命周期与状态机交织最深。
 
 替换过程中 `SubscribeRuntime` 会逐步瘦身，最终消失。第 11 节的风险 3（`innerHTML`）和风险 4（代码分割）会随这条路径自然缓解，因此不建议为它们做与迁移方向冲突的临时改造。
+
+若目标包含同构微信小程序，这条迁移路线会从「可选优化」变成硬前置条件（小程序无 DOM，`innerHTML` 与 `querySelector` 均不可用）。UI 技术栈选型、同构阻塞项与分期路线见 [ui-stack-and-miniprogram.md](ui-stack-and-miniprogram.md)。
