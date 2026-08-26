@@ -90,6 +90,6 @@ PR 不会部署、也不会写 `.env`。未配置上述 secrets 时，合并后�
 
 整体架构、模块划分、数据流与部署拓扑，见 [docs/architecture.md](docs/architecture.md)。
 
-UI 技术栈选型（Tailwind v4 / 组件库）与微信小程序同构可行性，见 [docs/ui-stack-and-miniprogram.md](docs/ui-stack-and-miniprogram.md)。
+UI 技术栈选型与微信小程序同构可行性（待评审，尚未实施）：选型论证见 [docs/ui-stack-selection.md](docs/ui-stack-selection.md)，实施计划见 [docs/ui-redesign-plan.md](docs/ui-redesign-plan.md)，任务清单见 [docs/ui-redesign-todo.md](docs/ui-redesign-todo.md)。
 
 订阅页（`/`）的 DOM 工作区如何拆分、卸载和查询节点，见 [docs/subscribe-frontend.md](docs/subscribe-frontend.md)。
