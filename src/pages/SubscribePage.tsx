@@ -3,6 +3,7 @@ import { apiUrl, fetchStatus } from "../api";
 import { TermsDialog } from "../components/TermsDialog";
 import shell from "../subscribe/shell.html?raw";
 import { mountSubscribeApp } from "../subscribe/subscribeApp";
+import "../styles/base.css";
 import "../styles/subscribe.css";
 import "leaflet/dist/leaflet.css";
 
