@@ -37,7 +37,7 @@
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: Arial, "Helvetica Neue", "MiSans", "PingFang SC", "Microsoft YaHei UI", "Noto Sans CJK SC", sans-serif;
+      font-family: var(--font-sans);
       letter-spacing: 0;
       background: var(--bg);
       color: var(--text);
@@ -284,7 +284,7 @@
       border-radius: 0;
       color: var(--text);
       background: color-mix(in srgb, var(--panel) 96%, transparent);
-      font: 700 20px/1 Arial, sans-serif;
+      font: 700 20px/1 var(--font-sans);
     }
     .leaflet-control-zoom a:last-child, .map-tool-button:last-child { border-bottom: 0; }
     .leaflet-control-zoom a:hover, .map-tool-button:hover { color: var(--primary); background: var(--info-bg); }
@@ -469,7 +469,7 @@
       color: #fff;
       background: var(--primary);
       box-shadow: 0 1px 5px rgba(0, 0, 0, .28);
-      font-family: Arial, sans-serif;
+      font-family: var(--font-sans);
       font-size: 12px;
       font-weight: 850;
     }
@@ -591,7 +591,7 @@
       border-radius: 4px;
       color: var(--text);
       background: var(--soft);
-      font: 700 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font: 700 12px/1.5 var(--font-mono);
       overflow-wrap: anywhere;
     }
     .instance-terms-dialog > ul { display: grid; gap: 9px; padding: 15px 0 0 20px; color: var(--text); font-size: 13px; line-height: 1.6; }

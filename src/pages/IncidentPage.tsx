@@ -9,6 +9,7 @@ import type {
   NotificationSnapshot,
   PublicEvent,
 } from "../api";
+import "../styles/base.css";
 import "../styles/detail.css";
 import "leaflet/dist/leaflet.css";
 
