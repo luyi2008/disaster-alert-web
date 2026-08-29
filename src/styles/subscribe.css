@@ -145,12 +145,25 @@
       font-size: 15px;
       line-height: 1.55;
     }
+    .identity-actions {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      flex-shrink: 0;
+    }
     .change-device {
       color: var(--primary);
       font-size: 13px;
       font-weight: 650;
       text-decoration: none;
       white-space: nowrap;
+    }
+    button.change-device {
+      height: auto;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
     }
     .change-device:hover { text-decoration: underline; }
     .workspace {
@@ -646,14 +659,6 @@
     @media (prefers-reduced-motion: reduce) {
       .toast, .config-disclosure > summary::after, .category-chevron, .disaster-detail { transition: none; }
     }
-    .retry-config {
-      display: none;
-      width: 100%;
-      margin: -6px 0 16px;
-      border: 1px solid var(--line);
-      background: var(--panel);
-    }
-    .retry-config.visible { display: block; }
     .form-actions {
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(150px, 190px) minmax(220px, 320px);

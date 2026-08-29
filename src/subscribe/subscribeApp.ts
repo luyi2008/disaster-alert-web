@@ -12,9 +12,9 @@ import { animateHeight } from "./motion";
 import { createRuntime } from "./runtime";
 import { bindStatus } from "./status";
 import { bindToast } from "./toast";
-import type { MountSubscribeOptions } from "./types";
+import type { MountSubscribeOptions, SubscribeAppHandle } from "./types";
 
-export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOptions): () => void {
+export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOptions): SubscribeAppHandle {
   const ctx = createRuntime(root, options);
   const toast = bindToast(ctx);
   const { el } = ctx;
@@ -103,7 +103,6 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
   function initializeConfiguration(): Promise<void> {
     const generation = ++ctx.initializationGeneration;
     ctx.configurationReady = false;
-    el.retryConfig.classList.remove("visible");
     setSubscriptionRequestInFlight(false);
     return Promise.all([loadBarkUrls(generation), alerts.loadSubscriptionOptions(ctx.subscriptionDraft, generation)])
       .then(() => {
@@ -118,16 +117,15 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
       .catch((error: { message?: string }) => {
         if (generation !== ctx.initializationGeneration) return;
         ctx.configurationReady = false;
-        el.retryConfig.classList.add("visible");
         setSubscriptionRequestInFlight(false);
         toast.show(error.message || "无法加载订阅配置", "error");
       });
   }
 
-  ctx.cleanup.listen(el.retryConfig, "click", () => {
+  function reloadConfiguration(): void {
     toast.show("正在重新加载订阅配置...", "info");
     void initializeConfiguration();
-  });
+  }
 
   ctx.cleanup.listen(el.form, "submit", async (event) => {
     event.preventDefault();
@@ -262,9 +260,12 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
     if (ctx.persistTimer) clearTimeout(ctx.persistTimer);
   });
 
-  return () => {
-    ctx.initializationGeneration += 1;
-    locations.cancelAllGeocode();
-    ctx.cleanup.run();
+  return {
+    reloadConfiguration,
+    teardown() {
+      ctx.initializationGeneration += 1;
+      locations.cancelAllGeocode();
+      ctx.cleanup.run();
+    },
   };
 }
