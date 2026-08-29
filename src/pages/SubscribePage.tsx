@@ -2,8 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { apiUrl, fetchStatus } from "../api";
 import { localValidateBarkKey } from "../bark/localValidate";
+import { DeviceIdentity } from "../components/DeviceIdentity";
 import { TermsDialog } from "../components/TermsDialog";
-import shell from "../subscribe/shell.html?raw";
+import bodyHtml from "../subscribe/body.html?raw";
+import footerHtml from "../subscribe/footer.html?raw";
+import headerHtml from "../subscribe/header.html?raw";
 import { mountSubscribeApp } from "../subscribe/subscribeApp";
 import "../styles/base.css";
 import "../styles/subscribe.css";
@@ -27,7 +30,10 @@ function barkKeyFromState(state: unknown): string | null {
 export function SubscribePage() {
   const location = useLocation();
   const barkKey = barkKeyFromState(location.state);
-  const hostRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const footerRef = useRef<HTMLDivElement>(null);
   const [termsAccepted, setTermsAccepted] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -49,19 +55,26 @@ export function SubscribePage() {
   }, []);
 
   useEffect(() => {
-    const host = hostRef.current;
-    if (!host || termsAccepted === null || !barkKey) {
+    const root = rootRef.current;
+    const header = headerRef.current;
+    const body = bodyRef.current;
+    const footer = footerRef.current;
+    if (!root || !header || !body || !footer || termsAccepted === null || !barkKey) {
       return;
     }
-    host.innerHTML = shell;
-    const teardown = mountSubscribeApp(host, {
+    header.innerHTML = headerHtml;
+    body.innerHTML = bodyHtml;
+    footer.innerHTML = footerHtml;
+    const teardown = mountSubscribeApp(root, {
       api: apiUrl(""),
       instanceTermsAccepted: termsAccepted,
-      initialBarkKey: barkKey,
+      deviceKey: barkKey,
     });
     return () => {
       teardown();
-      host.innerHTML = "";
+      header.innerHTML = "";
+      body.innerHTML = "";
+      footer.innerHTML = "";
     };
   }, [termsAccepted, barkKey]);
 
@@ -72,7 +85,14 @@ export function SubscribePage() {
   return (
     <>
       <TermsDialog open={termsAccepted === false} />
-      <div ref={hostRef} />
+      <main ref={rootRef}>
+        <div className="shell-slot" ref={headerRef} />
+        <section className="panel">
+          <DeviceIdentity barkId={barkKey} />
+          <div className="shell-slot" ref={bodyRef} />
+        </section>
+        <div className="shell-slot" ref={footerRef} />
+      </main>
     </>
   );
 }

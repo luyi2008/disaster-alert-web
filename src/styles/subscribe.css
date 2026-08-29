@@ -127,34 +127,32 @@
     .panel {
       padding: 0;
     }
-    .identity-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(260px, .82fr);
-      gap: 14px;
-      padding-bottom: 20px;
-      margin-bottom: 22px;
-      border-bottom: 1px solid var(--line);
-    }
-    .identity-grid .field { margin: 0; }
     .identity-label-row {
       display: flex;
       align-items: baseline;
       justify-content: space-between;
       gap: 12px;
-      margin-bottom: 8px;
     }
-    .identity-label-row label { margin-bottom: 0; }
+    .shell-slot { display: contents; }
+    .device-identity {
+      padding-bottom: 20px;
+      margin-bottom: 22px;
+      border-bottom: 1px solid var(--line);
+    }
+    .device-identity .identity-copy { display: grid; gap: 4px; }
+    .device-identity p {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.55;
+    }
     .change-device {
       color: var(--primary);
       font-size: 13px;
       font-weight: 650;
       text-decoration: none;
+      white-space: nowrap;
     }
     .change-device:hover { text-decoration: underline; }
-    input[readonly] {
-      color: var(--muted);
-      cursor: default;
-    }
     .workspace {
       display: grid;
       grid-template-columns: minmax(440px, 1.06fr) minmax(380px, .94fr);
@@ -681,9 +679,9 @@
       .topline { gap: 8px; }
       h1 { font-size: 28px; line-height: 1.12; }
       .badge { height: 32px; min-height: 32px; padding: 0 10px; font-size: 12px; }
-      .identity-grid, .grid, .form-actions { grid-template-columns: 1fr; }
+      .grid, .form-actions { grid-template-columns: 1fr; }
       .admin-grid { grid-template-columns: 1fr; }
-      .identity-grid { padding-bottom: 16px; margin-bottom: 18px; }
+      .device-identity { padding-bottom: 16px; margin-bottom: 18px; }
       .workspace { gap: 16px; }
       .workspace-section + .workspace-section { margin-top: 16px; }
       input, select { font-size: 16px; }

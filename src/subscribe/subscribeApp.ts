@@ -6,7 +6,6 @@ import {
   restoreDraftFromStorage,
   writeDraft,
 } from "./draft";
-import { escapeHtml } from "./html";
 import { parseApiResponse } from "./http";
 import { bindLocations } from "./locations";
 import { animateHeight } from "./motion";
@@ -21,14 +20,14 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
   const { el } = ctx;
 
   function currentDestinationIdentity(): string {
-    return `${el.barkUrlInput.value}\n${el.barkInput.value.trim()}`;
+    return `${ctx.barkUrl}\n${ctx.deviceKey}`;
   }
 
   function updateDraftStatus(): void {
     if (!ctx.instanceTermsAccepted) {
       el.draftStatus.textContent = "当前实例未确认部署责任，不能新增或覆盖订阅；仍可取消已有订阅。";
     } else if (!ctx.lastSubmittedSignature) {
-      el.draftStatus.textContent = "配置草稿保存在当前浏览器；Bark Key 不会保存。";
+      el.draftStatus.textContent = "配置草稿保存在当前浏览器；Bark ID 不会保存。";
     } else if (draftSignature(ctx.subscriptionDraft) === ctx.lastSubmittedSignature && currentDestinationIdentity() === ctx.lastSubmittedIdentity) {
       el.draftStatus.textContent = "本浏览器中的配置已提交。";
     } else {
@@ -54,11 +53,6 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
   const locations = bindLocations(ctx, { persistDraft, show: toast.show });
   const alerts = bindAlertRules(ctx, { persistDraft, show: toast.show });
   const status = bindStatus(ctx);
-
-  if (options.initialBarkKey) {
-    el.barkInput.value = options.initialBarkKey;
-  }
-  el.barkInput.readOnly = true;
 
   function setSubscriptionRequestInFlight(inFlight: boolean): void {
     ctx.subscriptionRequestInFlight = inFlight;
@@ -98,24 +92,18 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
     if (generation !== ctx.initializationGeneration) return;
     const data = json.data as { bark_urls?: unknown } | undefined;
     if (!res.ok || !json.success || !Array.isArray(data?.bark_urls) || !data.bark_urls.length) {
-      throw new Error(json.message || "没有可用的 Bark URL");
+      throw new Error(json.message || "没有可用的通知地址");
     }
-    ctx.barkUrls = data.bark_urls.filter((value): value is string => typeof value === "string" && Boolean(value));
-    if (!ctx.barkUrls.length) throw new Error("没有可用的 Bark URL");
-    const savedUrl = typeof ctx.subscriptionDraft.bark_url === "string" ? ctx.subscriptionDraft.bark_url : "";
-    const removedSavedUrl = savedUrl && !ctx.barkUrls.includes(savedUrl);
-    el.barkUrlInput.innerHTML = `${removedSavedUrl ? '<option value="">请选择 Bark URL</option>' : ""}${ctx.barkUrls.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
-    el.barkUrlInput.value = removedSavedUrl ? "" : savedUrl && ctx.barkUrls.includes(savedUrl) ? savedUrl : ctx.barkUrls[0];
-    ctx.subscriptionDraft.bark_url = el.barkUrlInput.value;
-    el.barkUrlInput.disabled = false;
-    el.barkUrlField.style.display = "";
+    const firstUrl = data.bark_urls.find((value): value is string => typeof value === "string" && Boolean(value));
+    if (!firstUrl) throw new Error("没有可用的通知地址");
+    ctx.barkUrl = firstUrl;
+    ctx.subscriptionDraft.bark_url = firstUrl;
   }
 
   function initializeConfiguration(): Promise<void> {
     const generation = ++ctx.initializationGeneration;
     ctx.configurationReady = false;
     el.retryConfig.classList.remove("visible");
-    el.barkUrlInput.disabled = true;
     setSubscriptionRequestInFlight(false);
     return Promise.all([loadBarkUrls(generation), alerts.loadSubscriptionOptions(ctx.subscriptionDraft, generation)])
       .then(() => {
@@ -130,18 +118,12 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
       .catch((error: { message?: string }) => {
         if (generation !== ctx.initializationGeneration) return;
         ctx.configurationReady = false;
-        el.barkUrlInput.disabled = true;
         el.retryConfig.classList.add("visible");
         setSubscriptionRequestInFlight(false);
         toast.show(error.message || "无法加载订阅配置", "error");
       });
   }
 
-  ctx.cleanup.listen(el.barkUrlInput, "change", () => {
-    ctx.subscriptionDraft.bark_url = el.barkUrlInput.value;
-    persistDraft();
-  });
-  ctx.cleanup.listen(el.barkInput, "input", () => updateDraftStatus());
   ctx.cleanup.listen(el.retryConfig, "click", () => {
     toast.show("正在重新加载订阅配置...", "info");
     void initializeConfiguration();
@@ -175,19 +157,18 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
       toast.show(locationError, "error");
       return;
     }
-    const barkID = el.barkInput.value.trim();
+    const barkID = ctx.deviceKey.trim();
     if (!/^[A-Za-z0-9]{1,64}$/.test(barkID)) {
-      toast.show("Bark Key 只能包含字母和数字", "error");
+      toast.show("Bark ID 无效", "error");
       return;
     }
-    const barkUrl = el.barkUrlInput.value;
-    if (!ctx.barkUrls.includes(barkUrl)) {
-      toast.show("请选择有效的 Bark URL", "error");
+    if (!ctx.barkUrl) {
+      toast.show("尚未加载到可用的通知地址", "error");
       return;
     }
     const submittedSignature = draftSignature(ctx.subscriptionDraft);
     const payload = {
-      destination: { type: "bark", base_url: barkUrl, device_key: barkID },
+      destination: { type: "bark", base_url: ctx.barkUrl, device_key: barkID },
       targets: ctx.subscriptionDraft.targets.map((target) => ({
         label: target.label.trim(),
         point: { latitude: Number(target.point.latitude), longitude: Number(target.point.longitude) },
@@ -206,7 +187,7 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
         body: JSON.stringify(payload),
       });
       const fallbackMessage = res.status === 502
-        ? "Bark 接收测试失败，请检查 Bark Key；若确认无误，请稍后重试"
+        ? "Bark 接收测试失败，请检查 Bark ID；若确认无误，请稍后重试"
         : "";
       const json = await parseApiResponse(res, fallbackMessage);
       if (!res.ok || !json.success) throw new Error(json.message || "保存失败");
@@ -229,13 +210,13 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
   });
 
   ctx.cleanup.listen(el.unsubscribe, "click", async () => {
-    const barkID = el.barkInput.value.trim();
+    const barkID = ctx.deviceKey.trim();
     if (!/^[A-Za-z0-9]{1,64}$/.test(barkID)) {
-      toast.show("请填写有效的 Bark Key", "error");
+      toast.show("Bark ID 无效", "error");
       return;
     }
-    if (!ctx.barkUrls.includes(el.barkUrlInput.value)) {
-      toast.show("请选择有效的 Bark URL", "error");
+    if (!ctx.barkUrl) {
+      toast.show("尚未加载到可用的通知地址", "error");
       return;
     }
     if (!confirm("确定删除该 Bark 服务与 Key 对应的服务端订阅？当前浏览器中的配置草稿会保留。")) return;
@@ -247,7 +228,7 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          destination: { type: "bark", base_url: el.barkUrlInput.value, device_key: barkID },
+          destination: { type: "bark", base_url: ctx.barkUrl, device_key: barkID },
         }),
       });
       const json = await parseApiResponse(res);

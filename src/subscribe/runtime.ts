@@ -52,9 +52,6 @@ export function requiredQuery<T extends Element>(root: ParentNode, selector: str
 export function queryElements(root: HTMLElement): SubscribeElements {
   return {
     form: requiredQuery(root, "#subscribe-form"),
-    barkInput: requiredQuery(root, "#bark-id"),
-    barkUrlInput: requiredQuery(root, "#bark-url"),
-    barkUrlField: requiredQuery(root, "#bark-url-field"),
     nameInput: requiredQuery(root, "#location-name"),
     provinceInput: requiredQuery(root, "#province"),
     cityInput: requiredQuery(root, "#city"),
@@ -123,7 +120,8 @@ export type SubscribeRuntime = {
   lastSubmittedIdentity: string;
   persistTimer: ReturnType<typeof setTimeout> | null;
   optionCategories: CategoryOption[];
-  barkUrls: string[];
+  deviceKey: string;
+  barkUrl: string;
   configurationReady: boolean;
   subscriptionRequestInFlight: boolean;
   initializationGeneration: number;
@@ -156,7 +154,8 @@ export function createRuntime(root: HTMLElement, options: MountSubscribeOptions)
     lastSubmittedIdentity: "",
     persistTimer: null,
     optionCategories: [],
-    barkUrls: [],
+    deviceKey: String(options.deviceKey || ""),
+    barkUrl: "",
     configurationReady: false,
     subscriptionRequestInFlight: false,
     initializationGeneration: 0,
