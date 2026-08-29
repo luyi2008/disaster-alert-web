@@ -1,72 +1,6 @@
-<main>
-    <header>
-      <div class="topline">
-        <h1>灾害预警订阅</h1>
-        <div id="status-shell" class="status-shell">
-          <button id="service-status" class="badge status-trigger" type="button" aria-expanded="false" aria-controls="status-details">
-            <span id="status-dot" class="dot"></span>
-            <span id="status-label" role="status" aria-live="polite">状态未知</span>
-          </button>
-          <div id="status-details" class="status-popover" role="tooltip">
-            <div class="status-popover-head">
-              <strong>服务运行状态</strong>
-              <span id="status-updated">等待更新</span>
-            </div>
-            <div class="status-source-list">
-              <div class="status-source">
-                <span id="status-wolfx-dot" class="dot"></span>
-                <span class="status-source-name">Wolfx</span>
-                <span id="status-wolfx-state" class="status-source-state">未知</span>
-                <span id="status-wolfx-meta" class="status-source-meta">尚未获取数据</span>
-              </div>
-              <div class="status-source">
-                <span id="status-fanstudio-dot" class="dot"></span>
-                <span class="status-source-name">FAN Studio</span>
-                <span id="status-fanstudio-state" class="status-source-state">未知</span>
-                <span id="status-fanstudio-meta" class="status-source-meta">尚未获取数据</span>
-              </div>
-              <div class="status-source">
-                <span id="status-huania-dot" class="dot"></span>
-                <span class="status-source-name">Huania</span>
-                <span id="status-huania-state" class="status-source-state">未知</span>
-                <span id="status-huania-meta" class="status-source-meta">尚未获取数据</span>
-              </div>
-            </div>
-            <div class="status-metrics">
-              <div class="status-metric"><span>订阅总数</span><strong id="status-subscriptions">--</strong></div>
-              <div class="status-metric"><span>后台待处理</span><strong id="status-pending">--</strong></div>
-              <div class="status-metric"><span>推送成功</span><strong id="status-delivered">--</strong></div>
-              <div class="status-metric"><span>推送失败</span><strong id="status-failed">--</strong></div>
-            </div>
-            <div class="status-backlog">
-              <strong>待处理明细</strong>
-              <span id="status-backlog">事件 -- · 匹配 -- · 投递 -- · 重试 -- · 订阅确认 --</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <p class="subhead">将所选地点的灾害预警推送到当前设备</p>
-    </header>
-
-    <section class="panel">
-      <div id="toast-stack" class="toast-stack" aria-live="polite" aria-atomic="true"></div>
+<div id="toast-stack" class="toast-stack" aria-live="polite" aria-atomic="true"></div>
       <button id="retry-config" class="retry-config" type="button">重新加载配置</button>
       <form id="subscribe-form">
-        <h2 class="workspace-heading">接收设备 <span>Bark</span></h2>
-        <div class="identity-grid" id="identity-grid">
-          <div class="field">
-            <div class="identity-label-row">
-              <label for="bark-id">Bark Key</label>
-              <a class="change-device" href="/">更换设备</a>
-            </div>
-            <input id="bark-id" type="text" autocomplete="off" maxlength="22" required readonly placeholder="已从测试链接填入" />
-          </div>
-          <div class="field" id="bark-url-field">
-            <label for="bark-url">Bark URL</label>
-            <select id="bark-url" required disabled></select>
-          </div>
-        </div>
-
         <div class="workspace">
           <div class="workspace-column">
             <section class="workspace-section">
@@ -137,14 +71,8 @@
           </div>
         </div>
         <div class="form-actions">
-          <div id="draft-status" class="form-actions-note">配置草稿会保存在当前浏览器；Bark Key 不会保存在浏览器中。</div>
+          <div id="draft-status" class="form-actions-note">配置草稿会保存在当前浏览器；Bark ID 不会保存在浏览器中。</div>
           <button class="danger" id="unsubscribe" type="button">取消订阅</button>
           <button class="primary" id="submit" type="submit">保存/覆盖订阅</button>
         </div>
       </form>
-    </section>
-    <footer>
-      <p>数据来源：<a href="https://ws-api.wolfx.jp">Wolfx.jp</a> · <a href="https://api.fanstudio.tech/doc/ws-api/#home">FAN Studio</a> · <a href="https://mobile-new.chinaeew.cn/v1/">Huania</a>　开源项目：<a href="https://github.com/luyi2008/disaster-alert">GitHub · luyi2008/disaster-alert</a></p>
-      <p>本服务仅用于灾害信息转发与个人提醒，数据可能延迟、缺失或误报，不构成官方预警或安全决策依据。请以所在地政府、应急管理部门及权威机构发布的信息为准，并遵从现场指引。</p>
-    </footer>
-  </main>

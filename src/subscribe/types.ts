@@ -92,14 +92,11 @@ export type GeocodeJob = {
 export type MountSubscribeOptions = {
   api?: string;
   instanceTermsAccepted?: boolean;
-  initialBarkKey?: string;
+  deviceKey?: string;
 };
 
 export type SubscribeElements = {
   form: HTMLFormElement;
-  barkInput: HTMLInputElement;
-  barkUrlInput: HTMLSelectElement;
-  barkUrlField: HTMLElement;
   nameInput: HTMLInputElement;
   provinceInput: HTMLInputElement;
   cityInput: HTMLInputElement;

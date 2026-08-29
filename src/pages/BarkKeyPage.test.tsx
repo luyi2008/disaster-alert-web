@@ -48,6 +48,7 @@ function stubCheck(data: { valid: boolean; registered: boolean; reason?: string 
 describe("BarkKeyPage", () => {
   it("keeps the continue button disabled for invalid input", () => {
     renderEntry();
+    expect(screen.getByRole("heading", { name: "发个通知" })).toBeInTheDocument();
     const button = screen.getByRole("button", { name: "进入订阅配置" });
     expect(button).toBeDisabled();
     fireEvent.change(screen.getByLabelText("Bark 测试链接"), { target: { value: "not-a-key" } });
