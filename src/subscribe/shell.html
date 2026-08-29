@@ -55,8 +55,11 @@
         <h2 class="workspace-heading">接收设备 <span>Bark</span></h2>
         <div class="identity-grid" id="identity-grid">
           <div class="field">
-            <label for="bark-id">Bark Key</label>
-            <input id="bark-id" type="text" autocomplete="off" maxlength="64" required placeholder="例如 JP8S9..." />
+            <div class="identity-label-row">
+              <label for="bark-id">Bark Key</label>
+              <a class="change-device" href="/">更换设备</a>
+            </div>
+            <input id="bark-id" type="text" autocomplete="off" maxlength="22" required readonly placeholder="已从测试链接填入" />
           </div>
           <div class="field" id="bark-url-field">
             <label for="bark-url">Bark URL</label>

@@ -9,6 +9,11 @@ export default defineConfig({
     proxy: {
       "/api": { target: apiOrigin, changeOrigin: true },
       "/health": { target: apiOrigin, changeOrigin: true },
+      "/bark-check": {
+        target: "https://bark.mangguo.cloud",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/bark-check/, "/check"),
+      },
     },
   },
   test: {

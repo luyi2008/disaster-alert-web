@@ -1,0 +1,131 @@
+@import "./tokens.css";
+
+.entry-page {
+  min-height: 100vh;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+}
+
+.entry-page * {
+  box-sizing: border-box;
+}
+
+main.entry-main {
+  width: min(480px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 72px 0 48px;
+}
+
+.entry-page h1 {
+  margin: 0;
+  font-size: 34px;
+  line-height: 1.12;
+  letter-spacing: 0;
+}
+
+.entry-lead {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.entry-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.entry-form label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 760;
+}
+
+.entry-form input {
+  width: 100%;
+  height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 13px;
+  background: color-mix(in srgb, var(--panel) 88%, var(--bg));
+  color: var(--text);
+  font-family: inherit;
+  font-size: 15px;
+  outline: none;
+}
+
+.entry-form input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+.entry-extracted,
+.entry-status {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.entry-extracted {
+  color: var(--muted);
+  word-break: break-all;
+}
+
+.entry-extracted strong {
+  color: var(--text);
+  font-weight: 650;
+}
+
+.entry-status.is-checking,
+.entry-status.is-info {
+  color: var(--info);
+}
+
+.entry-status.is-ok {
+  color: var(--ok);
+}
+
+.entry-status.is-error {
+  color: var(--err);
+}
+
+.entry-form button.primary {
+  height: 48px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--primary);
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 760;
+  cursor: pointer;
+}
+
+.entry-form button.primary:hover:not(:disabled) {
+  background: var(--primary-strong);
+}
+
+.entry-form button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+@media (max-width: 520px) {
+  main.entry-main {
+    width: min(100% - 28px, 480px);
+    padding-top: 48px;
+  }
+
+  .entry-page h1 {
+    font-size: 28px;
+  }
+
+  .entry-form input,
+  .entry-form button.primary {
+    font-size: 16px;
+  }
+}

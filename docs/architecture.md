@@ -32,10 +32,11 @@ graph TB
     Bark["Bark 推送服务"]
     Sources["Wolfx / FAN Studio / Huania<br/>灾害数据源"]
 
-    User -->|"/ 和 /incidents/*"| Proxy
+    User -->|"/ 、 /subscribe 和 /incidents/*"| Proxy
     Proxy --> Web
     Proxy -->|"/api/* 和 /health"| API
     User -.->|"直连瓦片"| Tiles
+    User -.->|"生产：直连 /check（CORS *.mangguo.cloud）"| Bark
     API --> Sources
     API -->|"推送通知（含详情深链）"| Bark
     Bark -->|"深链回到 /incidents/..."| User
@@ -47,6 +48,7 @@ graph TB
 | --- | --- |
 | 同源反代 | 站点与 API 共用域名时，由主机上的反向代理分流。容器自身**不代理** `/api`，单独部署容器无法完成订阅。 |
 | 瓦片直连 | 地图瓦片由浏览器直接向 CDN 请求，不经过本站或 API。 |
+| Bark Key 校验 | 入口页生产环境直连 `https://bark.mangguo.cloud/check`；该服务需 CORS 回显 `*.mangguo.cloud` 的 Origin。开发时 Vite 把 `/bark-check` 代理到同一地址。生产 nginx **不**反代该接口。 |
 | 闭环入口 | 详情页的唯一正常入口是 Bark 推送里的深链，路径中带通知凭据。 |
 
 ---
@@ -65,13 +67,13 @@ graph TB
 | 运行时镜像 | nginx alpine | 1.27 |
 | 构建镜像 | node bookworm | 22 |
 
-没有引入状态管理库、UI 组件库或 CSS 框架。样式是手写 CSS（`subscribe.css` 814 行、`detail.css` 39 行），通过 ES import 交给 Vite 打包。
+没有引入状态管理库、UI 组件库或 CSS 框架。样式是手写 CSS（`tokens.css` 色板、`entry.css`、`subscribe.css`、`detail.css`），通过 ES import 交给 Vite 打包。
 
 ---
 
 ## 3. 最重要的架构特征：双范式前端
 
-这是理解本仓库的核心。两个页面使用**完全不同的渲染范式**，这是有意为之的迁移中间态，不是技术债的意外产物。
+这是理解本仓库的核心。订阅配置页仍是命令式 DOM（从原静态页迁入的中间态），入口页与详情页已是 React。
 
 ```mermaid
 graph TB
@@ -79,12 +81,21 @@ graph TB
     App["App.tsx<br/>BrowserRouter"]
 
     Main --> App
-    App -->|"路由 /"| SubPage
+    App -->|"路由 /"| EntryPage
+    App -->|"路由 /subscribe"| SubPage
     App -->|"路由 /incidents/:id/notifications/:token"| IncPage
+
+    subgraph EntryPage["BarkKeyPage —— 标准 React"]
+        direction TB
+        E1["粘贴测试链接，提取 22 位 Key"]
+        E2["本地格式校验后 GET check"]
+        E3["valid 且 registered 才可进入 /subscribe"]
+        E1 --> E2 --> E3
+    end
 
     subgraph SubPage["SubscribePage —— 命令式 DOM"]
         direction TB
-        S1["React 只做外壳：<br/>拉取 /api/status、渲染责任声明弹窗"]
+        S1["React 只做外壳：<br/>无 key 则重定向 /；拉取 /api/status、渲染责任声明弹窗"]
         S2["注入 shell.html?raw 到宿主节点"]
         S3["mountSubscribeApp(host, options)"]
         S4["返回 teardown 函数"]
@@ -110,7 +121,7 @@ React 在这条路线上只承担三个职责：查询 `instance_terms_accepted`
 
 ---
 
-## 4. 订阅页架构（`/`）
+## 4. 订阅页架构（`/subscribe`）
 
 ### 4.1 模块划分
 
@@ -314,6 +325,7 @@ graph LR
 | POST | `/api/subscribe` | `subscribeApp.ts` | 覆盖保存订阅 |
 | DELETE | `/api/unsubscribe` | `subscribeApp.ts` | 按 Bark 服务 + Key 删除订阅 |
 | GET | `/api/incidents/{id}/notifications/{token}` | `api.ts` | 通知详情 |
+| GET | `https://bark.mangguo.cloud/check` | `checkDeviceKey.ts` | 校验 Bark Key 格式与是否已注册（开发走 Vite `/bark-check`） |
 | GET | `/health` | 仅反代/开发代理 | 进程健康检查 |
 
 `/api/subscription-options` 是一个重要的架构选择：**灾种、来源列表和默认规则由服务端下发，不在前端硬编码**。后端新增数据源或灾种，前端无需改代码。前端只保留渲染逻辑和各灾种的数值范围校验（如 `min_magnitude` 0–10、`min_severity` 1–4）。
@@ -323,8 +335,10 @@ graph LR
 ```mermaid
 graph LR
     Dev["开发：npm run dev"] -->|"Vite proxy /api + /health"| DevAPI["VITE_DEV_API_ORIGIN<br/>默认 127.0.0.1:30010"]
+    Dev -->|"Vite proxy /bark-check"| BarkCheck["bark.mangguo.cloud/check"]
     Prod["生产：VITE_API_BASE"] -->|"留空 = 同源"| Reverse["主机反向代理分流"]
     Prod -->|"设值 = 跨源"| Cross["独立 API 域名"]
+    ProdEntry["生产入口页"] -->|"直连 /check"| BarkCheck
 ```
 
 `api.ts` 的 `apiUrl()` 统一加前缀并去掉尾部斜杠。`VITE_API_BASE` 是**构建时**变量，会烘进产物 —— 同一镜像不能在运行时切换 API 地址。同源反代场景保持留空即可。
@@ -384,7 +398,7 @@ graph LR
 
 两阶段 Dockerfile：`node:22-bookworm` 里 `npm ci && npm run build`，产物 `dist/` 拷进 `nginx:1.27-alpine`。运行时镜像不含 Node 和源码。
 
-容器内 nginx **始终**监听 `0.0.0.0:30011`（写死在 `nginx.conf`），对外发布端口由 Compose 的 `SERVER_PORT` / `SERVER_PUBLISH_HOST` 控制。`/` 与 `/incidents/` 都 `try_files ... /index.html`，保证 SPA 深链刷新不 404 —— 这是 Bark 深链能正常工作的前提。
+容器内 nginx **始终**监听 `0.0.0.0:30011`（写死在 `nginx.conf`），对外发布端口由 Compose 的 `SERVER_PORT` / `SERVER_PUBLISH_HOST` 控制。`/`、`/subscribe` 与 `/incidents/` 都 `try_files ... /index.html`，保证 SPA 深链刷新不 404 —— 这是 Bark 深链能正常工作的前提。
 
 镜像自带 `HEALTHCHECK`（wget 探活 `127.0.0.1:30011/`），Compose 侧重复定义了一份。
 
@@ -418,7 +432,7 @@ graph TB
 
 | 手段 | 现状 |
 | --- | --- |
-| 单测 | 4 个文件 12 个用例，全部通过 |
+| 单测 | 9 个文件，覆盖入口校验、订阅挂载与详情页 |
 | 类型检查 | `tsc -b`（build 前置），项目引用拆 app / node 两份配置 |
 | Lint | oxlint，启用 react + typescript + oxc 插件；当前 1 条 warning |
 | 构建 | 44 模块 → JS 459.39 kB（gzip 140.06 kB）、CSS 62.64 kB（gzip 16.75 kB） |
@@ -426,7 +440,10 @@ graph TB
 测试覆盖的是**不变量而非快照**，四个文件各守一类风险：
 
 - `subscribe.logic.test.ts` — 纯函数：HTML 转义、错误文案映射、坐标校验、**草稿不含 Bark Key**。
-- `subscribeApp.test.ts` — 挂载/卸载契约：故意在 `document` 上放一个同 id 的诱饵 `#subscribe-form`，断言查询命中的是宿主内的节点；teardown 后断言 `map.remove()` 被调用，并派发一次 `pointerdown` 验证 document 级监听已解绑。
+- `extractBarkKey` / `localValidate` / `checkDeviceKey` — 测试链接提取、22 位本地校验、check 信封解析。
+- `BarkKeyPage.test.tsx` — 非法输入与未注册时按钮禁用；校验通过后带 state 进入 `/subscribe`。
+- `SubscribePage.test.tsx` — 无已校验 key 时重定向回 `/`。
+- `subscribeApp.test.ts` — 挂载/卸载契约，以及 `initialBarkKey` 写入只读输入框。
 - `IncidentPage.test.tsx` — 详情页渲染与状态分支。
 - `TermsDialog.test.tsx` — 弹窗行为。
 
@@ -444,6 +461,7 @@ Leaflet 在测试中被 `vi.mock` 替换，jsdom 无需真实地图实现。
 | 生成代次 + revision 守卫 | 无框架托管时，这是防止过期响应写入 DOM 的最简手段 | 每个异步入口都必须记得比对 |
 | 灾种/来源由服务端下发 | 后端扩展数据源无需改前端 | 前端需处理下发数据缺失/异常的降级 |
 | 草稿存 localStorage，Bark Key 不存 | 刷新不丢配置，同时不落盘凭据 | 草稿与服务端可能不一致，需签名比对提示 |
+| 入口页校验通过才进入 `/subscribe` | 避免无效 Key 进入复杂配置；生产直连 bark check，开发走 Vite 代理 | 依赖 bark-worker-server CORS；无 state 刷新订阅页会回到入口 |
 | 构建时注入 `VITE_API_BASE` | 同源部署下零配置 | 同一镜像无法在运行时切换 API 地址 |
 | 容器固定 30011，HTTPS 交给外部反代 | 与 API 仓库部署约定一致，职责清晰 | 单独跑容器无法完成订阅（无 `/api`） |
 

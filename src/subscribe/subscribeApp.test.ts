@@ -100,4 +100,41 @@ describe("mountSubscribeApp", () => {
     expect(mapRemove).toHaveBeenCalled();
     document.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
   });
+
+  it("fills a readonly Bark Key from initialBarkKey", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/bark-urls")) {
+          return jsonResponse({ bark_urls: ["https://bark.example"] });
+        }
+        if (url.includes("/api/subscription-options")) {
+          return jsonResponse({ categories: [] });
+        }
+        if (url.includes("/api/status")) {
+          return jsonResponse({
+            instance_terms_accepted: true,
+            total_subscriptions: 0,
+          });
+        }
+        return jsonResponse({});
+      }),
+    );
+
+    const host = document.createElement("div");
+    host.innerHTML = shell;
+    document.body.append(host);
+
+    const teardown = mountSubscribeApp(host, {
+      api: "",
+      instanceTermsAccepted: true,
+      initialBarkKey: "ynJ5Ft4atkMkWeo2PAvFhF",
+    });
+    const input = host.querySelector("#bark-id") as HTMLInputElement;
+    expect(input.value).toBe("ynJ5Ft4atkMkWeo2PAvFhF");
+    expect(input.readOnly).toBe(true);
+    expect(host.querySelector(".change-device")?.getAttribute("href")).toBe("/");
+    teardown();
+  });
 });

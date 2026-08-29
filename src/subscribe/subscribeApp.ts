@@ -55,6 +55,11 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
   const alerts = bindAlertRules(ctx, { persistDraft, show: toast.show });
   const status = bindStatus(ctx);
 
+  if (options.initialBarkKey) {
+    el.barkInput.value = options.initialBarkKey;
+  }
+  el.barkInput.readOnly = true;
+
   function setSubscriptionRequestInFlight(inFlight: boolean): void {
     ctx.subscriptionRequestInFlight = inFlight;
     el.submit.disabled = inFlight || !ctx.configurationReady || !ctx.instanceTermsAccepted;

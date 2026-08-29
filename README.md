@@ -2,6 +2,8 @@
 
 [disaster-alert](https://github.com/luyi2008/disaster-alert) 的订阅页和通知详情页。本仓库只包含前端，不运行灾害数据源或 Bark 推送。
 
+打开站点先进入 `/`：粘贴 Bark 测试链接，本地校验并通过 `bark.mangguo.cloud` 确认 Key 已注册后，才进入 `/subscribe` 配置订阅。通知详情仍由 Bark 深链打开 `/incidents/...`。
+
 服务端完全独立发版，两边不需要对齐 git tag。
 
 ## 本地开发
@@ -81,7 +83,7 @@ PR 不会部署、也不会写 `.env`。未配置上述 secrets 时，合并后�
 
 ```
 /api/*  /health  -> disaster-alert（默认 127.0.0.1:30010）
-/  /incidents/*  -> 本镜像（0.0.0.0:30011）
+/  /subscribe  /incidents/*  -> 本镜像（0.0.0.0:30011）
 ```
 
 反代、CDN 和日志不要记录 `/incidents/` 的完整 URL（路径里含通知凭据）。
