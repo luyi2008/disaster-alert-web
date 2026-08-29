@@ -165,7 +165,11 @@
       border-radius: 0;
       background: transparent;
     }
-    .change-device:hover { text-decoration: underline; }
+    .change-device:hover,
+    .change-device:focus-visible {
+      outline: none;
+      text-decoration: underline;
+    }
     .workspace {
       display: grid;
       grid-template-columns: minmax(440px, 1.06fr) minmax(380px, .94fr);
