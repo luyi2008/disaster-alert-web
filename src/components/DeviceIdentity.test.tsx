@@ -12,22 +12,36 @@ describe("DeviceIdentity", () => {
     );
     expect(screen.getByText("通知 APP：Bark")).toBeInTheDocument();
     expect(screen.getByText("Bark ID：ynJ5Ft4atkMkWeo2PAvFhF")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "测试" })).toHaveAttribute("href", "/subscribe/test");
     expect(screen.getByRole("link", { name: "更换设备" })).toHaveAttribute("href", "/");
     expect(container.querySelector("input")).toBeNull();
     expect(container.querySelector("select")).toBeNull();
   });
 
-  it("places reload config after change-device and calls onReloadConfig", () => {
+  it("places test before change-device and reload config", () => {
     const onReloadConfig = vi.fn();
     render(
       <MemoryRouter>
         <DeviceIdentity barkId="ynJ5Ft4atkMkWeo2PAvFhF" onReloadConfig={onReloadConfig} />
       </MemoryRouter>,
     );
+    const testLink = screen.getByRole("link", { name: "测试" });
     const changeDevice = screen.getByRole("link", { name: "更换设备" });
     const reloadConfig = screen.getByRole("button", { name: "重新加载配置" });
+    expect(testLink.compareDocumentPosition(changeDevice) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(changeDevice.compareDocumentPosition(reloadConfig) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     fireEvent.click(reloadConfig);
     expect(onReloadConfig).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows a back-to-subscribe link on the test page", () => {
+    render(
+      <MemoryRouter>
+        <DeviceIdentity barkId="ynJ5Ft4atkMkWeo2PAvFhF" currentPage="test" />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole("link", { name: "返回订阅" })).toHaveAttribute("href", "/subscribe");
+    expect(screen.queryByRole("link", { name: "测试" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "重新加载配置" })).toBeNull();
   });
 });

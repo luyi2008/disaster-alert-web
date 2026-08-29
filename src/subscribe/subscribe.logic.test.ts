@@ -50,6 +50,7 @@ describe("draft storage", () => {
     writeDraft(draft);
     const stored = JSON.parse(localStorage.getItem(DRAFT_STORAGE_KEY) || "{}");
     expect(draftOmitsBarkKey(stored)).toBe(true);
+    expect(stored.updated_at).toEqual(expect.any(Number));
     expect(draftForStorage(draft).bark_url).toBe("https://bark.example");
     expect(restoreDraftFromStorage().bark_url).toBe("https://bark.example");
   });

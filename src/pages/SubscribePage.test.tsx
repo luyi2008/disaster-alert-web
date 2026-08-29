@@ -103,6 +103,7 @@ describe("SubscribePage", () => {
 
     expect(screen.getByText("通知 APP：Bark")).toBeInTheDocument();
     expect(screen.getByText(`Bark ID：${KEY}`)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "测试" })).toHaveAttribute("href", "/subscribe/test");
     expect(screen.getByRole("link", { name: "更换设备" })).toHaveAttribute("href", "/");
     expect(screen.getByRole("button", { name: "重新加载配置" })).toBeInTheDocument();
     expect(container.querySelector("#bark-id")).toBeNull();

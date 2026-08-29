@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { apiUrl, fetchStatus } from "../api";
-import { localValidateBarkKey } from "../bark/localValidate";
 import { DeviceIdentity } from "../components/DeviceIdentity";
 import { TermsDialog } from "../components/TermsDialog";
+import { barkKeyFromState, type SubscribeLocationState } from "../subscribe/barkKeyState";
 import bodyHtml from "../subscribe/body.html?raw";
 import footerHtml from "../subscribe/footer.html?raw";
 import headerHtml from "../subscribe/header.html?raw";
@@ -12,20 +12,7 @@ import "../styles/base.css";
 import "../styles/subscribe.css";
 import "leaflet/dist/leaflet.css";
 
-export type SubscribeLocationState = {
-  barkKey?: string;
-};
-
-function barkKeyFromState(state: unknown): string | null {
-  if (!state || typeof state !== "object") {
-    return null;
-  }
-  const barkKey = (state as SubscribeLocationState).barkKey;
-  if (typeof barkKey !== "string" || localValidateBarkKey(barkKey)) {
-    return null;
-  }
-  return barkKey;
-}
+export type { SubscribeLocationState };
 
 export function SubscribePage() {
   const location = useLocation();
