@@ -77,7 +77,7 @@ const simpleCategory = {
 };
 
 function stubSubscribeFetches() {
-  return vi.fn(async (input: RequestInfo | URL) => {
+  return vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
     const url = String(input);
     if (url.includes("/api/bark-urls")) {
       return jsonResponse({ bark_urls: [FIRST_URL, SECOND_URL] });
@@ -170,8 +170,10 @@ describe("mountSubscribeApp", () => {
       const subscribeCall = fetchMock.mock.calls.find(([input, init]) => (
         String(input).includes("/api/subscribe") && (init as RequestInit | undefined)?.method === "POST"
       ));
-      expect(subscribeCall).toBeTruthy();
-      const body = JSON.parse(String((subscribeCall?.[1] as RequestInit).body));
+      if (!subscribeCall) {
+        throw new Error("missing subscribe request");
+      }
+      const body = JSON.parse(String((subscribeCall[1] as RequestInit).body));
       expect(body.destination).toEqual({
         type: "bark",
         base_url: FIRST_URL,
