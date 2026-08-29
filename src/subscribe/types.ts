@@ -92,6 +92,7 @@ export type GeocodeJob = {
 export type MountSubscribeOptions = {
   api?: string;
   instanceTermsAccepted?: boolean;
+  initialBarkKey?: string;
 };
 
 export type SubscribeElements = {
