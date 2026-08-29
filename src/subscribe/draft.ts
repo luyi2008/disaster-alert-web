@@ -80,8 +80,20 @@ export function incompleteTarget(draft: SubscriptionDraft): SubscriptionTarget |
 
 export function writeDraft(draft: SubscriptionDraft): void {
   try {
-    localStorage.setItem(DRAFT_STORAGE_KEY, draftSignature(draft));
+    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({
+      ...draftForStorage(draft),
+      updated_at: Date.now(),
+    }));
   } catch {
     // Ignore quota / private-mode failures; the in-memory draft remains usable.
   }
+}
+
+export function readDraftUpdatedAt(): number | null {
+  const source = safeJson(localStorage.getItem(DRAFT_STORAGE_KEY));
+  if (!source || typeof source !== "object") {
+    return null;
+  }
+  const value = (source as { updated_at?: unknown }).updated_at;
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : null;
 }

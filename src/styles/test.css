@@ -1,0 +1,159 @@
+@import "./tokens.css";
+
+.test-page {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 38px 0 48px;
+}
+
+.test-page header {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.test-page h1 {
+  margin: 0;
+  font-size: 38px;
+  line-height: 1.08;
+}
+
+.test-summary,
+.test-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.test-summary {
+  padding-bottom: 22px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid var(--line);
+}
+
+.test-summary h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.test-note,
+.test-summary-list dd,
+.test-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.test-summary-list {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+}
+
+.test-summary-list > div {
+  display: grid;
+  gap: 4px;
+}
+
+.test-summary-list dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.test-summary-list dd {
+  color: var(--text);
+  font-size: 15px;
+}
+
+.test-summary-list ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.test-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.test-tabs [role="tab"] {
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.test-tabs [role="tab"].is-active,
+.test-tabs [role="tab"][aria-selected="true"] {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--info-bg);
+}
+
+.test-level-list,
+.test-history-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.test-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel) 88%, var(--bg));
+}
+
+.test-card strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 15px;
+}
+
+.test-card .primary {
+  width: auto;
+  min-width: 96px;
+  height: 40px;
+  padding: 0 14px;
+  flex-shrink: 0;
+}
+
+.test-status {
+  margin: 16px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.test-status.is-success {
+  color: var(--ok);
+  background: var(--ok-bg);
+}
+
+.test-status.is-error {
+  color: var(--err);
+  background: var(--err-bg);
+}
+
+@media (max-width: 720px) {
+  .test-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .test-card .primary {
+    width: 100%;
+  }
+}
