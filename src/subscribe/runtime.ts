@@ -75,7 +75,6 @@ export function queryElements(root: HTMLElement): SubscribeElements {
     discardLocationEdit: requiredQuery(root, "#discard-location-edit"),
     draftStatus: requiredQuery(root, "#draft-status"),
     toastStack: requiredQuery(root, "#toast-stack"),
-    retryConfig: requiredQuery(root, "#retry-config"),
     submit: requiredQuery(root, "#submit"),
     unsubscribe: requiredQuery(root, "#unsubscribe"),
     statusShell: requiredQuery(root, "#status-shell"),

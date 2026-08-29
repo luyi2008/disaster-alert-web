@@ -95,6 +95,11 @@ export type MountSubscribeOptions = {
   deviceKey?: string;
 };
 
+export type SubscribeAppHandle = {
+  reloadConfiguration: () => void;
+  teardown: () => void;
+};
+
 export type SubscribeElements = {
   form: HTMLFormElement;
   nameInput: HTMLInputElement;
@@ -120,7 +125,6 @@ export type SubscribeElements = {
   discardLocationEdit: HTMLButtonElement;
   draftStatus: HTMLElement;
   toastStack: HTMLElement;
-  retryConfig: HTMLButtonElement;
   submit: HTMLButtonElement;
   unsubscribe: HTMLButtonElement;
   statusShell: HTMLElement;

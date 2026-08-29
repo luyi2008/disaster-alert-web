@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { SubscribePage } from "./SubscribePage";
@@ -104,9 +104,49 @@ describe("SubscribePage", () => {
     expect(screen.getByText("通知 APP：Bark")).toBeInTheDocument();
     expect(screen.getByText(`Bark ID：${KEY}`)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "更换设备" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("button", { name: "重新加载配置" })).toBeInTheDocument();
     expect(container.querySelector("#bark-id")).toBeNull();
     expect(container.querySelector("#bark-url")).toBeNull();
+    expect(container.querySelector("#retry-config")).toBeNull();
     expect(container.querySelector("input#bark-id")).toBeNull();
     expect(await screen.findByRole("heading", { name: "发个通知" })).toBeInTheDocument();
+  });
+
+  it("reloads subscription options from the React identity action", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/bark-urls")) {
+        return jsonResponse({ bark_urls: ["https://bark.example"] });
+      }
+      if (url.includes("/api/subscription-options")) {
+        return jsonResponse({ categories: [] });
+      }
+      if (url.includes("/api/status")) {
+        return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
+      }
+      return jsonResponse({});
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <MemoryRouter initialEntries={[{ pathname: "/subscribe", state: { barkKey: KEY } }]}>
+        <Routes>
+          <Route path="/" element={<div>entry</div>} />
+          <Route path="/subscribe" element={<SubscribePage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole("heading", { name: "发个通知" });
+    const callsFor = (path: string) => fetchMock.mock.calls.filter(([input]) => String(input).includes(path));
+    await vi.waitFor(() => expect(callsFor("/api/bark-urls").length).toBeGreaterThan(0));
+    const barkCallsBefore = callsFor("/api/bark-urls").length;
+    const optionCallsBefore = callsFor("/api/subscription-options").length;
+
+    fireEvent.click(screen.getByRole("button", { name: "重新加载配置" }));
+    await vi.waitFor(() => {
+      expect(callsFor("/api/bark-urls")).toHaveLength(barkCallsBefore + 1);
+      expect(callsFor("/api/subscription-options")).toHaveLength(optionCallsBefore + 1);
+    });
   });
 });

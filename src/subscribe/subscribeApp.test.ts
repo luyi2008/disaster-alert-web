@@ -117,14 +117,15 @@ describe("mountSubscribeApp", () => {
     fillHost(host);
     document.body.append(host);
 
-    const teardown = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceKey: KEY });
+    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceKey: KEY });
     const form = host.querySelector("#subscribe-form");
     expect(form).not.toBe(decoy);
     expect((form as HTMLFormElement | null)?.id).toBe("subscribe-form");
     expect(host.querySelector("#bark-id")).toBeNull();
     expect(host.querySelector("#bark-url")).toBeNull();
+    expect(host.querySelector("#retry-config")).toBeNull();
 
-    teardown();
+    app.teardown();
     expect(mapRemove).toHaveBeenCalled();
     document.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
   });
@@ -156,7 +157,7 @@ describe("mountSubscribeApp", () => {
     host.append(decoyKey, decoyUrl);
     document.body.append(host);
 
-    const teardown = mountSubscribeApp(host, {
+    const app = mountSubscribeApp(host, {
       api: "",
       instanceTermsAccepted: true,
       deviceKey: KEY,
@@ -181,6 +182,33 @@ describe("mountSubscribeApp", () => {
       });
     });
 
-    teardown();
+    app.teardown();
+  });
+
+  it("reloads bark URLs and subscription options when reloadConfiguration runs", async () => {
+    const fetchMock = stubSubscribeFetches();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const host = document.createElement("div");
+    fillHost(host);
+    document.body.append(host);
+
+    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceKey: KEY });
+    const submit = host.querySelector("#submit") as HTMLButtonElement;
+    await vi.waitFor(() => expect(submit.disabled).toBe(false));
+
+    const callsFor = (path: string) => fetchMock.mock.calls.filter(([input]) => String(input).includes(path));
+    expect(callsFor("/api/bark-urls")).toHaveLength(1);
+    expect(callsFor("/api/subscription-options")).toHaveLength(1);
+
+    app.reloadConfiguration();
+    expect(host.textContent).toContain("正在重新加载订阅配置...");
+    await vi.waitFor(() => {
+      expect(callsFor("/api/bark-urls")).toHaveLength(2);
+      expect(callsFor("/api/subscription-options")).toHaveLength(2);
+      expect(submit.disabled).toBe(false);
+    });
+
+    app.teardown();
   });
 });

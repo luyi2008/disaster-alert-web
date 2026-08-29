@@ -34,6 +34,7 @@ export function SubscribePage() {
   const headerRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const footerRef = useRef<HTMLDivElement>(null);
+  const reloadConfigRef = useRef<() => void>(() => {});
   const [termsAccepted, setTermsAccepted] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -65,13 +66,15 @@ export function SubscribePage() {
     header.innerHTML = headerHtml;
     body.innerHTML = bodyHtml;
     footer.innerHTML = footerHtml;
-    const teardown = mountSubscribeApp(root, {
+    const app = mountSubscribeApp(root, {
       api: apiUrl(""),
       instanceTermsAccepted: termsAccepted,
       deviceKey: barkKey,
     });
+    reloadConfigRef.current = app.reloadConfiguration;
     return () => {
-      teardown();
+      reloadConfigRef.current = () => {};
+      app.teardown();
       header.innerHTML = "";
       body.innerHTML = "";
       footer.innerHTML = "";
@@ -88,7 +91,7 @@ export function SubscribePage() {
       <main ref={rootRef}>
         <div className="shell-slot" ref={headerRef} />
         <section className="panel">
-          <DeviceIdentity barkId={barkKey} />
+          <DeviceIdentity barkId={barkKey} onReloadConfig={() => reloadConfigRef.current()} />
           <div className="shell-slot" ref={bodyRef} />
         </section>
         <div className="shell-slot" ref={footerRef} />
