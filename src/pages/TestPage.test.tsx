@@ -52,7 +52,7 @@ function stubApis(options: {
   bands?: Array<{ min: number; max: number; interruption_level: string }>;
   history?: unknown;
 }) {
-  const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+  const fetchMock = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
     const url = String(input);
     if (url.includes("/api/bark-urls")) {
       return jsonResponse({ bark_urls: ["https://bark.example"] });

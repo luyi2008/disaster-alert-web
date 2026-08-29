@@ -88,8 +88,6 @@ export function TestPage() {
       return;
     }
     let cancelled = false;
-    setHistoryError(null);
-    setHistoryLoading(true);
     fetchHistoryCatalog(barkKey)
       .then(({ status, body }) => {
         if (cancelled) {
@@ -221,7 +219,11 @@ export function TestPage() {
             aria-controls="panel-history"
             aria-selected={tab === "history"}
             className={tab === "history" ? "is-active" : undefined}
-            onClick={() => setTab("history")}
+            onClick={() => {
+              setTab("history");
+              setHistoryLoading(true);
+              setHistoryError(null);
+            }}
           >
             历史数据
           </button>
