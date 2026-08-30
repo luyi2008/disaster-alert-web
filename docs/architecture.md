@@ -139,6 +139,7 @@ graph TB
 
     App --> Loc["locations.ts<br/>Leaflet 地图 + 监测地点"]
     App --> Alerts["alerts.ts<br/>灾种 / 来源 / 烈度规则"]
+    App --> Status["status.ts<br/>已连接数据源"]
     App --> Toast["toast.ts<br/>页面内提示"]
 
     Loc --> Geo["geo.ts 坐标校验"]
@@ -154,6 +155,7 @@ graph TB
 | `alerts.ts` | 593 | 灾害类别卡片、来源勾选、阈值与烈度区间编辑器 |
 | `locations.ts` | 550 | Leaflet 地图、监测地点增删改、逆地理编码 |
 | `subscribeApp.ts` | 284 | 装配：Bark 身份、提交/取消订阅、配置加载、teardown |
+| `status.ts` | 60 | `/api/status` 已连接数据源，展示在预警类型标题后 |
 | `runtime.ts` | 173 | 宿主节点查询、runtime 构造、清理登记表 |
 | `types.ts` | 150 | 订阅草稿与运行时类型 |
 | `shell.html` | 146 | 静态骨架（表单、地图容器） |
@@ -317,7 +319,7 @@ graph LR
 
 | 方法 | 路径 | 调用方 | 用途 |
 | --- | --- | --- | --- |
-| GET | `/api/status` | `api.ts` | 数据源健康、订阅数、队列深度、`instance_terms_accepted` |
+| GET | `/api/status` | `status.ts`、`api.ts` | 数据源健康、订阅数、队列深度、`instance_terms_accepted` |
 | GET | `/api/bark-urls` | `subscribeApp.ts` | 可选 Bark 服务白名单 |
 | GET | `/api/subscription-options` | `alerts.ts` | 灾种、来源分组、默认规则 |
 | GET | `/api/reverse-geocode` | `locations.ts` | 坐标 → 省/市/区 |
@@ -544,7 +546,8 @@ oxlint 报 `react(set-state-in-effect)`。当前写法是 effect 内取数并 se
 订阅页迁往 React 的路径已在 [subscribe-frontend.md](subscribe-frontend.md) 中确立：**模块稳定且有测试之后，才逐模块替换，不整页重写**。按依赖关系，风险从低到高的顺序大致是：
 
 1. `toast.ts` —— 无业务状态，纯展示，可独立替换为组件。
-2. `alerts.ts` —— 状态集中在 `alerts_by_category`，边界清晰。
-3. `locations.ts` —— 最后做。Leaflet 命令式生命周期与状态机交织最深。
+2. `status.ts` —— 只读 `/api/status`，把已连接数据源写进预警类型标题。
+3. `alerts.ts` —— 状态集中在 `alerts_by_category`，边界清晰。
+4. `locations.ts` —— 最后做。Leaflet 命令式生命周期与状态机交织最深。
 
 替换过程中 `SubscribeRuntime` 会逐步瘦身，最终消失。第 11 节的风险 3（`innerHTML`）和风险 4（代码分割）会随这条路径自然缓解，因此不建议为它们做与迁移方向冲突的临时改造。
