@@ -92,4 +92,6 @@ PR 不会部署、也不会写 `.env`。未配置上述 secrets 时，合并后�
 
 整体架构、模块划分、数据流与部署拓扑，见 [docs/architecture.md](docs/architecture.md)。
 
-订阅页（`/`）的 DOM 工作区如何拆分、卸载和查询节点，见 [docs/subscribe-frontend.md](docs/subscribe-frontend.md)。
+Bark Key 作为本机登录身份的产品需求，见 [docs/bark-key-session-prd.md](docs/bark-key-session-prd.md)。
+
+订阅页的 DOM 工作区如何拆分、卸载和查询节点，见 [docs/subscribe-frontend.md](docs/subscribe-frontend.md)。
