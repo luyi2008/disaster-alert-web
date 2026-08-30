@@ -82,9 +82,11 @@ export function SubscribePage() {
     <>
       <TermsDialog open={termsAccepted === false} />
       <main ref={rootRef}>
-        <div className="shell-slot" ref={headerRef} />
-        <section className="panel">
+        <div className="app-bar">
+          <div className="shell-slot" ref={headerRef} />
           <DeviceIdentity barkId={barkKey} onReloadConfig={() => reloadConfigRef.current()} />
+        </div>
+        <section className="panel">
           <div className="shell-slot" ref={bodyRef} />
         </section>
         <div className="shell-slot" ref={footerRef} />

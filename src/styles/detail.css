@@ -1,5 +1,14 @@
+@import "./tokens.css";
 
-:root{--ink:#17211f;--muted:#64716e;--line:#d9e1de;--paper:#f6f8f7;--panel:rgba(255,255,255,.94);--green:#176a56;--red:#df4b3f;--amber:#d49a2f;--blue:#2878c7;--shadow:0 18px 45px rgba(11,30,25,.18)}
+:root{
+  --ink: var(--text);
+  --paper: var(--bg);
+  --green: #16a34a;
+  --red: #dc2626;
+  --amber: #ea580c;
+  --blue: var(--primary);
+  --shadow: var(--shadow-float);
+}
 *{box-sizing:border-box}
 html{background:var(--paper)}
 body{min-height:100vh;margin:0;background:var(--paper);color:var(--ink);font:15px/1.55 var(--font-sans);letter-spacing:0}
