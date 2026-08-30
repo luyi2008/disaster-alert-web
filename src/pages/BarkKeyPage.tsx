@@ -68,9 +68,20 @@ export function BarkKeyPage() {
 
   return (
     <div className="entry-page">
+      <p className="entry-brand">发个通知</p>
       <main className="entry-main">
-        <h1>发个通知</h1>
-        <p className="entry-lead">从 Bark 复制测试推送链接并粘贴到下方，校验通过后进入订阅配置。</p>
+        <div className="entry-mark" aria-hidden="true">
+          <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
+            <rect x="24" y="16" width="24" height="40" rx="5" stroke="currentColor" strokeWidth="1.75" />
+            <rect x="28" y="21" width="16" height="24" rx="2" stroke="currentColor" strokeWidth="1.5" />
+            <circle cx="36" cy="50" r="1.75" fill="currentColor" />
+            <circle cx="48" cy="22" r="10" stroke="currentColor" strokeWidth="1.5" opacity="0.7" />
+            <circle cx="48" cy="22" r="5.5" stroke="currentColor" strokeWidth="1.5" opacity="0.45" />
+            <path d="M50.2 18.8 56 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+        </div>
+        <h1>连接你的 Bark</h1>
+        <p className="entry-lead">从 Bark App 复制测试推送链接，粘贴到这里完成设备连接。</p>
         <form
           className="entry-form"
           onSubmit={(event) => {
@@ -83,7 +94,7 @@ export function BarkKeyPage() {
           }}
         >
           <div>
-            <label htmlFor="bark-test-link">Bark 测试链接</label>
+            <label htmlFor="bark-test-link">测试链接或 Bark Key</label>
             <input
               id="bark-test-link"
               type="text"
@@ -108,9 +119,10 @@ export function BarkKeyPage() {
             </p>
           ) : null}
           <button className="primary" type="submit" disabled={!canContinue}>
-            进入订阅配置
+            连接 Bark
           </button>
         </form>
+        <p className="entry-hint">支持完整推送 URL · 支持 Bark Key</p>
       </main>
     </div>
   );

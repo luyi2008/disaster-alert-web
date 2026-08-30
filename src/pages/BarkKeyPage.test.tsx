@@ -50,10 +50,10 @@ function stubCheck(data: { valid: boolean; registered: boolean; reason?: string 
 describe("BarkKeyPage", () => {
   it("keeps the continue button disabled for invalid input", () => {
     renderEntry();
-    expect(screen.getByRole("heading", { name: "发个通知" })).toBeInTheDocument();
-    const button = screen.getByRole("button", { name: "进入订阅配置" });
+    expect(screen.getByRole("heading", { name: "连接你的 Bark" })).toBeInTheDocument();
+    const button = screen.getByRole("button", { name: "连接 Bark" });
     expect(button).toBeDisabled();
-    fireEvent.change(screen.getByLabelText("Bark 测试链接"), { target: { value: "not-a-key" } });
+    fireEvent.change(screen.getByLabelText("测试链接或 Bark Key"), { target: { value: "not-a-key" } });
     expect(screen.getByText("无法从内容中提取 Bark Key")).toBeInTheDocument();
     expect(button).toBeDisabled();
   });
@@ -61,20 +61,20 @@ describe("BarkKeyPage", () => {
   it("keeps the button disabled while checking and when the key is not registered", async () => {
     stubCheck({ valid: true, registered: false });
     renderEntry();
-    fireEvent.change(screen.getByLabelText("Bark 测试链接"), { target: { value: KEY } });
-    expect(screen.getByRole("button", { name: "进入订阅配置" })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText("测试链接或 Bark Key"), { target: { value: KEY } });
+    expect(screen.getByRole("button", { name: "连接 Bark" })).toBeDisabled();
     expect(screen.getByText("正在校验…")).toBeInTheDocument();
     expect(await screen.findByText("该 Bark Key 尚未在推送服务注册")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "进入订阅配置" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "连接 Bark" })).toBeDisabled();
   });
 
   it("enables continue after a registered key and navigates with state", async () => {
     stubCheck({ valid: true, registered: true });
     renderEntry();
-    fireEvent.change(screen.getByLabelText("Bark 测试链接"), {
+    fireEvent.change(screen.getByLabelText("测试链接或 Bark Key"), {
       target: { value: `https://bark.mangguo.cloud/${KEY}/测试` },
     });
-    const button = screen.getByRole("button", { name: "进入订阅配置" });
+    const button = screen.getByRole("button", { name: "连接 Bark" });
     await waitFor(() => expect(button).toBeEnabled());
     fireEvent.click(button);
     expect(screen.getByTestId("location").textContent).toBe(`/subscribe:${KEY}`);

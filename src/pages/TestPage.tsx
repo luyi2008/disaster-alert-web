@@ -158,12 +158,14 @@ export function TestPage() {
 
   return (
     <main className="test-page">
-      <header>
-        <h1>发个通知</h1>
-        <p className="subhead">用已保存订阅做旁路测试推送，不会写入真实预警队列</p>
-      </header>
-      <section className="panel">
+      <div className="app-bar">
+        <header>
+          <h1>发个通知</h1>
+          <p className="subhead">用已保存订阅做旁路测试推送，不会写入真实预警队列</p>
+        </header>
         <DeviceIdentity barkId={barkKey} currentPage="test" />
+      </div>
+      <section className="panel">
         <section className="test-summary" aria-labelledby="test-summary-heading">
           <h2 id="test-summary-heading">当前订阅</h2>
           {!hasDraftContent ? (
@@ -199,7 +201,7 @@ export function TestPage() {
               <dd>
                 {alertSummaries.length
                   ? (
-                      <ul>
+                      <ul className="test-rule-list">
                         {alertSummaries.map((item) => (
                           <li key={item}>{item}</li>
                         ))}
@@ -262,7 +264,7 @@ export function TestPage() {
                   </div>
                   <button
                     type="button"
-                    className="primary"
+                    className="btn-ghost"
                     disabled={pendingAction !== null}
                     onClick={() => runAction(`level:${level.id}`, () => simulateNotifyLevel(barkKey, level.id))}
                   >
@@ -305,7 +307,7 @@ export function TestPage() {
                     </div>
                     <button
                       type="button"
-                      className="primary"
+                      className="btn-ghost"
                       disabled={pendingAction !== null}
                       onClick={() => runAction(
                         `history:${record.key}`,

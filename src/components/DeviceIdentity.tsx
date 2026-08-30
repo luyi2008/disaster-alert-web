@@ -21,19 +21,19 @@ export function DeviceIdentity({
         </div>
         <div className="identity-actions">
           {currentPage === "test" ? (
-            <Link className="change-device" to="/subscribe" state={{ barkKey: barkId }}>
+            <Link className="btn-ghost" to="/subscribe" state={{ barkKey: barkId }}>
               返回订阅
             </Link>
           ) : (
-            <Link className="change-device" to="/subscribe/test" state={{ barkKey: barkId }}>
+            <Link className="btn-ghost" to="/subscribe/test" state={{ barkKey: barkId }}>
               测试
             </Link>
           )}
-          <Link className="change-device" to="/" onClick={() => clearCachedBarkKey()}>
+          <Link className="btn-ghost" to="/" onClick={() => clearCachedBarkKey()}>
             更换设备
           </Link>
           {onReloadConfig ? (
-            <button className="change-device" type="button" onClick={onReloadConfig}>
+            <button className="btn-ghost" type="button" onClick={onReloadConfig}>
               重新加载配置
             </button>
           ) : null}

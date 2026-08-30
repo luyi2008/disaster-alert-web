@@ -287,7 +287,7 @@ export function bindLocations(
           </button>
           <span class="location-actions">
             <button type="button" data-location-action="edit">编辑</button>
-            <button class="remove-location" type="button" data-location-action="remove" aria-label="删除地点 ${index + 1}" title="删除地点">×</button>
+            <button class="remove-location" type="button" data-location-action="remove" aria-label="删除地点 ${index + 1}" title="删除地点">删除</button>
           </span>
         </div>`;
       }).join("");
