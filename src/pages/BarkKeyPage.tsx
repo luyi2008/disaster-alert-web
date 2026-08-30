@@ -69,6 +69,7 @@ export function BarkKeyPage() {
   return (
     <div className="entry-page">
       <main className="entry-main">
+        <p className="masthead-kicker">Bark Key · 本机登录</p>
         <h1>发个通知</h1>
         <p className="entry-lead">从 Bark 复制测试推送链接并粘贴到下方，校验通过后进入订阅配置。</p>
         <form

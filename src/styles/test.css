@@ -14,8 +14,10 @@
 
 .test-page h1 {
   margin: 0;
-  font-size: 38px;
-  line-height: 1.08;
+  font-family: var(--font-display);
+  font-size: 40px;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
 }
 
 .test-summary,
@@ -80,9 +82,10 @@
 .test-tabs [role="tab"] {
   height: 36px;
   padding: 0 14px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--panel);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
   color: var(--muted);
   font-size: 13px;
   font-weight: 650;
@@ -90,9 +93,9 @@
 
 .test-tabs [role="tab"].is-active,
 .test-tabs [role="tab"][aria-selected="true"] {
-  border-color: var(--primary);
-  color: var(--primary);
-  background: var(--info-bg);
+  border-bottom-color: var(--primary);
+  color: var(--text);
+  background: transparent;
 }
 
 .test-level-list,
@@ -111,7 +114,7 @@
   gap: 16px;
   padding: 14px 16px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: color-mix(in srgb, var(--panel) 88%, var(--bg));
 }
 
@@ -132,7 +135,7 @@
 .test-status {
   margin: 16px 0 0;
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   font-size: 13px;
   line-height: 1.5;
 }

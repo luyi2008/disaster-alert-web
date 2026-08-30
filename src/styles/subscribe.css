@@ -15,14 +15,15 @@
     }
     header {
       display: grid;
-      gap: 12px;
+      gap: 8px;
       margin-bottom: 22px;
     }
     h1 {
       margin: 0;
-      font-size: 38px;
-      line-height: 1.08;
-      letter-spacing: 0;
+      font-family: var(--font-display);
+      font-size: 40px;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
     }
     .subhead {
       margin: 0;
@@ -48,8 +49,13 @@
     .device-identity .identity-copy { display: grid; gap: 4px; }
     .device-identity p {
       margin: 0;
-      font-size: 15px;
+      font-size: 14px;
       line-height: 1.55;
+    }
+    .device-identity p:last-child {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      letter-spacing: 0.02em;
     }
     .identity-actions {
       display: flex;
@@ -296,7 +302,7 @@
       height: 30px;
       border-radius: 50%;
       color: #fff;
-      background: var(--primary);
+      background: var(--i6);
       font-size: 12px;
       font-weight: 850;
     }
@@ -701,9 +707,9 @@
     .intensity-range input, .band-select { height: 40px; }
     .intensity-range input { padding: 0 8px; text-align: center; font-weight: 800; }
     .band-select { min-width: 0; font-weight: 800; }
-    .level-passive { color: #344054; background: #eef2f6; }
-    .level-active { color: #175cd3; background: #eff6ff; }
-    .level-critical { color: #b42318; background: #fff1f0; }
+    .level-passive { color: var(--text); background: color-mix(in srgb, var(--i0) 42%, var(--panel)); }
+    .level-active { color: #8a5a00; background: var(--warn-bg); }
+    .level-critical { color: var(--err); background: var(--err-bg); }
     .notify-warning {
       display: none;
       padding: 9px 10px;

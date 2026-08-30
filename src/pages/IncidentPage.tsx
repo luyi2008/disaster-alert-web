@@ -309,10 +309,10 @@ function IncidentLoaded({
       if (point.role === "event" && point.radiusKm && point.radiusKm > 0) {
         L.circle([point.latitude, point.longitude], {
           radius: point.radiusKm * 1000,
-          color: "#df4b3f",
+          color: "#c23b22",
           weight: 1.5,
           opacity: 0.7,
-          fillColor: "#df4b3f",
+          fillColor: "#c23b22",
           fillOpacity: 0.07,
           interactive: false,
         }).addTo(map);

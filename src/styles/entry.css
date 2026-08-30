@@ -18,11 +18,16 @@ main.entry-main {
   padding: 72px 0 48px;
 }
 
+.entry-page .masthead-kicker {
+  margin-bottom: 10px;
+}
+
 .entry-page h1 {
   margin: 0;
-  font-size: 34px;
-  line-height: 1.12;
-  letter-spacing: 0;
+  font-family: var(--font-display);
+  font-size: 40px;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
 }
 
 .entry-lead {
@@ -49,7 +54,7 @@ main.entry-main {
   width: 100%;
   height: 48px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 0 13px;
   background: color-mix(in srgb, var(--panel) 88%, var(--bg));
   color: var(--text);
@@ -77,6 +82,7 @@ main.entry-main {
 
 .entry-extracted strong {
   color: var(--text);
+  font-family: var(--font-mono);
   font-weight: 650;
 }
 
@@ -96,7 +102,7 @@ main.entry-main {
 .entry-form button.primary {
   height: 48px;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--primary);
   color: #fff;
   font-family: inherit;

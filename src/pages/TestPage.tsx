@@ -159,8 +159,9 @@ export function TestPage() {
   return (
     <main className="test-page">
       <header>
+        <p className="masthead-kicker">旁路测试 · 不写入预警队列</p>
         <h1>发个通知</h1>
-        <p className="subhead">用已保存订阅做旁路测试推送，不会写入真实预警队列</p>
+        <p className="subhead">用已保存订阅做测试推送，不会写入真实预警队列。</p>
       </header>
       <section className="panel">
         <DeviceIdentity barkId={barkKey} currentPage="test" />

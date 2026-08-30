@@ -1,6 +1,9 @@
+@import "./tokens.css";
+
 /* 全站系统字体：macOS/iOS 优先，其次 Windows/Linux，不加载、不安装 webfont。 */
 :root {
   --font-sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif;
+  --font-display: Bahnschrift, "DIN Alternate", "Avenir Next Condensed", "Yu Gothic", "Hiragino Sans GB", "PingFang SC", "Microsoft YaHei UI", sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
@@ -13,6 +16,8 @@ html {
 body {
   margin: 0;
   font-family: inherit;
+  background: var(--bg);
+  color: var(--text);
 }
 
 button,
@@ -33,4 +38,40 @@ html .leaflet-container,
 html .leaflet-tooltip,
 html .leaflet-popup-content {
   font-family: var(--font-sans);
+}
+
+.intensity-ribbon {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 2px;
+  height: 7px;
+}
+
+.intensity-ribbon span {
+  display: block;
+  min-width: 0;
+}
+
+.intensity-ribbon span:nth-child(1) { background: var(--i0); }
+.intensity-ribbon span:nth-child(2) { background: var(--i1); }
+.intensity-ribbon span:nth-child(3) { background: var(--i2); }
+.intensity-ribbon span:nth-child(4) { background: var(--i3); }
+.intensity-ribbon span:nth-child(5) { background: var(--i4); }
+.intensity-ribbon span:nth-child(6) { background: var(--i5); }
+.intensity-ribbon span:nth-child(7) { background: var(--i6); }
+.intensity-ribbon span:nth-child(8) { background: var(--i7); }
+
+.masthead-kicker {
+  margin: 0;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.16em;
+  line-height: 1.4;
+}
+
+h1 {
+  font-family: var(--font-display);
+  font-weight: 750;
 }
