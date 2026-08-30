@@ -212,7 +212,7 @@ describe("mountSubscribeApp", () => {
     app.teardown();
   });
 
-  it("shows connected source chips and omits disconnected sources from the overlay", async () => {
+  it("shows connected source chips and hides disconnected sources", async () => {
     function channel(connected: boolean) {
       return {
         connected,
@@ -251,34 +251,28 @@ describe("mountSubscribeApp", () => {
 
     const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceKey: KEY });
     await vi.waitFor(() => {
-      expect(host.querySelector("#status-label")?.textContent).toBe("3 个订阅");
+      expect((host.querySelector("#status-chip-wolfx") as HTMLElement).hidden).toBe(false);
     });
 
-    expect((host.querySelector("#status-chip-wolfx") as HTMLElement).hidden).toBe(false);
     expect((host.querySelector("#status-chip-fanstudio") as HTMLElement).hidden).toBe(false);
     expect((host.querySelector("#status-chip-huania") as HTMLElement).hidden).toBe(true);
-    expect(host.querySelector("#status-dot")).toBeNull();
+    expect(host.querySelector("#status-label")).toBeNull();
+    expect(host.querySelector("#status-details")).toBeNull();
+    expect(host.querySelector("#service-status")).toBeNull();
+    expect(host.textContent).not.toContain("个订阅");
+    expect(host.textContent).not.toContain("状态未知");
+    expect(host.textContent).not.toContain("服务运行状态");
     expect(host.textContent).not.toContain("数据源 2/3");
     expect(host.textContent).not.toContain("已连接");
     expect(host.textContent).not.toContain("未连接");
+    expect(host.textContent).not.toContain("配置草稿保存在当前浏览器");
+    expect(host.textContent).not.toContain("Bark ID 不会保存");
     const footer = host.querySelector("footer");
     expect(footer?.textContent).not.toContain("数据来源");
     expect(footer?.textContent).not.toContain("开源项目");
     expect(footer?.innerHTML).not.toContain("ws-api.wolfx.jp");
     expect(footer?.innerHTML).not.toContain("github.com/luyi2008/disaster-alert");
     expect(footer?.textContent).toContain("本服务仅用于灾害信息转发与个人提醒");
-
-    host.querySelector("#status-shell")?.dispatchEvent(new Event("mouseenter"));
-    expect(host.querySelector("#status-shell")?.classList.contains("is-open")).toBe(true);
-    expect((host.querySelector("#status-source-list") as HTMLElement).hidden).toBe(false);
-    expect((host.querySelector("#status-source-wolfx") as HTMLElement).hidden).toBe(false);
-    expect((host.querySelector("#status-source-fanstudio") as HTMLElement).hidden).toBe(false);
-    expect((host.querySelector("#status-source-huania") as HTMLElement).hidden).toBe(true);
-    expect(host.textContent).not.toContain("订阅总数");
-    expect(host.textContent).not.toContain("后台待处理");
-    expect(host.textContent).not.toContain("推送成功");
-    expect(host.textContent).not.toContain("推送失败");
-    expect(host.textContent).not.toContain("待处理明细");
 
     app.teardown();
   });
