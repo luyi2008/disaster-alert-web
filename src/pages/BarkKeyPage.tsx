@@ -68,20 +68,28 @@ export function BarkKeyPage() {
 
   return (
     <div className="entry-page">
-      <p className="entry-brand">发个通知</p>
       <main className="entry-main">
-        <div className="entry-mark" aria-hidden="true">
-          <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
-            <rect x="24" y="16" width="24" height="40" rx="5" stroke="currentColor" strokeWidth="1.75" />
-            <rect x="28" y="21" width="16" height="24" rx="2" stroke="currentColor" strokeWidth="1.5" />
-            <circle cx="36" cy="50" r="1.75" fill="currentColor" />
-            <circle cx="48" cy="22" r="10" stroke="currentColor" strokeWidth="1.5" opacity="0.7" />
-            <circle cx="48" cy="22" r="5.5" stroke="currentColor" strokeWidth="1.5" opacity="0.45" />
-            <path d="M50.2 18.8 56 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
+        <div className="entry-hero">
+          <div className="entry-mark" aria-hidden="true">
+            <svg width="200" height="176" viewBox="0 0 200 176" fill="none">
+              <circle cx="126" cy="72" r="68" stroke="currentColor" strokeWidth="1.25" opacity="0.28" />
+              <circle cx="126" cy="72" r="46" stroke="currentColor" strokeWidth="1.25" opacity="0.48" />
+              <rect x="46" y="28" width="76" height="132" rx="14" stroke="currentColor" strokeWidth="1.75" />
+              <rect x="56" y="44" width="56" height="92" rx="6" stroke="currentColor" strokeWidth="1.4" />
+              <circle cx="84" cy="148" r="3.25" fill="currentColor" />
+              <rect x="92" y="52" width="58" height="40" rx="12" fill="var(--bg)" stroke="currentColor" strokeWidth="1.5" />
+              <circle cx="108" cy="72" r="4.5" fill="currentColor" />
+              <path d="M118 72h22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </div>
+          <p className="entry-caption">Bark</p>
         </div>
         <h1>连接你的 Bark</h1>
-        <p className="entry-lead">从 Bark App 复制测试推送链接，粘贴到这里完成设备连接。</p>
+        <p className="entry-lead">
+          从 Bark App 复制测试推送链接，
+          <br />
+          粘贴到这里完成设备连接。
+        </p>
         <form
           className="entry-form"
           onSubmit={(event) => {
@@ -101,7 +109,7 @@ export function BarkKeyPage() {
               autoComplete="off"
               spellCheck={false}
               value={raw}
-              placeholder="粘贴测试链接或 22 位 Bark Key"
+              placeholder="粘贴测试链接或 22 位 Key"
               onChange={(event) => setRaw(event.target.value)}
             />
           </div>

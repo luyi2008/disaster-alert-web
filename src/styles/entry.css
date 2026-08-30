@@ -3,6 +3,8 @@
 .entry-page {
   min-height: 100vh;
   margin: 0;
+  display: flex;
+  flex-direction: column;
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
@@ -12,29 +14,45 @@
   box-sizing: border-box;
 }
 
-.entry-brand {
-  position: absolute;
-  top: 24px;
-  left: 32px;
-  margin: 0;
-  color: var(--text);
-  font-size: 15px;
-  font-weight: 600;
+main.entry-main {
+  width: min(400px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 48px 0 64px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
-main.entry-main {
-  width: min(440px, calc(100% - 48px));
-  margin: 0 auto;
-  padding: 96px 0 64px;
+.entry-hero {
+  display: grid;
+  justify-items: center;
+  margin: 0 0 28px;
 }
 
 .entry-mark {
   display: grid;
   place-items: center;
-  width: 72px;
-  height: 72px;
-  margin: 0 0 24px;
+  width: 200px;
+  height: 176px;
+  margin: 0;
   color: var(--muted);
+}
+
+.entry-mark svg {
+  display: block;
+  width: 200px;
+  height: 176px;
+}
+
+.entry-caption {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
 }
 
 .entry-page h1 {
@@ -49,13 +67,15 @@ main.entry-main {
   margin: 12px 0 0;
   color: var(--muted);
   font-size: 15px;
-  line-height: 1.55;
+  line-height: 1.6;
 }
 
 .entry-form {
   display: grid;
   gap: 16px;
+  width: 100%;
   margin-top: 32px;
+  text-align: left;
 }
 
 .entry-form label {
@@ -147,14 +167,15 @@ main.entry-main {
 }
 
 @media (max-width: 520px) {
-  .entry-brand {
-    left: 20px;
-    top: 20px;
+  main.entry-main {
+    width: min(100% - 40px, 400px);
+    padding-top: 40px;
   }
 
-  main.entry-main {
-    width: min(100% - 40px, 440px);
-    padding-top: 80px;
+  .entry-mark,
+  .entry-mark svg {
+    width: 168px;
+    height: 148px;
   }
 
   .entry-page h1 {

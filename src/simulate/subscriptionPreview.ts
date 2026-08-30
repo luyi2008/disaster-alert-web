@@ -47,6 +47,136 @@ export function formatTarget(target: SubscriptionTarget): string {
   return name;
 }
 
+export function formatTargetChip(target: SubscriptionTarget): string {
+  const name = target.label.trim() || "未命名地点";
+  const city = target.region.city.trim() || target.region.province.trim();
+  const district = target.region.district.trim();
+  const place = [city, district].filter((part, index, parts) => part && parts.indexOf(part) === index);
+  return place.length ? `${name} · ${place.join(" · ")}` : name;
+}
+
+export function formatBarkHost(url: string): string {
+  const trimmed = url.trim();
+  if (!trimmed) {
+    return "尚未获取";
+  }
+  try {
+    const host = new URL(trimmed).hostname;
+    return host || trimmed;
+  } catch {
+    return trimmed.replace(/^https?:\/\//i, "").split("/")[0] || trimmed;
+  }
+}
+
+export type RuleCardTone = "warn" | "primary" | "yellow" | "quiet";
+
+export type AlertRuleCard = {
+  category: string;
+  title: string;
+  tone: RuleCardTone;
+  badge?: { label: string; tone: RuleCardTone };
+  metric?: string;
+};
+
+function notifyLevelTone(id: string): RuleCardTone {
+  switch (id) {
+    case "critical":
+      return "warn";
+    case "active":
+      return "primary";
+    default:
+      return "quiet";
+  }
+}
+
+function severityTone(severity: number): RuleCardTone {
+  if (severity >= 4) {
+    return "warn";
+  }
+  if (severity >= 2) {
+    return "yellow";
+  }
+  return "primary";
+}
+
+function categoryTone(category: string, entry: AlertEntry): RuleCardTone {
+  if (!entry.enabled) {
+    return "quiet";
+  }
+  switch (category) {
+    case "earthquake_warning": {
+      const bands = entry.rule.estimated_intensity_bands || [];
+      const levels = bands
+        .map((band) => String(band.interruption_level ?? band.level ?? "").trim().toLowerCase())
+        .filter(Boolean);
+      if (levels.includes("critical")) {
+        return "warn";
+      }
+      if (levels.includes("active")) {
+        return "primary";
+      }
+      return "quiet";
+    }
+    case "weather_warning":
+    case "tsunami":
+      return "yellow";
+    case "typhoon":
+      return "primary";
+    default:
+      return "quiet";
+  }
+}
+
+export function alertRuleCards(draft: SubscriptionDraft): AlertRuleCard[] {
+  return Object.entries(draft.alerts_by_category).map(([category, entry]) => {
+    const title = categoryLabel(entry.rule.category || category);
+    const tone = categoryTone(category, entry);
+    if (!entry.enabled) {
+      return { category, title, tone: "quiet", badge: { label: "未启用", tone: "quiet" } };
+    }
+
+    const bands = entry.rule.estimated_intensity_bands || [];
+    const criticalBand = [...bands].reverse().find((band) => {
+      const level = String(band.interruption_level ?? band.level ?? "").trim().toLowerCase();
+      return level === "critical";
+    }) ?? bands[bands.length - 1];
+    const levelId = criticalBand
+      ? String(criticalBand.interruption_level ?? criticalBand.level ?? "").trim().toLowerCase()
+      : "";
+
+    let badge: AlertRuleCard["badge"];
+    let metric: string | undefined;
+
+    if (criticalBand && formatBand(criticalBand)) {
+      const range = formatBand(criticalBand).replace(/\s+(紧急|重要|静默)$/, "");
+      metric = range || undefined;
+      if (levelId) {
+        badge = { label: notifyLevelLabel(levelId), tone: notifyLevelTone(levelId) };
+      }
+    }
+
+    if (entry.rule.min_magnitude != null && String(entry.rule.min_magnitude) !== "") {
+      const magnitude = Number(entry.rule.min_magnitude);
+      metric = `M ≥ ${Number.isFinite(magnitude) ? magnitude.toFixed(1) : entry.rule.min_magnitude}`;
+    }
+
+    if (entry.rule.min_severity != null && String(entry.rule.min_severity) !== "") {
+      const severity = Number(entry.rule.min_severity);
+      const severityLabel = Number.isFinite(severity) ? SEVERITY_LABELS[severity] : "";
+      if (severityLabel) {
+        badge = { label: severityLabel, tone: Number.isFinite(severity) ? severityTone(severity) : "quiet" };
+      }
+    }
+
+    const radius = entry.rule.fallback_radius_km ?? entry.rule.max_center_distance_km;
+    if (radius != null && String(radius) !== "") {
+      metric = `${radius}km`;
+    }
+
+    return { category, title, tone, badge, metric };
+  });
+}
+
 function notifyLevelLabel(id: string): string {
   switch (id) {
     case "critical":

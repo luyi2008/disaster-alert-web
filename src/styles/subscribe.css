@@ -29,6 +29,19 @@
       gap: 0;
       margin: 0;
     }
+    .app-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    .app-brand-mark {
+      display: inline-flex;
+      color: var(--text);
+    }
+    .app-brand-mark svg {
+      display: block;
+    }
     h1 {
       margin: 0;
       font-size: 15px;
@@ -59,16 +72,11 @@
       border: 0;
     }
     .device-identity .identity-copy {
-      display: grid;
-      gap: 0;
-      margin-right: 4px;
-      text-align: right;
-    }
-    .identity-copy p {
-      margin: 0;
+      margin: 0 4px 0 0;
       color: var(--muted);
       font-size: 13px;
       line-height: 1.4;
+      white-space: nowrap;
     }
     .identity-actions {
       display: flex;

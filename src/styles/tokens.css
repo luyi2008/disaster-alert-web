@@ -16,6 +16,8 @@
   --info-bg: #eff6ff;
   --warn: #ea580c;
   --warn-bg: #fff7ed;
+  --yellow: #ca8a04;
+  --yellow-bg: #fefce8;
   --quiet: #a1a1aa;
   --radius: 12px;
   --radius-sm: 8px;
@@ -43,6 +45,7 @@
     --err-bg: rgba(220, 38, 38, 0.16);
     --info-bg: rgba(37, 99, 235, 0.18);
     --warn-bg: rgba(234, 88, 12, 0.18);
+    --yellow-bg: rgba(202, 138, 4, 0.18);
     --shadow-float: 0 8px 24px rgba(0, 0, 0, 0.35);
   }
 }

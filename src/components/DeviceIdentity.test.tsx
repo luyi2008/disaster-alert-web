@@ -11,14 +11,15 @@ afterEach(() => {
 });
 
 describe("DeviceIdentity", () => {
-  it("shows the Bark app hint and Bark ID without form controls", () => {
+  it("shows a masked Bark ID without an app label", () => {
     const { container } = render(
       <MemoryRouter>
         <DeviceIdentity barkId={KEY} onReloadConfig={() => {}} />
       </MemoryRouter>,
     );
-    expect(screen.getByText("通知 APP：Bark")).toBeInTheDocument();
-    expect(screen.getByText(`Bark ID：${KEY}`)).toBeInTheDocument();
+    expect(screen.getByText("Bark · ••••FhF")).toBeInTheDocument();
+    expect(screen.queryByText("通知 APP：Bark")).toBeNull();
+    expect(screen.queryByText(`Bark ID：${KEY}`)).toBeNull();
     expect(screen.getByRole("link", { name: "测试" })).toHaveAttribute("href", "/subscribe/test");
     expect(screen.getByRole("link", { name: "更换设备" })).toHaveAttribute("href", "/");
     expect(container.querySelector("input")).toBeNull();
@@ -34,7 +35,7 @@ describe("DeviceIdentity", () => {
     );
     const testLink = screen.getByRole("link", { name: "测试" });
     const changeDevice = screen.getByRole("link", { name: "更换设备" });
-    const reloadConfig = screen.getByRole("button", { name: "重新加载配置" });
+    const reloadConfig = screen.getByRole("button", { name: "重新加载" });
     expect(testLink.compareDocumentPosition(changeDevice) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(changeDevice.compareDocumentPosition(reloadConfig) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     fireEvent.click(reloadConfig);
@@ -60,6 +61,6 @@ describe("DeviceIdentity", () => {
     );
     expect(screen.getByRole("link", { name: "返回订阅" })).toHaveAttribute("href", "/subscribe");
     expect(screen.queryByRole("link", { name: "测试" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "重新加载配置" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "重新加载" })).toBeNull();
   });
 });
