@@ -1,12 +1,14 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { readCachedBarkKey, writeCachedBarkKey } from "../bark/session";
 import { BarkKeyPage } from "./BarkKeyPage";
 
 const KEY = "ynJ5Ft4atkMkWeo2PAvFhF";
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  localStorage.clear();
 });
 
 function LocationProbe() {
@@ -75,6 +77,13 @@ describe("BarkKeyPage", () => {
     const button = screen.getByRole("button", { name: "进入订阅配置" });
     await waitFor(() => expect(button).toBeEnabled());
     fireEvent.click(button);
+    expect(screen.getByTestId("location").textContent).toBe(`/subscribe:${KEY}`);
+    expect(readCachedBarkKey()).toBe(KEY);
+  });
+
+  it("skips the form when a cached key is already present", () => {
+    writeCachedBarkKey(KEY);
+    renderEntry();
     expect(screen.getByTestId("location").textContent).toBe(`/subscribe:${KEY}`);
   });
 });

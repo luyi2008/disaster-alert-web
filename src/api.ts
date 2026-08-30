@@ -132,6 +132,7 @@ export async function fetchIncidentDetail(
 
 export const DRAFT_STORAGE_KEY = "disaster_subscription_draft_v3";
 
+/** Draft blob must not hold the login Key; identity lives in `disaster_bark_key`. */
 export function draftOmitsBarkKey(draft: unknown): boolean {
   if (!draft || typeof draft !== "object") {
     return true;

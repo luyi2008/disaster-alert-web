@@ -93,6 +93,7 @@ export type MountSubscribeOptions = {
   api?: string;
   instanceTermsAccepted?: boolean;
   deviceKey?: string;
+  onInvalidBarkKey?: () => void;
 };
 
 export type SubscribeAppHandle = {

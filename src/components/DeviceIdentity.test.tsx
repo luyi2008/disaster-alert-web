@@ -1,17 +1,24 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { readCachedBarkKey, writeCachedBarkKey } from "../bark/session";
 import { DeviceIdentity } from "./DeviceIdentity";
+
+const KEY = "ynJ5Ft4atkMkWeo2PAvFhF";
+
+afterEach(() => {
+  localStorage.clear();
+});
 
 describe("DeviceIdentity", () => {
   it("shows the Bark app hint and Bark ID without form controls", () => {
     const { container } = render(
       <MemoryRouter>
-        <DeviceIdentity barkId="ynJ5Ft4atkMkWeo2PAvFhF" onReloadConfig={() => {}} />
+        <DeviceIdentity barkId={KEY} onReloadConfig={() => {}} />
       </MemoryRouter>,
     );
     expect(screen.getByText("通知 APP：Bark")).toBeInTheDocument();
-    expect(screen.getByText("Bark ID：ynJ5Ft4atkMkWeo2PAvFhF")).toBeInTheDocument();
+    expect(screen.getByText(`Bark ID：${KEY}`)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "测试" })).toHaveAttribute("href", "/subscribe/test");
     expect(screen.getByRole("link", { name: "更换设备" })).toHaveAttribute("href", "/");
     expect(container.querySelector("input")).toBeNull();
@@ -22,7 +29,7 @@ describe("DeviceIdentity", () => {
     const onReloadConfig = vi.fn();
     render(
       <MemoryRouter>
-        <DeviceIdentity barkId="ynJ5Ft4atkMkWeo2PAvFhF" onReloadConfig={onReloadConfig} />
+        <DeviceIdentity barkId={KEY} onReloadConfig={onReloadConfig} />
       </MemoryRouter>,
     );
     const testLink = screen.getByRole("link", { name: "测试" });
@@ -34,10 +41,21 @@ describe("DeviceIdentity", () => {
     expect(onReloadConfig).toHaveBeenCalledTimes(1);
   });
 
+  it("clears the cached Bark Key when changing device", () => {
+    writeCachedBarkKey(KEY);
+    render(
+      <MemoryRouter>
+        <DeviceIdentity barkId={KEY} />
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByRole("link", { name: "更换设备" }));
+    expect(readCachedBarkKey()).toBeNull();
+  });
+
   it("shows a back-to-subscribe link on the test page", () => {
     render(
       <MemoryRouter>
-        <DeviceIdentity barkId="ynJ5Ft4atkMkWeo2PAvFhF" currentPage="test" />
+        <DeviceIdentity barkId={KEY} currentPage="test" />
       </MemoryRouter>,
     );
     expect(screen.getByRole("link", { name: "返回订阅" })).toHaveAttribute("href", "/subscribe");

@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DRAFT_STORAGE_KEY } from "../api";
+import { writeCachedBarkKey, readCachedBarkKey } from "../bark/session";
 import { TestPage } from "./TestPage";
 
 const KEY = "ynJ5Ft4atkMkWeo2PAvFhF";
@@ -51,9 +52,21 @@ function historyRecords() {
 function stubApis(options: {
   bands?: Array<{ min: number; max: number; interruption_level: string }>;
   history?: unknown;
+  simulateStatus?: number;
+  historyStatus?: number;
+  check?: { valid: boolean; registered: boolean };
 }) {
   const fetchMock = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
     const url = String(input);
+    if (url.includes("/bark-check")) {
+      const check = options.check ?? { valid: true, registered: true };
+      return jsonResponse({
+        device_key: KEY,
+        valid: check.valid,
+        registered: check.registered,
+        reason: null,
+      });
+    }
     if (url.includes("/api/bark-urls")) {
       return jsonResponse({ bark_urls: ["https://bark.example"] });
     }
@@ -65,15 +78,17 @@ function stubApis(options: {
       ]));
     }
     if (url.includes("/api/history")) {
-      return jsonResponse(options.history ?? historyRecords());
+      const status = options.historyStatus ?? 200;
+      return jsonResponse(options.history ?? historyRecords(), status, status === 401 ? "缺少或无效的 Bearer Bark Key" : "ok");
     }
     if (url.includes("/api/simulate")) {
+      const status = options.simulateStatus ?? 200;
       return jsonResponse({
         event_id: "SIM-TEST",
         pushed: 1,
         skipped: 0,
         temporary: false,
-      }, 200, "已向目标设备尝试推送");
+      }, status, status === 401 ? "缺少或无效的 Bearer Bark Key" : "已向目标设备尝试推送");
     }
     return jsonResponse({});
   });
@@ -192,5 +207,41 @@ describe("TestPage", () => {
       const headers = new Headers(simulateCall?.[1]?.headers);
       expect(headers.get("Authorization")).toBe(`Bearer ${KEY}`);
     });
+  });
+
+  it("opens from a cached key without location state", async () => {
+    writeCachedBarkKey(KEY);
+    stubApis({});
+    render(
+      <MemoryRouter initialEntries={["/subscribe/test"]}>
+        <Routes>
+          <Route path="/" element={<div>entry</div>} />
+          <Route path="/subscribe/test" element={<TestPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(screen.getByText(`Bark ID：${KEY}`)).toBeInTheDocument();
+    await screen.findByText("静默");
+  });
+
+  it("expires the session when simulate 401 and /check rejects the key", async () => {
+    writeCachedBarkKey(KEY);
+    stubApis({ simulateStatus: 401, check: { valid: true, registered: false } });
+    renderTestPage();
+    const buttons = await screen.findAllByRole("button", { name: "发送测试" });
+    fireEvent.click(buttons[0]);
+    expect(await screen.findByText("entry")).toBeInTheDocument();
+    expect(readCachedBarkKey()).toBeNull();
+  });
+
+  it("keeps the session when simulate 401 but /check still accepts the key", async () => {
+    writeCachedBarkKey(KEY);
+    stubApis({ simulateStatus: 401, check: { valid: true, registered: true } });
+    renderTestPage();
+    const buttons = await screen.findAllByRole("button", { name: "发送测试" });
+    fireEvent.click(buttons[0]);
+    expect(await screen.findByText("缺少或无效的 Bearer Bark Key")).toBeInTheDocument();
+    expect(readCachedBarkKey()).toBe(KEY);
+    expect(screen.queryByText("entry")).toBeNull();
   });
 });

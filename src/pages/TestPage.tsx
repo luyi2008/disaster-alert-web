@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { maybeExpireBarkSession } from "../bark/session";
 import { DeviceIdentity } from "../components/DeviceIdentity";
 import {
   fetchBarkUrls,
@@ -12,7 +13,7 @@ import {
 } from "../simulate/client";
 import { formatIntensityRange, notifyLevelLabel, notifyLevelsFromOptions, type NotifyLevelOption } from "../simulate/notifyLevels";
 import { formatAlertSummaries, formatDraftUpdatedAt, formatTarget } from "../simulate/subscriptionPreview";
-import { barkKeyFromState } from "../subscribe/barkKeyState";
+import { resolveBarkKey } from "../subscribe/barkKeyState";
 import { readDraftUpdatedAt, restoreDraftFromStorage } from "../subscribe/draft";
 import "../styles/base.css";
 import "../styles/subscribe.css";
@@ -45,7 +46,8 @@ function formatDistance(value: number | undefined, unit: string): string | null 
 
 export function TestPage() {
   const location = useLocation();
-  const barkKey = barkKeyFromState(location.state);
+  const navigate = useNavigate();
+  const barkKey = resolveBarkKey(location.state);
   const draft = useMemo(() => restoreDraftFromStorage(), []);
   const draftUpdatedAt = useMemo(() => readDraftUpdatedAt(), []);
   const [barkUrl, setBarkUrl] = useState(draft.bark_url);
@@ -89,7 +91,16 @@ export function TestPage() {
     }
     let cancelled = false;
     fetchHistoryCatalog(barkKey)
-      .then(({ status, body }) => {
+      .then(async ({ status, body }) => {
+        if (cancelled) {
+          return;
+        }
+        if (await maybeExpireBarkSession(barkKey, status, "bearer")) {
+          if (!cancelled) {
+            navigate("/", { replace: true });
+          }
+          return;
+        }
         if (cancelled) {
           return;
         }
@@ -115,7 +126,7 @@ export function TestPage() {
     return () => {
       cancelled = true;
     };
-  }, [barkKey, tab]);
+  }, [barkKey, tab, navigate]);
 
   if (!barkKey) {
     return <Navigate to="/" replace />;
@@ -124,11 +135,15 @@ export function TestPage() {
   const alertSummaries = formatAlertSummaries(draft);
   const hasDraftContent = draft.targets.length > 0 || alertSummaries.length > 0;
 
-  async function runAction(actionId: string, send: () => ReturnType<typeof simulateNotifyLevel>): Promise<void> {
+  const runAction = async (actionId: string, send: () => ReturnType<typeof simulateNotifyLevel>): Promise<void> => {
     setPendingAction(actionId);
     setActionStatus(null);
     try {
       const { status, body } = await send();
+      if (await maybeExpireBarkSession(barkKey, status, "bearer")) {
+        navigate("/", { replace: true });
+        return;
+      }
       const text = resultMessage(status, body.message, body.data);
       setActionStatus({ kind: status < 400 && body.success ? "success" : "error", text });
     } catch (error) {
@@ -139,7 +154,7 @@ export function TestPage() {
     } finally {
       setPendingAction(null);
     }
-  }
+  };
 
   return (
     <main className="test-page">

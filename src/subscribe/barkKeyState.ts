@@ -1,4 +1,5 @@
 import { localValidateBarkKey } from "../bark/localValidate";
+import { readCachedBarkKey } from "../bark/session";
 
 export type SubscribeLocationState = {
   barkKey?: string;
@@ -13,4 +14,8 @@ export function barkKeyFromState(state: unknown): string | null {
     return null;
   }
   return barkKey;
+}
+
+export function resolveBarkKey(state: unknown): string | null {
+  return barkKeyFromState(state) ?? readCachedBarkKey();
 }

@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { checkDeviceKey, remoteStatusMessage } from "../bark/checkDeviceKey";
 import { extractBarkKey } from "../bark/extractBarkKey";
 import { localValidateBarkKey, localValidateMessage } from "../bark/localValidate";
+import { readCachedBarkKey, writeCachedBarkKey } from "../bark/session";
 import "../styles/base.css";
 import "../styles/entry.css";
 
@@ -14,6 +15,7 @@ type RemoteStatus = {
 
 export function BarkKeyPage() {
   const navigate = useNavigate();
+  const cachedKey = readCachedBarkKey();
   const [raw, setRaw] = useState("");
   const [remote, setRemote] = useState<RemoteStatus | null>(null);
 
@@ -60,6 +62,10 @@ export function BarkKeyPage() {
     };
   }, [extracted]);
 
+  if (cachedKey) {
+    return <Navigate to="/subscribe" replace state={{ barkKey: cachedKey }} />;
+  }
+
   return (
     <div className="entry-page">
       <main className="entry-main">
@@ -72,6 +78,7 @@ export function BarkKeyPage() {
             if (!canContinue || !extracted) {
               return;
             }
+            writeCachedBarkKey(extracted);
             navigate("/subscribe", { state: { barkKey: extracted } });
           }}
         >

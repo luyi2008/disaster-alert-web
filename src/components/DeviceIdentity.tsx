@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { clearCachedBarkKey } from "../bark/session";
 
 type DeviceIdentityProps = {
   barkId: string;
@@ -28,7 +29,7 @@ export function DeviceIdentity({
               测试
             </Link>
           )}
-          <Link className="change-device" to="/">
+          <Link className="change-device" to="/" onClick={() => clearCachedBarkKey()}>
             更换设备
           </Link>
           {onReloadConfig ? (

@@ -44,7 +44,7 @@ describe("locations", () => {
 });
 
 describe("draft storage", () => {
-  it("omits bark keys from stored drafts", () => {
+  it("stores configuration fields and leaves login identity to a separate key", () => {
     const draft = createEmptyDraft();
     draft.bark_url = "https://bark.example";
     writeDraft(draft);
