@@ -2,44 +2,32 @@
       <div class="topline">
         <h1>发个通知</h1>
         <div id="status-shell" class="status-shell">
-          <button id="service-status" class="badge status-trigger" type="button" aria-expanded="false" aria-controls="status-details">
-            <span id="status-dot" class="dot"></span>
-            <span id="status-label" role="status" aria-live="polite">状态未知</span>
+          <button id="service-status" class="status-trigger" type="button" aria-expanded="false" aria-controls="status-details">
+            <span id="status-source-chips" class="status-source-chips">
+              <span id="status-chip-wolfx" class="status-chip" hidden>Wolfx</span>
+              <span id="status-chip-fanstudio" class="status-chip" hidden>FAN Studio</span>
+              <span id="status-chip-huania" class="status-chip" hidden>Huania</span>
+            </span>
+            <span id="status-label" class="badge" role="status" aria-live="polite">状态未知</span>
           </button>
           <div id="status-details" class="status-popover" role="tooltip">
             <div class="status-popover-head">
               <strong>服务运行状态</strong>
               <span id="status-updated">等待更新</span>
             </div>
-            <div class="status-source-list">
-              <div class="status-source">
-                <span id="status-wolfx-dot" class="dot"></span>
+            <div id="status-source-list" class="status-source-list" hidden>
+              <div id="status-source-wolfx" class="status-source" hidden>
                 <span class="status-source-name">Wolfx</span>
-                <span id="status-wolfx-state" class="status-source-state">未知</span>
                 <span id="status-wolfx-meta" class="status-source-meta">尚未获取数据</span>
               </div>
-              <div class="status-source">
-                <span id="status-fanstudio-dot" class="dot"></span>
+              <div id="status-source-fanstudio" class="status-source" hidden>
                 <span class="status-source-name">FAN Studio</span>
-                <span id="status-fanstudio-state" class="status-source-state">未知</span>
                 <span id="status-fanstudio-meta" class="status-source-meta">尚未获取数据</span>
               </div>
-              <div class="status-source">
-                <span id="status-huania-dot" class="dot"></span>
+              <div id="status-source-huania" class="status-source" hidden>
                 <span class="status-source-name">Huania</span>
-                <span id="status-huania-state" class="status-source-state">未知</span>
                 <span id="status-huania-meta" class="status-source-meta">尚未获取数据</span>
               </div>
-            </div>
-            <div class="status-metrics">
-              <div class="status-metric"><span>订阅总数</span><strong id="status-subscriptions">--</strong></div>
-              <div class="status-metric"><span>后台待处理</span><strong id="status-pending">--</strong></div>
-              <div class="status-metric"><span>推送成功</span><strong id="status-delivered">--</strong></div>
-              <div class="status-metric"><span>推送失败</span><strong id="status-failed">--</strong></div>
-            </div>
-            <div class="status-backlog">
-              <strong>待处理明细</strong>
-              <span id="status-backlog">事件 -- · 匹配 -- · 投递 -- · 重试 -- · 订阅确认 --</span>
             </div>
           </div>
         </div>
