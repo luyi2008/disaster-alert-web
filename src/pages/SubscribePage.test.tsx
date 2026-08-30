@@ -102,16 +102,16 @@ describe("SubscribePage", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText("通知 APP：Bark")).toBeInTheDocument();
-    expect(screen.getByText(`Bark ID：${KEY}`)).toBeInTheDocument();
+    expect(screen.getByText("Bark · ••••FhF")).toBeInTheDocument();
+    expect(screen.queryByText("通知 APP：Bark")).toBeNull();
     expect(screen.getByRole("link", { name: "测试" })).toHaveAttribute("href", "/subscribe/test");
     expect(screen.getByRole("link", { name: "更换设备" })).toHaveAttribute("href", "/");
-    expect(screen.getByRole("button", { name: "重新加载配置" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "重新加载" })).toBeInTheDocument();
     expect(container.querySelector("#bark-id")).toBeNull();
     expect(container.querySelector("#bark-url")).toBeNull();
     expect(container.querySelector("#retry-config")).toBeNull();
     expect(container.querySelector("input#bark-id")).toBeNull();
-    expect(await screen.findByRole("heading", { name: "发个通知" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "灾害预警" })).toBeInTheDocument();
   });
 
   it("reloads subscription options from the React identity action", async () => {
@@ -139,13 +139,13 @@ describe("SubscribePage", () => {
       </MemoryRouter>,
     );
 
-    await screen.findByRole("heading", { name: "发个通知" });
+    await screen.findByRole("heading", { name: "灾害预警" });
     const callsFor = (path: string) => fetchMock.mock.calls.filter(([input]) => String(input).includes(path));
     await vi.waitFor(() => expect(callsFor("/api/bark-urls").length).toBeGreaterThan(0));
     const barkCallsBefore = callsFor("/api/bark-urls").length;
     const optionCallsBefore = callsFor("/api/subscription-options").length;
 
-    fireEvent.click(screen.getByRole("button", { name: "重新加载配置" }));
+    fireEvent.click(screen.getByRole("button", { name: "重新加载" }));
     await vi.waitFor(() => {
       expect(callsFor("/api/bark-urls")).toHaveLength(barkCallsBefore + 1);
       expect(callsFor("/api/subscription-options")).toHaveLength(optionCallsBefore + 1);
@@ -180,7 +180,7 @@ describe("SubscribePage", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText(`Bark ID：${KEY}`)).toBeInTheDocument();
-    expect(await screen.findByRole("heading", { name: "发个通知" })).toBeInTheDocument();
+    expect(screen.getByText("Bark · ••••FhF")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "灾害预警" })).toBeInTheDocument();
   });
 });

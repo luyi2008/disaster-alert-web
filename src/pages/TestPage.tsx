@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { maskBarkId } from "../bark/maskBarkId";
 import { maybeExpireBarkSession } from "../bark/session";
+import { AppBrand } from "../components/AppBrand";
 import { DeviceIdentity } from "../components/DeviceIdentity";
 import {
   fetchBarkUrls,
@@ -12,7 +14,14 @@ import {
   type SimulateResult,
 } from "../simulate/client";
 import { formatIntensityRange, notifyLevelLabel, notifyLevelsFromOptions, type NotifyLevelOption } from "../simulate/notifyLevels";
-import { formatAlertSummaries, formatDraftUpdatedAt, formatTarget } from "../simulate/subscriptionPreview";
+import {
+  alertRuleCards,
+  formatBarkHost,
+  formatDraftUpdatedAt,
+  formatTargetChip,
+  type AlertRuleCard,
+  type RuleCardTone,
+} from "../simulate/subscriptionPreview";
 import { resolveBarkKey } from "../subscribe/barkKeyState";
 import { readDraftUpdatedAt, restoreDraftFromStorage } from "../subscribe/draft";
 import "../styles/base.css";
@@ -25,6 +34,95 @@ type ActionStatus = {
   kind: "success" | "error";
   text: string;
 };
+
+function StatusIcon({ name }: { name: "cloud" | "server" | "pin" }) {
+  if (name === "cloud") {
+    return (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M7 18h10a4 4 0 0 0 .4-8 6 6 0 0 0-11.6 1.5A3.5 3.5 0 0 0 7 18Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  if (name === "server") {
+    return (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <rect x="4" y="4" width="16" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.7" />
+        <rect x="4" y="14" width="16" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.7" />
+        <circle cx="8" cy="7" r="1" fill="currentColor" />
+        <circle cx="8" cy="17" r="1" fill="currentColor" />
+      </svg>
+    );
+  }
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 21s7-6.2 7-11.2A7 7 0 0 0 5 9.8C5 14.8 12 21 12 21Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+      <circle cx="12" cy="10" r="2.2" stroke="currentColor" strokeWidth="1.7" />
+    </svg>
+  );
+}
+
+function RuleGlyph({ category }: { category: string }) {
+  const common = { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none" as const };
+  if (category === "earthquake_warning") {
+    return (
+      <svg {...common} aria-hidden="true">
+        <path d="M3 12h3.2l2.4 7 4.8-14 2.4 7H21" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  if (category === "earthquake_report") {
+    return (
+      <svg {...common} aria-hidden="true">
+        <path d="M5 19V10M10 19V5M15 19v-7M20 19V8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (category === "weather_warning") {
+    return (
+      <svg {...common} aria-hidden="true">
+        <circle cx="10" cy="10" r="3.2" stroke="currentColor" strokeWidth="1.7" />
+        <path d="M8 16h8.5a3 3 0 0 0 .2-6 5 5 0 0 0-9.4 1.2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (category === "tsunami") {
+    return (
+      <svg {...common} aria-hidden="true">
+        <path d="M4 16c2.2-2 4.2-3 6-3s3.8 1 6 3 4.2 3 6 3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+        <path d="M4 10c2.2-2 4.2-3 6-3s3.8 1 6 3 4.2 3 6 3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  return (
+    <svg {...common} aria-hidden="true">
+      <path d="M12 5c2.8 2.4 4.5 5.2 4.5 7.6A4.5 4.5 0 0 1 7.5 12.6C7.5 10.2 9.2 7.4 12 5Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function RuleCard({ card }: { card: AlertRuleCard }) {
+  return (
+    <li className={`rule-card is-${card.tone}`}>
+      <span className="rule-card-bar" aria-hidden="true" />
+      <RuleGlyph category={card.category} />
+      <strong>{card.title}</strong>
+      {card.badge ? (
+        <span className={`rule-badge is-${card.badge.tone}`}>{card.badge.label}</span>
+      ) : null}
+      {card.metric ? <span className="rule-metric">{card.metric}</span> : null}
+    </li>
+  );
+}
+
+function levelTone(id: string): RuleCardTone {
+  if (id === "critical") {
+    return "warn";
+  }
+  if (id === "active") {
+    return "primary";
+  }
+  return "quiet";
+}
 
 function resultMessage(status: number, message: string, data?: SimulateResult): string {
   if (data && (status < 400)) {
@@ -132,8 +230,8 @@ export function TestPage() {
     return <Navigate to="/" replace />;
   }
 
-  const alertSummaries = formatAlertSummaries(draft);
-  const hasDraftContent = draft.targets.length > 0 || alertSummaries.length > 0;
+  const alertCards = alertRuleCards(draft);
+  const hasDraftContent = draft.targets.length > 0 || alertCards.length > 0;
 
   const runAction = async (actionId: string, send: () => ReturnType<typeof simulateNotifyLevel>): Promise<void> => {
     setPendingAction(actionId);
@@ -159,92 +257,91 @@ export function TestPage() {
   return (
     <main className="test-page">
       <div className="app-bar">
-        <header>
-          <h1>发个通知</h1>
-          <p className="subhead">用已保存订阅做旁路测试推送，不会写入真实预警队列</p>
-        </header>
+        <AppBrand />
         <DeviceIdentity barkId={barkKey} currentPage="test" />
       </div>
-      <section className="panel">
-        <section className="test-summary" aria-labelledby="test-summary-heading">
-          <h2 id="test-summary-heading">当前订阅</h2>
-          {!hasDraftContent ? (
-            <p className="test-note">本浏览器还没有订阅草稿。模拟接口只认本实例已保存的订阅，请先回到订阅页保存。</p>
+      <section className="panel test-sheet">
+        <div className="test-status-strip" aria-label="设备状态">
+          <div className="test-status-cell">
+            <StatusIcon name="cloud" />
+            <span title={barkKey}>{maskBarkId(barkKey)}</span>
+          </div>
+          <div className="test-status-cell">
+            <StatusIcon name="server" />
+            <div>
+              <span className="test-status-kicker">服务器</span>
+              <strong>{formatBarkHost(barkUrl)}</strong>
+            </div>
+          </div>
+          <div className="test-status-cell">
+            <span className="test-status-dot" aria-hidden="true" />
+            <span>已连接</span>
+          </div>
+        </div>
+
+        <section className="test-block" aria-labelledby="test-locations-heading">
+          <h2 id="test-locations-heading">订阅位置</h2>
+          {draft.targets.length ? (
+            <ul className="test-location-chips">
+              {draft.targets.map((target) => (
+                <li key={target.id}>
+                  <StatusIcon name="pin" />
+                  {formatTargetChip(target)}
+                </li>
+              ))}
+            </ul>
           ) : (
-            <p className="test-note">以下来自本机草稿，不一定等于服务端已生效订阅。未保存时测试会返回 404。</p>
+            <p className="test-note">尚未选择地点</p>
           )}
-          <dl className="test-summary-list">
-            <div>
-              <dt>Bark Key</dt>
-              <dd>{barkKey}</dd>
-            </div>
-            <div>
-              <dt>Bark 服务器</dt>
-              <dd>{barkUrl || "尚未获取"}</dd>
-            </div>
-            <div>
-              <dt>订阅位置</dt>
-              <dd>
-                {draft.targets.length
-                  ? (
-                      <ul>
-                        {draft.targets.map((target) => (
-                          <li key={target.id}>{formatTarget(target)}</li>
-                        ))}
-                      </ul>
-                    )
-                  : "尚未选择地点"}
-              </dd>
-            </div>
-            <div>
-              <dt>订阅项目与通知规则</dt>
-              <dd>
-                {alertSummaries.length
-                  ? (
-                      <ul className="test-rule-list">
-                        {alertSummaries.map((item) => (
-                          <li key={item}>{item}</li>
-                        ))}
-                      </ul>
-                    )
-                  : "尚未配置规则"}
-              </dd>
-            </div>
-            <div>
-              <dt>更新时间</dt>
-              <dd>{formatDraftUpdatedAt(draftUpdatedAt)}</dd>
-            </div>
-          </dl>
         </section>
 
-        <div className="test-tabs" role="tablist" aria-label="测试方式">
-          <button
-            type="button"
-            role="tab"
-            id="tab-levels"
-            aria-controls="panel-levels"
-            aria-selected={tab === "levels"}
-            className={tab === "levels" ? "is-active" : undefined}
-            onClick={() => setTab("levels")}
-          >
-            推送等级
-          </button>
-          <button
-            type="button"
-            role="tab"
-            id="tab-history"
-            aria-controls="panel-history"
-            aria-selected={tab === "history"}
-            className={tab === "history" ? "is-active" : undefined}
-            onClick={() => {
-              setTab("history");
-              setHistoryLoading(true);
-              setHistoryError(null);
-            }}
-          >
-            历史数据
-          </button>
-        </div>
+        <section className="test-block" aria-labelledby="test-rules-heading">
+          <h2 id="test-rules-heading">订阅规则</h2>
+          {alertCards.length ? (
+            <ul className="test-rule-grid">
+              {alertCards.map((card) => (
+                <RuleCard key={card.category} card={card} />
+              ))}
+            </ul>
+          ) : (
+            <p className="test-note">尚未配置规则</p>
+          )}
+        </section>
+
+        {!hasDraftContent ? (
+          <p className="test-note">本浏览器还没有订阅草稿。模拟接口只认本实例已保存的订阅，请先回到订阅页保存。</p>
+        ) : null}
+
+        <section className="test-block" aria-labelledby="test-priority-heading">
+          <h2 id="test-priority-heading">Push Priority</h2>
+          <div className="test-tabs" role="tablist" aria-label="测试方式">
+            <button
+              type="button"
+              role="tab"
+              id="tab-levels"
+              aria-controls="panel-levels"
+              aria-selected={tab === "levels"}
+              className={tab === "levels" ? "is-active" : undefined}
+              onClick={() => setTab("levels")}
+            >
+              烈度试推
+            </button>
+            <button
+              type="button"
+              role="tab"
+              id="tab-history"
+              aria-controls="panel-history"
+              aria-selected={tab === "history"}
+              className={tab === "history" ? "is-active" : undefined}
+              onClick={() => {
+                setTab("history");
+                setHistoryLoading(true);
+                setHistoryError(null);
+              }}
+            >
+              历史回放
+            </button>
+          </div>
 
         {tab === "levels" ? (
           <section
@@ -253,14 +350,13 @@ export function TestPage() {
             id="panel-levels"
             aria-labelledby="tab-levels"
           >
-            <p className="test-note">等级来自服务端地震预警烈度带。后端增删级别后刷新本页即可同步。</p>
             {loadError ? <p className="test-status is-error" role="status">{loadError}</p> : null}
             <ul className="test-level-list">
               {levels.map((level) => (
-                <li key={level.id} className="test-card">
+                <li key={level.id} className={`test-card is-${levelTone(level.id)}`}>
                   <div>
                     <strong>{notifyLevelLabel(level.id)}</strong>
-                    <p>{formatIntensityRange(level.min, level.max)} · {level.id}</p>
+                    <p>{formatIntensityRange(level.min, level.max)}</p>
                   </div>
                   <button
                     type="button"
@@ -326,7 +422,9 @@ export function TestPage() {
         {actionStatus ? (
           <p className={`test-status is-${actionStatus.kind}`} role="status">{actionStatus.text}</p>
         ) : null}
+        </section>
       </section>
+      <p className="test-updated">上次更新 {formatDraftUpdatedAt(draftUpdatedAt)}</p>
     </main>
   );
 }

@@ -149,13 +149,15 @@ describe("TestPage", () => {
     stubApis({});
     renderTestPage();
 
-    expect(screen.getByText(`Bark ID：${KEY}`)).toBeInTheDocument();
-    expect(screen.getByText("上海家中 · 上海市 / 上海市 / 浦东新区 · 31.2304, 121.4737")).toBeInTheDocument();
-    expect(screen.getByText("地震预警：3–7 紧急")).toBeInTheDocument();
-    await screen.findByText("https://bark.example");
+    expect(screen.getAllByText("Bark · ••••FhF").length).toBeGreaterThan(0);
+    expect(screen.queryByText("订阅项目与通知规则")).toBeNull();
+    expect(screen.getByText("上海家中 · 上海市 · 浦东新区")).toBeInTheDocument();
+    expect(screen.getByText("地震预警")).toBeInTheDocument();
+    expect(screen.getByText("3–7")).toBeInTheDocument();
+    await screen.findByText("bark.example");
     expect(screen.getByText("静默")).toBeInTheDocument();
     expect(screen.getByText("重要")).toBeInTheDocument();
-    expect(screen.getByText("紧急")).toBeInTheDocument();
+    expect(screen.getAllByText("紧急").length).toBeGreaterThan(0);
     expect(screen.getAllByRole("button", { name: "发送测试" })).toHaveLength(3);
   });
 
@@ -192,7 +194,7 @@ describe("TestPage", () => {
   it("loads history records and posts source plus key from the test button", async () => {
     const fetchMock = stubApis({});
     renderTestPage();
-    fireEvent.click(screen.getByRole("tab", { name: "历史数据" }));
+    fireEvent.click(screen.getByRole("tab", { name: "历史回放" }));
     expect(await screen.findByText("四川汶川")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "测试" }));
     await waitFor(() => {
@@ -220,7 +222,7 @@ describe("TestPage", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(screen.getByText(`Bark ID：${KEY}`)).toBeInTheDocument();
+    expect(screen.getAllByText("Bark · ••••FhF").length).toBeGreaterThan(0);
     await screen.findByText("静默");
   });
 
