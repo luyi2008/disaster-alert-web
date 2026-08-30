@@ -2,7 +2,7 @@
 
 `/subscribe` 的工作区仍是命令式 DOM（从原静态页迁入），不是 React 组件树。React 只包一层：无登录会话（`disaster_bark_key` 或路由 state）时重定向到 `/`；否则 `SubscribePage` 负责责任声明、把 `shell.html` 塞进宿主节点、调用 `mountSubscribeApp`（带上 `deviceKey` 与 `onInvalidBarkKey`），并在卸载时执行返回的 teardown。
 
-首页 `/` 是 React 入口页（粘贴 Bark 测试链接并校验 Key）。`/check` 通过后把 Key 写入 `disaster_bark_key`；已有会话则直接进订阅页。通知详情页 `/incidents/...` 也是 React。不要把订阅页的命令式拆分策略用到这两页。
+首页 `/` 是 React 入口页（粘贴 Bark 测试链接并校验 Key）。`/check` 通过后把 Key 写入 `disaster_bark_key`；已有会话则直接进订阅页。产品规则见 [bark-key-session-prd.md](bark-key-session-prd.md)。通知详情页 `/incidents/...` 也是 React。不要把订阅页的命令式拆分策略用到这两页。
 
 ## 改动顺序（已按此落地）
 

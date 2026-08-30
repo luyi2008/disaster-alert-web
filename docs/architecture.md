@@ -5,6 +5,7 @@
 本文描述本仓库**当前实际的**架构（而非规划中的架构），包含系统边界、模块划分、数据流、部署拓扑、关键设计决策，以及已识别的架构风险。
 
 - 订阅页 DOM 层的具体拆分约定见 [subscribe-frontend.md](subscribe-frontend.md)。
+- Bark Key 作为本机登录身份的产品需求见 [bark-key-session-prd.md](bark-key-session-prd.md)。
 - 后端契约快照见 [openapi.yaml](openapi.yaml)。
 - 部署操作步骤见 [README](../README.md)。
 
