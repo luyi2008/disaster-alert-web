@@ -211,4 +211,75 @@ describe("mountSubscribeApp", () => {
 
     app.teardown();
   });
+
+  it("shows connected source chips and omits disconnected sources from the overlay", async () => {
+    function channel(connected: boolean) {
+      return {
+        connected,
+        last_message_epoch_ms: connected ? 1_700_000_000_000 : null,
+        reconnects: connected ? 1 : 0,
+        messages: connected ? 12 : 0,
+        parse_errors: 0,
+        notifications_succeeded: 0,
+        notifications_failed: 0,
+      };
+    }
+
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/bark-urls")) {
+        return jsonResponse({ bark_urls: [FIRST_URL] });
+      }
+      if (url.includes("/api/subscription-options")) {
+        return jsonResponse({ categories: [simpleCategory] });
+      }
+      if (url.includes("/api/status")) {
+        return jsonResponse({
+          instance_terms_accepted: true,
+          total_subscriptions: 3,
+          wolfx: channel(true),
+          fanstudio: channel(true),
+          huania: channel(false),
+        });
+      }
+      return jsonResponse({});
+    }));
+
+    const host = document.createElement("div");
+    fillHost(host);
+    document.body.append(host);
+
+    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceKey: KEY });
+    await vi.waitFor(() => {
+      expect(host.querySelector("#status-label")?.textContent).toBe("3 个订阅");
+    });
+
+    expect((host.querySelector("#status-chip-wolfx") as HTMLElement).hidden).toBe(false);
+    expect((host.querySelector("#status-chip-fanstudio") as HTMLElement).hidden).toBe(false);
+    expect((host.querySelector("#status-chip-huania") as HTMLElement).hidden).toBe(true);
+    expect(host.querySelector("#status-dot")).toBeNull();
+    expect(host.textContent).not.toContain("数据源 2/3");
+    expect(host.textContent).not.toContain("已连接");
+    expect(host.textContent).not.toContain("未连接");
+    const footer = host.querySelector("footer");
+    expect(footer?.textContent).not.toContain("数据来源");
+    expect(footer?.textContent).not.toContain("开源项目");
+    expect(footer?.innerHTML).not.toContain("ws-api.wolfx.jp");
+    expect(footer?.innerHTML).not.toContain("github.com/luyi2008/disaster-alert");
+    expect(footer?.textContent).toContain("本服务仅用于灾害信息转发与个人提醒");
+
+    host.querySelector("#status-shell")?.dispatchEvent(new Event("mouseenter"));
+    expect(host.querySelector("#status-shell")?.classList.contains("is-open")).toBe(true);
+    expect((host.querySelector("#status-source-list") as HTMLElement).hidden).toBe(false);
+    expect((host.querySelector("#status-source-wolfx") as HTMLElement).hidden).toBe(false);
+    expect((host.querySelector("#status-source-fanstudio") as HTMLElement).hidden).toBe(false);
+    expect((host.querySelector("#status-source-huania") as HTMLElement).hidden).toBe(true);
+    expect(host.textContent).not.toContain("订阅总数");
+    expect(host.textContent).not.toContain("后台待处理");
+    expect(host.textContent).not.toContain("推送成功");
+    expect(host.textContent).not.toContain("推送失败");
+    expect(host.textContent).not.toContain("待处理明细");
+
+    app.teardown();
+  });
 });

@@ -48,23 +48,51 @@
       font-size: 13px;
       white-space: nowrap;
     }
-    .status-trigger { cursor: pointer; }
+    .status-trigger {
+      display: inline-flex;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+    }
     .status-trigger:focus-visible {
       outline: none;
+    }
+    .status-trigger:focus-visible .badge,
+    .status-trigger:focus-visible .status-chip {
       border-color: var(--primary);
       box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
     }
-    .dot {
-      width: 8px;
-      height: 8px;
-      flex: 0 0 8px;
-      border-radius: 50%;
-      background: var(--muted);
-      box-shadow: 0 0 0 4px color-mix(in srgb, var(--muted) 16%, transparent);
+    .status-source-chips {
+      display: inline-flex;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
     }
-    .dot.online { background: #17b26a; box-shadow: 0 0 0 4px rgba(23, 178, 106, .15); }
-    .dot.partial { background: #f79009; box-shadow: 0 0 0 4px rgba(247, 144, 9, .15); }
-    .dot.offline { background: #f04438; box-shadow: 0 0 0 4px rgba(240, 68, 56, .15); }
+    .status-source-chips:not(:has(.status-chip:not([hidden]))) { display: none; }
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      height: 34px;
+      min-height: 34px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+    .status-chip[hidden] { display: none; }
     .status-popover {
       position: absolute;
       z-index: 1200;
@@ -94,30 +122,24 @@
       align-items: baseline;
       justify-content: space-between;
       gap: 12px;
-      padding-bottom: 11px;
-      border-bottom: 1px solid var(--line);
     }
     .status-popover-head strong { font-size: 14px; }
     .status-popover-head span { color: var(--muted); font-size: 11px; white-space: nowrap; }
-    .status-source-list { display: grid; padding: 5px 0; border-bottom: 1px solid var(--line); }
+    .status-source-list {
+      display: grid;
+      margin-top: 11px;
+      padding-top: 5px;
+      border-top: 1px solid var(--line);
+    }
+    .status-source-list[hidden] { display: none; }
     .status-source {
       display: grid;
-      grid-template-columns: 8px minmax(0, 1fr) auto;
-      align-items: center;
-      column-gap: 9px;
+      gap: 2px;
       padding: 8px 0;
     }
-    .status-source .dot { grid-row: 1 / span 2; box-shadow: none; }
+    .status-source[hidden] { display: none; }
     .status-source-name { font-size: 13px; font-weight: 750; }
-    .status-source-state { color: var(--muted); font-size: 12px; }
-    .status-source-meta { grid-column: 2 / 4; margin-top: 2px; color: var(--muted); font-size: 11px; line-height: 1.4; }
-    .status-metrics { display: grid; grid-template-columns: 1fr 1fr; padding: 5px 0; border-bottom: 1px solid var(--line); }
-    .status-metric { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 7px 8px 7px 0; }
-    .status-metric:nth-child(even) { padding-right: 0; padding-left: 8px; border-left: 1px solid var(--line); }
-    .status-metric span { color: var(--muted); font-size: 11px; }
-    .status-metric strong { font-size: 13px; }
-    .status-backlog { padding-top: 11px; color: var(--muted); font-size: 11px; line-height: 1.55; }
-    .status-backlog strong { display: block; margin-bottom: 3px; color: var(--text); font-size: 12px; }
+    .status-source-meta { color: var(--muted); font-size: 11px; line-height: 1.4; }
     .subhead {
       margin: 0;
       color: var(--muted);
@@ -687,7 +709,8 @@
       main { padding-top: 22px; }
       .topline { gap: 8px; }
       h1 { font-size: 28px; line-height: 1.12; }
-      .badge { height: 32px; min-height: 32px; padding: 0 10px; font-size: 12px; }
+      .badge,
+      .status-chip { height: 32px; min-height: 32px; padding: 0 10px; font-size: 12px; }
       .grid, .form-actions { grid-template-columns: 1fr; }
       .admin-grid { grid-template-columns: 1fr; }
       .device-identity { padding-bottom: 16px; margin-bottom: 18px; }
