@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { TermsDialog } from "./TermsDialog";
 import { DRAFT_STORAGE_KEY, draftOmitsBarkKey } from "../api";
+import { BARK_KEY_STORAGE_KEY } from "../bark/session";
 
 describe("TermsDialog", () => {
   it("hides when the instance has accepted terms", () => {
@@ -18,8 +19,9 @@ describe("TermsDialog", () => {
 });
 
 describe("subscription draft", () => {
-  it("uses a browser draft key that does not store Bark Key", () => {
+  it("keeps login identity out of the draft blob", () => {
     expect(DRAFT_STORAGE_KEY).toBe("disaster_subscription_draft_v3");
+    expect(BARK_KEY_STORAGE_KEY).toBe("disaster_bark_key");
     expect(draftOmitsBarkKey({ targets: [], alerts: [] })).toBe(true);
     expect(draftOmitsBarkKey({ barkKey: "abc" })).toBe(false);
   });

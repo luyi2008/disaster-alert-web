@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { writeCachedBarkKey } from "../bark/session";
 import { SubscribePage } from "./SubscribePage";
 
 const KEY = "ynJ5Ft4atkMkWeo2PAvFhF";
@@ -149,5 +150,37 @@ describe("SubscribePage", () => {
       expect(callsFor("/api/bark-urls")).toHaveLength(barkCallsBefore + 1);
       expect(callsFor("/api/subscription-options")).toHaveLength(optionCallsBefore + 1);
     });
+  });
+
+  it("renders from a cached Bark Key when location state is missing", async () => {
+    writeCachedBarkKey(KEY);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/bark-urls")) {
+          return jsonResponse({ bark_urls: ["https://bark.example"] });
+        }
+        if (url.includes("/api/subscription-options")) {
+          return jsonResponse({ categories: [] });
+        }
+        if (url.includes("/api/status")) {
+          return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
+        }
+        return jsonResponse({});
+      }),
+    );
+
+    render(
+      <MemoryRouter initialEntries={["/subscribe"]}>
+        <Routes>
+          <Route path="/" element={<div>entry</div>} />
+          <Route path="/subscribe" element={<SubscribePage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText(`Bark ID：${KEY}`)).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "发个通知" })).toBeInTheDocument();
   });
 });

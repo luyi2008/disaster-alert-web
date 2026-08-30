@@ -2,7 +2,7 @@
 
 [disaster-alert](https://github.com/luyi2008/disaster-alert) 的订阅页和通知详情页。本仓库只包含前端，不运行灾害数据源或 Bark 推送。
 
-打开站点先进入 `/`：粘贴 Bark 测试链接，本地校验并通过 `bark.mangguo.cloud` 确认 Key 已注册后，才进入 `/subscribe` 配置订阅。通知详情仍由 Bark 深链打开 `/incidents/...`。
+打开站点先进入 `/`：粘贴 Bark 测试链接，本地校验并通过 `bark.mangguo.cloud` 确认 Key 已注册后，把 Key 作为本机登录会话写入并进入 `/subscribe`。之后打开 `/` 若会话仍在则直接进订阅页；「更换设备」会清除会话。通知详情仍由 Bark 深链打开 `/incidents/...`。
 
 服务端完全独立发版，两边不需要对齐 git tag。
 

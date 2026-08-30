@@ -13,6 +13,8 @@ import { createRuntime } from "./runtime";
 import { bindStatus } from "./status";
 import { bindToast } from "./toast";
 import type { MountSubscribeOptions, SubscribeAppHandle } from "./types";
+import { localValidateBarkKey } from "../bark/localValidate";
+import { clearCachedBarkKey, maybeExpireBarkSession } from "../bark/session";
 
 export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOptions): SubscribeAppHandle {
   const ctx = createRuntime(root, options);
@@ -156,8 +158,10 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
       return;
     }
     const barkID = ctx.deviceKey.trim();
-    if (!/^[A-Za-z0-9]{1,64}$/.test(barkID)) {
+    if (localValidateBarkKey(barkID)) {
       toast.show("Bark ID 无效", "error");
+      clearCachedBarkKey();
+      options.onInvalidBarkKey?.();
       return;
     }
     if (!ctx.barkUrl) {
@@ -188,7 +192,13 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
         ? "Bark 接收测试失败，请检查 Bark ID；若确认无误，请稍后重试"
         : "";
       const json = await parseApiResponse(res, fallbackMessage);
-      if (!res.ok || !json.success) throw new Error(json.message || "保存失败");
+      if (!res.ok || !json.success) {
+        if (await maybeExpireBarkSession(barkID, res.status, "subscribe")) {
+          options.onInvalidBarkKey?.();
+          return;
+        }
+        throw new Error(json.message || "保存失败");
+      }
       ctx.lastSubmittedSignature = submittedSignature;
       ctx.lastSubmittedIdentity = currentDestinationIdentity();
       updateDraftStatus();
@@ -209,8 +219,10 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
 
   ctx.cleanup.listen(el.unsubscribe, "click", async () => {
     const barkID = ctx.deviceKey.trim();
-    if (!/^[A-Za-z0-9]{1,64}$/.test(barkID)) {
+    if (localValidateBarkKey(barkID)) {
       toast.show("Bark ID 无效", "error");
+      clearCachedBarkKey();
+      options.onInvalidBarkKey?.();
       return;
     }
     if (!ctx.barkUrl) {

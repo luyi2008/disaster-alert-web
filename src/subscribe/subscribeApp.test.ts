@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DRAFT_STORAGE_KEY } from "../api";
+import { readCachedBarkKey, writeCachedBarkKey } from "../bark/session";
 import bodyHtml from "./body.html?raw";
 import footerHtml from "./footer.html?raw";
 import headerHtml from "./header.html?raw";
@@ -274,6 +275,115 @@ describe("mountSubscribeApp", () => {
     expect(footer?.innerHTML).not.toContain("github.com/luyi2008/disaster-alert");
     expect(footer?.textContent).toContain("本服务仅用于灾害信息转发与个人提醒");
 
+    app.teardown();
+  });
+
+  it("expires the Bark session when subscribe returns 502 and /check rejects the key", async () => {
+    const onInvalidBarkKey = vi.fn();
+    writeCachedBarkKey(KEY);
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("/bark-check")) {
+        return new Response(JSON.stringify({
+          data: { device_key: KEY, valid: true, registered: false, reason: null },
+        }));
+      }
+      if (url.includes("/api/bark-urls")) {
+        return jsonResponse({ bark_urls: [FIRST_URL] });
+      }
+      if (url.includes("/api/subscription-options")) {
+        return jsonResponse({ categories: [simpleCategory] });
+      }
+      if (url.includes("/api/status")) {
+        return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
+      }
+      if (url.includes("/api/subscribe")) {
+        return new Response(JSON.stringify({ success: false, message: "Bark 拒绝" }), { status: 502 });
+      }
+      return jsonResponse({});
+    }));
+
+    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({
+      schema_version: 3,
+      bark_url: FIRST_URL,
+      targets: [{
+        id: "t1",
+        label: "home",
+        point: { latitude: "35.0000", longitude: "139.0000" },
+        region: { province: "", city: "", district: "" },
+      }],
+      alerts_by_category: {},
+    }));
+
+    const host = document.createElement("div");
+    fillHost(host);
+    document.body.append(host);
+    const app = mountSubscribeApp(host, {
+      api: "",
+      instanceTermsAccepted: true,
+      deviceKey: KEY,
+      onInvalidBarkKey,
+    });
+    const submit = host.querySelector("#submit") as HTMLButtonElement;
+    await vi.waitFor(() => expect(submit.disabled).toBe(false));
+    (host.querySelector("#subscribe-form") as HTMLFormElement).requestSubmit();
+    await vi.waitFor(() => expect(onInvalidBarkKey).toHaveBeenCalledTimes(1));
+    expect(readCachedBarkKey()).toBeNull();
+    app.teardown();
+  });
+
+  it("keeps the Bark session when subscribe returns 502 but /check still accepts the key", async () => {
+    const onInvalidBarkKey = vi.fn();
+    writeCachedBarkKey(KEY);
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("/bark-check")) {
+        return new Response(JSON.stringify({
+          data: { device_key: KEY, valid: true, registered: true, reason: null },
+        }));
+      }
+      if (url.includes("/api/bark-urls")) {
+        return jsonResponse({ bark_urls: [FIRST_URL] });
+      }
+      if (url.includes("/api/subscription-options")) {
+        return jsonResponse({ categories: [simpleCategory] });
+      }
+      if (url.includes("/api/status")) {
+        return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
+      }
+      if (url.includes("/api/subscribe")) {
+        return new Response(JSON.stringify({ success: false, message: "Bark 拒绝" }), { status: 502 });
+      }
+      return jsonResponse({});
+    }));
+
+    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({
+      schema_version: 3,
+      bark_url: FIRST_URL,
+      targets: [{
+        id: "t1",
+        label: "home",
+        point: { latitude: "35.0000", longitude: "139.0000" },
+        region: { province: "", city: "", district: "" },
+      }],
+      alerts_by_category: {},
+    }));
+
+    const host = document.createElement("div");
+    fillHost(host);
+    document.body.append(host);
+    const app = mountSubscribeApp(host, {
+      api: "",
+      instanceTermsAccepted: true,
+      deviceKey: KEY,
+      onInvalidBarkKey,
+    });
+    const submit = host.querySelector("#submit") as HTMLButtonElement;
+    await vi.waitFor(() => expect(submit.disabled).toBe(false));
+    (host.querySelector("#subscribe-form") as HTMLFormElement).requestSubmit();
+    await vi.waitFor(() => expect(host.textContent).toContain("Bark 拒绝"));
+    expect(onInvalidBarkKey).not.toHaveBeenCalled();
+    expect(readCachedBarkKey()).toBe(KEY);
     app.teardown();
   });
 });

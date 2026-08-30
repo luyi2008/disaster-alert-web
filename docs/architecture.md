@@ -244,7 +244,7 @@ stateDiagram-v2
 
 localStorage 键 `disaster_subscription_draft_v3`，读取时兼容 `disaster_subscription_draft_v2`（旧格式单地点 `current` 字段会被提升为 targets 数组的首项）。写入 150ms 防抖，提交时 flush。
 
-**Bark Key 绝不落盘。** `draftForStorage` 显式只挑 `schema_version`、`bark_url`、`targets`、`alerts_by_category` 四个字段重建对象，而非删字段的黑名单方式 —— 新增字段默认不会泄漏。`api.ts` 导出 `draftOmitsBarkKey` 供测试断言这一不变量。
+**Bark Key 是站点登录身份**，存在独立键 `disaster_bark_key`。入口页经 `bark.mangguo.cloud/check` 确认 `valid` 且 `registered` 后写入；「更换设备」或 `/check` 复核判定失效时清除。订阅草稿仍只存地点与规则：`draftForStorage` 显式只挑 `schema_version`、`bark_url`、`targets`、`alerts_by_category` 四个字段重建对象，避免登录账号和配置草稿绑在一起。`api.ts` 导出 `draftOmitsBarkKey` 断言草稿 blob 不含 Key 字段。
 
 「有未提交更改」的提示靠 `draftSignature`（草稿的稳定 JSON 序列化）与 `lastSubmittedSignature` 比对，配合 `lastSubmittedIdentity`（Bark URL + Key）判断投递目标是否也变了。
 
@@ -366,7 +366,7 @@ graph LR
 | `index.html` | `<meta name="referrer" content="no-referrer">` |
 | `IncidentPage` | 运行时注入 robots / referrer meta |
 | 运维（仓库外） | 反代、CDN、日志**不得**记录 `/incidents/` 完整 URL |
-| localStorage | Bark Key 永不写入（`draftForStorage` 白名单 + 测试断言） |
+| localStorage | 登录身份在 `disaster_bark_key`；草稿白名单不含 Key（`draftForStorage` + `draftOmitsBarkKey`） |
 
 `escapeHtml` 用于所有拼接进 `innerHTML` 的动态值（Bark URL 下拉、灾种卡片等）。**这条防线依赖人工纪律** —— 命令式层用 `innerHTML` 拼模板，漏一次转义就是一个 XSS 缺口。这是 3.1 节所述范式选择的直接代价。
 
@@ -439,10 +439,10 @@ graph TB
 
 测试覆盖的是**不变量而非快照**，四个文件各守一类风险：
 
-- `subscribe.logic.test.ts` — 纯函数：HTML 转义、错误文案映射、坐标校验、**草稿不含 Bark Key**。
-- `extractBarkKey` / `localValidate` / `checkDeviceKey` — 测试链接提取、22 位本地校验、check 信封解析。
-- `BarkKeyPage.test.tsx` — 非法输入与未注册时按钮禁用；校验通过后带 state 进入 `/subscribe`。
-- `SubscribePage.test.tsx` — 无已校验 key 时重定向回 `/`。
+- `subscribe.logic.test.ts` — 纯函数：HTML 转义、错误文案映射、坐标校验、草稿 blob 不含登录 Key。
+- `extractBarkKey` / `localValidate` / `checkDeviceKey` / `session` — 测试链接提取、22 位本地校验、check 信封解析、登录会话与 `/check` 复核。
+- `BarkKeyPage.test.tsx` — 非法输入与未注册时按钮禁用；校验通过后写入会话并进入 `/subscribe`；已有会话则自动跳转。
+- `SubscribePage.test.tsx` — 无会话时重定向回 `/`；仅有缓存时仍能打开订阅页。
 - `subscribeApp.test.ts` — 挂载/卸载契约，以及 `initialBarkKey` 写入只读输入框。
 - `IncidentPage.test.tsx` — 详情页渲染与状态分支。
 - `TermsDialog.test.tsx` — 弹窗行为。
@@ -460,8 +460,8 @@ Leaflet 在测试中被 `vi.mock` 替换，jsdom 无需真实地图实现。
 | 单一 `SubscribeRuntime` 承载共享状态 | 命令式层无 React 状态机制，需要显式的单一真相源 | runtime 字段较多，模块耦合于其结构 |
 | 生成代次 + revision 守卫 | 无框架托管时，这是防止过期响应写入 DOM 的最简手段 | 每个异步入口都必须记得比对 |
 | 灾种/来源由服务端下发 | 后端扩展数据源无需改前端 | 前端需处理下发数据缺失/异常的降级 |
-| 草稿存 localStorage，Bark Key 不存 | 刷新不丢配置，同时不落盘凭据 | 草稿与服务端可能不一致，需签名比对提示 |
-| 入口页校验通过才进入 `/subscribe` | 避免无效 Key 进入复杂配置；生产直连 bark check，开发走 Vite 代理 | 依赖 bark-worker-server CORS；无 state 刷新订阅页会回到入口 |
+| 草稿与登录身份分键存储 | 刷新不丢配置；登出不抹地点草稿；有效性只认 `/check` | 草稿与服务端可能不一致，需签名比对提示 |
+| 入口页 `/check` 通过后写入会话 | 避免无效 Key 进入复杂配置；生产直连 bark check，开发走 Vite 代理 | 依赖 bark-worker-server CORS；`disaster-alert` 的 401/502 不能单独登出 |
 | 构建时注入 `VITE_API_BASE` | 同源部署下零配置 | 同一镜像无法在运行时切换 API 地址 |
 | 容器固定 30011，HTTPS 交给外部反代 | 与 API 仓库部署约定一致，职责清晰 | 单独跑容器无法完成订阅（无 `/api`） |
 

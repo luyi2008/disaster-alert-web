@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { apiUrl, fetchStatus } from "../api";
+import { clearCachedBarkKey } from "../bark/session";
 import { DeviceIdentity } from "../components/DeviceIdentity";
 import { TermsDialog } from "../components/TermsDialog";
-import { barkKeyFromState, type SubscribeLocationState } from "../subscribe/barkKeyState";
+import { resolveBarkKey, type SubscribeLocationState } from "../subscribe/barkKeyState";
 import bodyHtml from "../subscribe/body.html?raw";
 import footerHtml from "../subscribe/footer.html?raw";
 import headerHtml from "../subscribe/header.html?raw";
@@ -16,7 +17,8 @@ export type { SubscribeLocationState };
 
 export function SubscribePage() {
   const location = useLocation();
-  const barkKey = barkKeyFromState(location.state);
+  const navigate = useNavigate();
+  const barkKey = resolveBarkKey(location.state);
   const rootRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -57,6 +59,10 @@ export function SubscribePage() {
       api: apiUrl(""),
       instanceTermsAccepted: termsAccepted,
       deviceKey: barkKey,
+      onInvalidBarkKey: () => {
+        clearCachedBarkKey();
+        navigate("/", { replace: true });
+      },
     });
     reloadConfigRef.current = app.reloadConfiguration;
     return () => {
@@ -66,7 +72,7 @@ export function SubscribePage() {
       body.innerHTML = "";
       footer.innerHTML = "";
     };
-  }, [termsAccepted, barkKey]);
+  }, [termsAccepted, barkKey, navigate]);
 
   if (!barkKey) {
     return <Navigate to="/" replace />;
