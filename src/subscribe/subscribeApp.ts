@@ -27,7 +27,7 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
     if (!ctx.instanceTermsAccepted) {
       el.draftStatus.textContent = "当前实例未确认部署责任，不能新增或覆盖订阅；仍可取消已有订阅。";
     } else if (!ctx.lastSubmittedSignature) {
-      el.draftStatus.textContent = "配置草稿保存在当前浏览器；Bark ID 不会保存。";
+      el.draftStatus.textContent = "";
     } else if (draftSignature(ctx.subscriptionDraft) === ctx.lastSubmittedSignature && currentDestinationIdentity() === ctx.lastSubmittedIdentity) {
       el.draftStatus.textContent = "本浏览器中的配置已提交。";
     } else {
