@@ -27,6 +27,8 @@
   --space-24: 24px;
   --space-32: 32px;
   --space-40: 40px;
+  --page-max: 1200px;
+  --page-gutter: 32px;
   --focus: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
   --shadow-float: 0 4px 16px rgba(24, 24, 27, 0.08);
 }
