@@ -213,7 +213,19 @@ describe("mountSubscribeApp", () => {
     app.teardown();
   });
 
-  it("lists unique data sources after the alert-type heading and drops the status shell", async () => {
+  it("lists connected /api/status sources after the alert-type heading", async () => {
+    function channel(connected: boolean) {
+      return {
+        connected,
+        last_message_epoch_ms: connected ? 1_700_000_000_000 : null,
+        reconnects: connected ? 1 : 0,
+        messages: connected ? 12 : 0,
+        parse_errors: 0,
+        notifications_succeeded: 0,
+        notifications_failed: 0,
+      };
+    }
+
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes("/api/bark-urls")) {
@@ -221,32 +233,27 @@ describe("mountSubscribeApp", () => {
       }
       if (url.includes("/api/subscription-options")) {
         return jsonResponse({
-          categories: [
-            {
-              ...simpleCategory,
-              source_groups: [{
-                id: "all",
-                label: "全部",
-                sources: [
-                  { id: "wolfx", label: "Wolfx" },
-                  { id: "fanstudio", label: "FAN Studio" },
-                ],
-              }],
-            },
-            {
-              id: "tsunami",
-              label: "海啸预警",
-              source_groups: [{
-                id: "all",
-                label: "全部",
-                sources: [
-                  { id: "wolfx", label: "Wolfx" },
-                  { id: "huania", label: "Huania" },
-                ],
-              }],
-              default_alert: { category: "tsunami", sources: { mode: "all" }, min_severity: 1 },
-            },
-          ],
+          categories: [{
+            ...simpleCategory,
+            source_groups: [{
+              id: "all",
+              label: "全部",
+              sources: [
+                { id: "wolfx", label: "Wolfx" },
+                { id: "fanstudio", label: "FAN Studio" },
+                { id: "huania", label: "Huania" },
+              ],
+            }],
+          }],
+        });
+      }
+      if (url.includes("/api/status")) {
+        return jsonResponse({
+          instance_terms_accepted: true,
+          total_subscriptions: 3,
+          wolfx: channel(true),
+          fanstudio: channel(true),
+          huania: channel(false),
         });
       }
       return jsonResponse({});
@@ -260,9 +267,10 @@ describe("mountSubscribeApp", () => {
     const sources = host.querySelector("#alert-type-sources") as HTMLElement;
     await vi.waitFor(() => {
       expect(sources.hidden).toBe(false);
-      expect(sources.textContent).toBe("Wolfx ｜ FAN Studio ｜ Huania");
+      expect(sources.textContent).toBe("Wolfx ｜ FAN Studio");
     });
 
+    expect(sources.textContent).not.toContain("Huania");
     expect(host.querySelector("#status-shell")).toBeNull();
     expect(host.querySelector("#status-chip-wolfx")).toBeNull();
     expect(host.querySelector(".subhead")).toBeNull();
