@@ -213,34 +213,40 @@ describe("mountSubscribeApp", () => {
     app.teardown();
   });
 
-  it("shows connected source chips and hides disconnected sources", async () => {
-    function channel(connected: boolean) {
-      return {
-        connected,
-        last_message_epoch_ms: connected ? 1_700_000_000_000 : null,
-        reconnects: connected ? 1 : 0,
-        messages: connected ? 12 : 0,
-        parse_errors: 0,
-        notifications_succeeded: 0,
-        notifications_failed: 0,
-      };
-    }
-
+  it("lists unique data sources after the alert-type heading and drops the status shell", async () => {
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes("/api/bark-urls")) {
         return jsonResponse({ bark_urls: [FIRST_URL] });
       }
       if (url.includes("/api/subscription-options")) {
-        return jsonResponse({ categories: [simpleCategory] });
-      }
-      if (url.includes("/api/status")) {
         return jsonResponse({
-          instance_terms_accepted: true,
-          total_subscriptions: 3,
-          wolfx: channel(true),
-          fanstudio: channel(true),
-          huania: channel(false),
+          categories: [
+            {
+              ...simpleCategory,
+              source_groups: [{
+                id: "all",
+                label: "全部",
+                sources: [
+                  { id: "wolfx", label: "Wolfx" },
+                  { id: "fanstudio", label: "FAN Studio" },
+                ],
+              }],
+            },
+            {
+              id: "tsunami",
+              label: "海啸预警",
+              source_groups: [{
+                id: "all",
+                label: "全部",
+                sources: [
+                  { id: "wolfx", label: "Wolfx" },
+                  { id: "huania", label: "Huania" },
+                ],
+              }],
+              default_alert: { category: "tsunami", sources: { mode: "all" }, min_severity: 1 },
+            },
+          ],
         });
       }
       return jsonResponse({});
@@ -251,12 +257,18 @@ describe("mountSubscribeApp", () => {
     document.body.append(host);
 
     const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceKey: KEY });
+    const sources = host.querySelector("#alert-type-sources") as HTMLElement;
     await vi.waitFor(() => {
-      expect((host.querySelector("#status-chip-wolfx") as HTMLElement).hidden).toBe(false);
+      expect(sources.hidden).toBe(false);
+      expect(sources.textContent).toBe("Wolfx ｜ FAN Studio ｜ Huania");
     });
 
-    expect((host.querySelector("#status-chip-fanstudio") as HTMLElement).hidden).toBe(false);
-    expect((host.querySelector("#status-chip-huania") as HTMLElement).hidden).toBe(true);
+    expect(host.querySelector("#status-shell")).toBeNull();
+    expect(host.querySelector("#status-chip-wolfx")).toBeNull();
+    expect(host.querySelector(".subhead")).toBeNull();
+    expect(host.textContent).not.toContain("将所选地点的提醒推送到当前设备");
+    expect((host.querySelector("#unsubscribe") as HTMLButtonElement).className).toBe("secondary");
+    expect((host.querySelector("#submit") as HTMLButtonElement).textContent).toBe("保存订阅");
     expect(host.querySelector("#status-label")).toBeNull();
     expect(host.querySelector("#status-details")).toBeNull();
     expect(host.querySelector("#service-status")).toBeNull();

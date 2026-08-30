@@ -10,7 +10,6 @@ import { parseApiResponse } from "./http";
 import { bindLocations } from "./locations";
 import { animateHeight } from "./motion";
 import { createRuntime } from "./runtime";
-import { bindStatus } from "./status";
 import { bindToast } from "./toast";
 import type { MountSubscribeOptions, SubscribeAppHandle } from "./types";
 import { localValidateBarkKey } from "../bark/localValidate";
@@ -54,7 +53,6 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
 
   const locations = bindLocations(ctx, { persistDraft, show: toast.show });
   const alerts = bindAlertRules(ctx, { persistDraft, show: toast.show });
-  const status = bindStatus(ctx);
 
   function setSubscriptionRequestInFlight(inFlight: boolean): void {
     ctx.subscriptionRequestInFlight = inFlight;
@@ -206,7 +204,6 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
       const data = json.data as { saved?: boolean } | undefined;
       if (data?.saved === true) {
         toast.show("订阅已保存，Bark 确认通知已发送", "success");
-        void status.refreshStatus();
       } else {
         toast.show(json.message || "Bark 服务暂时不可用，订阅确认将在后台重试", "warning");
       }
@@ -247,7 +244,6 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
       ctx.lastSubmittedIdentity = "";
       updateDraftStatus();
       toast.show("已删除服务端订阅；浏览器配置草稿已保留", "success");
-      void status.refreshStatus();
     } catch (error) {
       toast.show((error as { message?: string }).message || "网络请求失败", "error");
     } finally {
@@ -266,7 +262,6 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
   locations.renderLocations();
   locations.renderLocationEditor();
   void initializeConfiguration();
-  void status.refreshStatus();
 
   ctx.cleanup.add(() => {
     if (ctx.persistTimer) clearTimeout(ctx.persistTimer);

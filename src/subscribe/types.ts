@@ -128,10 +128,7 @@ export type SubscribeElements = {
   toastStack: HTMLElement;
   submit: HTMLButtonElement;
   unsubscribe: HTMLButtonElement;
-  statusShell: HTMLElement;
-  statusChipWolfx: HTMLElement;
-  statusChipFanstudio: HTMLElement;
-  statusChipHuania: HTMLElement;
+  alertTypeSources: HTMLElement;
   disasterGroupsEl: HTMLElement;
   resetAlertRules: HTMLButtonElement;
   mapElement: HTMLElement;

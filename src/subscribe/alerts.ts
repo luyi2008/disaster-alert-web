@@ -329,7 +329,30 @@ export function bindAlertRules(
     return true;
   }
 
+  function uniqueSourceLabels(): string[] {
+    const labels: string[] = [];
+    const seen = new Set<string>();
+    for (const category of ctx.optionCategories) {
+      for (const group of category.source_groups || []) {
+        for (const source of group.sources || []) {
+          const label = String(source.label || "").trim();
+          if (!label || seen.has(label)) continue;
+          seen.add(label);
+          labels.push(label);
+        }
+      }
+    }
+    return labels;
+  }
+
+  function renderAlertTypeSources(): void {
+    const labels = uniqueSourceLabels();
+    ctx.el.alertTypeSources.textContent = labels.join(" ｜ ");
+    ctx.el.alertTypeSources.hidden = labels.length === 0;
+  }
+
   function renderDisasterGroups(): void {
+    renderAlertTypeSources();
     ctx.el.disasterGroupsEl.innerHTML = ctx.optionCategories.map((category) => {
       const disabled = !alertEntry(category.id)?.enabled;
       const sourceCount = category.source_groups.reduce((total, group) => total + group.sources.length, 0);

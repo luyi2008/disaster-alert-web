@@ -62,7 +62,10 @@
           <div class="workspace-column">
             <section class="workspace-section">
               <div class="workspace-heading">
-                <h2>预警类型</h2>
+                <div class="workspace-heading-title">
+                  <h2>预警类型</h2>
+                  <span id="alert-type-sources" class="heading-sources" hidden></span>
+                </div>
                 <button class="heading-action" id="reset-alert-rules" type="button" disabled>重置规则</button>
               </div>
               <div id="disaster-groups" class="disaster-groups"></div>
@@ -71,7 +74,7 @@
         </div>
         <div class="form-actions">
           <div id="draft-status" class="form-actions-note"></div>
-          <button class="danger" id="unsubscribe" type="button">取消订阅</button>
-          <button class="primary" id="submit" type="submit">保存/覆盖订阅</button>
+          <button class="secondary" id="unsubscribe" type="button">取消订阅</button>
+          <button class="primary" id="submit" type="submit">保存订阅</button>
         </div>
       </form>
