@@ -13,7 +13,7 @@ describe("TermsDialog", () => {
     render(<TermsDialog open />);
     expect(screen.getByRole("dialog")).toHaveAttribute("id", "instance-terms-dialog");
     expect(screen.getByText(/INSTANCE_TERMS_ACCEPTED=true/)).toBeInTheDocument();
-    expect(screen.getByText(/新增和覆盖订阅已在服务端禁用/)).toBeInTheDocument();
+    expect(screen.getByText(/新增和保存订阅已在服务端禁用/)).toBeInTheDocument();
   });
 });
 

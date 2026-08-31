@@ -76,20 +76,53 @@ const simpleCategory = {
   },
 };
 
+const typhoonCategory = {
+  id: "typhoon",
+  label: "台风信息",
+  source_groups: [{ id: "all", label: "全部", sources: [{ id: "nmc", label: "中央气象台" }] }],
+  default_alert: {
+    category: "typhoon",
+    sources: { mode: "all" },
+    max_center_distance_km: 500,
+  },
+};
+
+const weatherCategory = {
+  id: "weather_warning",
+  label: "气象预警",
+  source_groups: [{ id: "all", label: "全部", sources: [{ id: "nmc", label: "中央气象台" }] }],
+  default_alert: {
+    category: "weather_warning",
+    sources: { mode: "all" },
+    min_severity: 2,
+    fallback_radius_km: 50,
+  },
+};
+
+const simpleAlert = {
+  category: "earthquake_report",
+  sources: { mode: "all" },
+  min_magnitude: 3,
+};
+
+function savedRow(alerts: unknown[] = [simpleAlert]) {
+  return {
+    destination: { type: "bark", base_url: FIRST_URL, device_key: KEY },
+    targets: [{
+      label: "home",
+      point: { latitude: 35, longitude: 139 },
+      region: { province: "", city: "", district: "" },
+    }],
+    alerts,
+  };
+}
+
 function stubSubscribeFetches() {
   return vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
     const url = String(input);
     if (url.includes("/api/subscriptions")) {
       return jsonResponse({
-        subscriptions: [{
-          destination: { type: "bark", base_url: FIRST_URL, device_key: KEY },
-          targets: [{
-            label: "home",
-            point: { latitude: 35, longitude: 139 },
-            region: { province: "", city: "", district: "" },
-          }],
-          alerts: [],
-        }],
+        subscriptions: [savedRow()],
       });
     }
     if (url.includes("/api/bark-urls")) {
@@ -223,13 +256,12 @@ describe("mountSubscribeApp", () => {
 
     resolveSubscriptions(jsonResponse({
       subscriptions: [{
-        destination: { type: "bark", base_url: FIRST_URL, device_key: KEY },
+        ...savedRow(),
         targets: [{
           label: "server home",
           point: { latitude: 35, longitude: 139 },
           region: { province: "", city: "", district: "" },
         }],
-        alerts: [],
       }],
     }));
 
@@ -257,6 +289,43 @@ describe("mountSubscribeApp", () => {
     const submit = host.querySelector("#submit") as HTMLButtonElement;
     await vi.waitFor(() => expect(submit.disabled).toBe(false));
     expect(host.textContent).not.toContain("无法加载已保存的订阅");
+    const toggle = host.querySelector(".category-toggle[data-category='earthquake_report']") as HTMLInputElement;
+    expect(toggle.checked).toBe(true);
+    app.teardown();
+  });
+
+  it("enables only the categories present in the saved subscription alerts", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/subscriptions")) {
+        return jsonResponse({
+          subscriptions: [savedRow([{
+            category: "typhoon",
+            sources: { mode: "all" },
+            max_center_distance_km: 300,
+          }])],
+        });
+      }
+      if (url.includes("/api/bark-urls")) return jsonResponse({ bark_urls: [FIRST_URL] });
+      if (url.includes("/api/subscription-options")) {
+        return jsonResponse({ categories: [simpleCategory, weatherCategory, typhoonCategory] });
+      }
+      if (url.includes("/api/status")) return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
+      return jsonResponse({});
+    }));
+    const host = document.createElement("div");
+    fillHost(host);
+    document.body.append(host);
+    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceKey: KEY });
+    const submit = host.querySelector("#submit") as HTMLButtonElement;
+    await vi.waitFor(() => expect(submit.disabled).toBe(false));
+    const checked = (category: string) => (
+      host.querySelector(`.category-toggle[data-category='${category}']`) as HTMLInputElement
+    ).checked;
+    expect(checked("typhoon")).toBe(true);
+    expect(checked("earthquake_report")).toBe(false);
+    expect(checked("weather_warning")).toBe(false);
+    expect(host.textContent).toContain("中心 300 km 内");
     app.teardown();
   });
 
@@ -388,15 +457,7 @@ describe("mountSubscribeApp", () => {
       }
       if (url.includes("/api/subscriptions")) {
         return jsonResponse({
-          subscriptions: [{
-            destination: { type: "bark", base_url: FIRST_URL, device_key: KEY },
-            targets: [{
-              label: "home",
-              point: { latitude: 35, longitude: 139 },
-              region: { province: "", city: "", district: "" },
-            }],
-            alerts: [],
-          }],
+          subscriptions: [savedRow()],
         });
       }
       if (url.includes("/api/bark-urls")) {
@@ -443,15 +504,7 @@ describe("mountSubscribeApp", () => {
       }
       if (url.includes("/api/subscriptions")) {
         return jsonResponse({
-          subscriptions: [{
-            destination: { type: "bark", base_url: FIRST_URL, device_key: KEY },
-            targets: [{
-              label: "home",
-              point: { latitude: 35, longitude: 139 },
-              region: { province: "", city: "", district: "" },
-            }],
-            alerts: [],
-          }],
+          subscriptions: [savedRow()],
         });
       }
       if (url.includes("/api/bark-urls")) {
