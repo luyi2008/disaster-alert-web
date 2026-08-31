@@ -170,7 +170,7 @@ describe("TestPage", () => {
     expect(screen.getByText("entry")).toBeInTheDocument();
   });
 
-  it("previews draft subscription fields and renders three dynamic levels", async () => {
+  it("previews saved subscription fields and renders three dynamic levels", async () => {
     const fetchMock = stubApis({});
     renderTestPage();
 
@@ -179,7 +179,6 @@ describe("TestPage", () => {
     expect(await screen.findByText("上海家中 · 上海市 · 浦东新区")).toBeInTheDocument();
     expect(screen.getByText("地震预警")).toBeInTheDocument();
     expect(screen.getByText("3–7")).toBeInTheDocument();
-    expect(screen.queryByText(/本浏览器还没有订阅草稿/)).toBeNull();
     expect(screen.getByText(`上次更新 ${formatDraftUpdatedAt(UPDATED_AT)}`)).toBeInTheDocument();
     const subscriptionsCall = fetchMock.mock.calls.find(([input]) => String(input).includes("/api/subscriptions"));
     expect(subscriptionsCall).toBeTruthy();
@@ -203,7 +202,6 @@ describe("TestPage", () => {
     expect(await screen.findByText("尚未选择地点")).toBeInTheDocument();
     expect(screen.getByText("尚未配置规则")).toBeInTheDocument();
     expect(screen.getByText("模拟接口只认本实例已保存的订阅，请先回到订阅页保存。")).toBeInTheDocument();
-    expect(screen.queryByText(/本浏览器还没有订阅草稿/)).toBeNull();
     expect(screen.queryByText("ok")).toBeNull();
   });
 
