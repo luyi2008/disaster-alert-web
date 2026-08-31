@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { fetchSavedSubscriptions } from "../api";
 import { maskBarkId } from "../bark/maskBarkId";
 import { maybeExpireBarkSession } from "../bark/session";
 import { AppBrand } from "../components/AppBrand";
@@ -24,7 +25,11 @@ import {
   type RuleCardTone,
 } from "../simulate/subscriptionPreview";
 import { resolveBarkKey } from "../subscribe/barkKeyState";
-import { readDraftUpdatedAt, restoreDraftFromStorage } from "../subscribe/draft";
+import {
+  createEmptyDraft,
+  draftFromSavedSubscription,
+  selectSavedSubscription,
+} from "../subscribe/draft";
 import "../styles/base.css";
 import "../styles/subscribe.css";
 import "../styles/test.css";
@@ -147,9 +152,9 @@ export function TestPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const barkKey = resolveBarkKey(location.state);
-  const draft = useMemo(() => restoreDraftFromStorage(), []);
-  const draftUpdatedAt = useMemo(() => readDraftUpdatedAt(), []);
-  const [barkUrl, setBarkUrl] = useState(draft.bark_url);
+  const [draft, setDraft] = useState(createEmptyDraft);
+  const [draftUpdatedAt, setDraftUpdatedAt] = useState<number | null>(null);
+  const [barkUrl, setBarkUrl] = useState("");
   const [levels, setLevels] = useState<NotifyLevelOption[]>([]);
   const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [historySource, setHistorySource] = useState("major");
@@ -165,13 +170,49 @@ export function TestPage() {
       return;
     }
     let cancelled = false;
-    Promise.all([fetchBarkUrls(), fetchSubscriptionOptions()])
-      .then(([urls, options]) => {
+    Promise.all([
+      fetchBarkUrls(),
+      fetchSubscriptionOptions(),
+      fetchSavedSubscriptions(barkKey).catch(
+        (error: { message?: string }): Awaited<ReturnType<typeof fetchSavedSubscriptions>> => ({
+          status: 0,
+          body: {
+            success: false,
+            message: error?.message || "无法加载已保存的订阅",
+          },
+        }),
+      ),
+    ])
+      .then(async ([urls, options, saved]) => {
         if (cancelled) {
           return;
         }
-        setBarkUrl(urls[0] || draft.bark_url);
         setLevels(notifyLevelsFromOptions(options));
+        setBarkUrl(urls[0] || "");
+        if (await maybeExpireBarkSession(barkKey, saved.status, "bearer")) {
+          if (!cancelled) {
+            navigate("/", { replace: true });
+          }
+          return;
+        }
+        if (cancelled) {
+          return;
+        }
+        if (saved.status === 200 && saved.body.success) {
+          const row = selectSavedSubscription(
+            saved.body.data?.subscriptions,
+            barkKey,
+            urls,
+          );
+          if (row) {
+            const mapped = draftFromSavedSubscription(row, urls);
+            setDraft(mapped);
+            setDraftUpdatedAt(row.updated_at ?? null);
+            setBarkUrl(mapped.bark_url || urls[0] || "");
+          }
+        } else if (saved.status !== 200) {
+          setLoadError(saved.body.message || "无法加载已保存的订阅");
+        }
       })
       .catch((error: { message?: string }) => {
         if (!cancelled) {
@@ -182,7 +223,7 @@ export function TestPage() {
     return () => {
       cancelled = true;
     };
-  }, [barkKey, draft.bark_url]);
+  }, [barkKey, navigate]);
 
   useEffect(() => {
     if (!barkKey || tab !== "history") {
@@ -310,7 +351,7 @@ export function TestPage() {
         </section>
 
         {!hasDraftContent ? (
-          <p className="test-note">本浏览器还没有订阅草稿。模拟接口只认本实例已保存的订阅，请先回到订阅页保存。</p>
+          <p className="test-note">模拟接口只认本实例已保存的订阅，请先回到订阅页保存。</p>
         ) : null}
 
         <section className="test-block" aria-labelledby="test-priority-heading">
