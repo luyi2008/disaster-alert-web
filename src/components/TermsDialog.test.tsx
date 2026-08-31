@@ -1,7 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { TermsDialog } from "./TermsDialog";
-import { DRAFT_STORAGE_KEY, draftOmitsBarkKey } from "../api";
 import { BARK_KEY_STORAGE_KEY } from "../bark/session";
 
 describe("TermsDialog", () => {
@@ -18,11 +17,8 @@ describe("TermsDialog", () => {
   });
 });
 
-describe("subscription draft", () => {
-  it("keeps login identity out of the draft blob", () => {
-    expect(DRAFT_STORAGE_KEY).toBe("disaster_subscription_draft_v3");
+describe("login identity storage", () => {
+  it("keeps the Bark Key in its own session key", () => {
     expect(BARK_KEY_STORAGE_KEY).toBe("disaster_bark_key");
-    expect(draftOmitsBarkKey({ targets: [], alerts: [] })).toBe(true);
-    expect(draftOmitsBarkKey({ barkKey: "abc" })).toBe(false);
   });
 });

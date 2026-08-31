@@ -1,3 +1,6 @@
+import { parseApiResponse } from "./subscribe/http";
+import type { SavedSubscriptionsData } from "./subscribe/types";
+
 export type ApiEnvelope<T> = {
   success: boolean;
   message: string;
@@ -130,13 +133,12 @@ export async function fetchIncidentDetail(
   return { status: response.status, body };
 }
 
-export const DRAFT_STORAGE_KEY = "disaster_subscription_draft_v3";
-
-/** Draft blob must not hold the login Key; identity lives in `disaster_bark_key`. */
-export function draftOmitsBarkKey(draft: unknown): boolean {
-  if (!draft || typeof draft !== "object") {
-    return true;
-  }
-  const record = draft as Record<string, unknown>;
-  return !("barkKey" in record) && !("device_key" in record) && !("bark_id" in record);
+export async function fetchSavedSubscriptions(
+  barkKey: string,
+): Promise<{ status: number; body: ApiEnvelope<SavedSubscriptionsData> }> {
+  const response = await fetch(apiUrl("/api/subscriptions"), {
+    headers: { Authorization: `Bearer ${barkKey}` },
+  });
+  const body = await parseApiResponse(response) as ApiEnvelope<SavedSubscriptionsData>;
+  return { status: response.status, body };
 }
