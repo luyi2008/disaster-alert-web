@@ -51,9 +51,10 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
     el.submit.title = ctx.instanceTermsAccepted ? "" : "实例部署者确认责任声明后才能保存订阅";
     el.unsubscribe.disabled = inFlight;
     el.resetAlertRules.disabled = inFlight || !ctx.configurationReady;
-    el.startAddLocation.disabled = inFlight || ctx.subscriptionDraft.targets.length >= 3 || ctx.uiState.locationMode !== "overview";
-    el.finishLocation.disabled = inFlight || (ctx.uiState.locationMode !== "overview" && !targetCoordinates(locations.activeTarget()));
-    el.discardLocationEdit.disabled = inFlight;
+    el.startAddLocation.disabled = inFlight || !ctx.configurationReady || ctx.subscriptionDraft.targets.length >= 3 || ctx.uiState.locationMode !== "overview";
+    el.finishLocation.disabled = inFlight || !ctx.configurationReady || (ctx.uiState.locationMode !== "overview" && !targetCoordinates(locations.activeTarget()));
+    el.discardLocationEdit.disabled = inFlight || !ctx.configurationReady;
+    if (ctx.locate) ctx.locate.disabled = inFlight || !ctx.configurationReady;
   }
 
   root.querySelectorAll("details.config-disclosure").forEach((node) => {

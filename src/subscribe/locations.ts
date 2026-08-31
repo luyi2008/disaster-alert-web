@@ -251,7 +251,7 @@ export function bindLocations(
       : targetLabel(target);
     el.locationPickerHeading.textContent = coordinates ? "当前位置，可在地图点击以调整" : "在地图点击位置，或输入坐标";
     el.locationDetails.hidden = adding && !coordinates;
-    el.finishLocation.disabled = ctx.subscriptionRequestInFlight || !coordinates;
+    el.finishLocation.disabled = ctx.subscriptionRequestInFlight || !ctx.configurationReady || !coordinates;
     el.finishLocation.textContent = adding ? "保存地点" : "保存修改";
     el.nameInput.value = target?.label || "";
     el.latInput.value = target?.point.latitude ?? "";
@@ -269,7 +269,7 @@ export function bindLocations(
     const count = ctx.subscriptionDraft.targets.length;
     el.locationCount.textContent = `${count} / 3`;
     el.locationsSummary.textContent = count ? `共 ${count} 个，可添加 ${3 - count} 个` : "尚未添加";
-    el.startAddLocation.disabled = count >= 3 || ctx.subscriptionRequestInFlight || ctx.uiState.locationMode !== "overview";
+    el.startAddLocation.disabled = count >= 3 || ctx.subscriptionRequestInFlight || !ctx.configurationReady || ctx.uiState.locationMode !== "overview";
     if (!count) {
       el.locationsList.innerHTML = '<div class="locations-empty">尚未添加地点。点击地图选择位置，也可以使用当前位置或手动输入坐标。</div>';
     } else {
@@ -300,6 +300,7 @@ export function bindLocations(
   }
 
   function startAddingLocation(initialCoordinates: Coordinates | null = null): void {
+    if (!ctx.configurationReady) return;
     if (ctx.subscriptionDraft.targets.length >= 3) {
       helpers.show("最多添加 3 个监测地点", "error");
       return;
