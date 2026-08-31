@@ -124,11 +124,6 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
       });
   }
 
-  function reloadConfiguration(): void {
-    toast.show("正在重新加载订阅配置...", "info");
-    void initializeConfiguration();
-  }
-
   ctx.cleanup.listen(el.form, "submit", async (event) => {
     event.preventDefault();
     if (!ctx.instanceTermsAccepted) {
@@ -273,7 +268,6 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
   });
 
   return {
-    reloadConfiguration,
     teardown() {
       ctx.initializationGeneration += 1;
       locations.cancelAllGeocode();

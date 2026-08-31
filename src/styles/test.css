@@ -4,10 +4,11 @@
   width: 100%;
   max-width: none;
   margin: 0;
-  padding: 0 0 48px;
+  padding: 0;
 }
 
 .test-sheet {
+  flex: 1;
   margin-left: var(--page-inline);
   margin-right: var(--page-inline);
   padding: 20px 20px 16px;

@@ -159,6 +159,7 @@ describe("TestPage", () => {
     expect(screen.getByText("重要")).toBeInTheDocument();
     expect(screen.getAllByText("紧急").length).toBeGreaterThan(0);
     expect(screen.getAllByRole("button", { name: "发送测试" })).toHaveLength(3);
+    expect(screen.getByText(/本服务仅用于灾害信息转发与个人提醒/)).toBeInTheDocument();
   });
 
   it("renders only the levels returned by subscription options", async () => {
