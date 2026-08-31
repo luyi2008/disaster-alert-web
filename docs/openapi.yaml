@@ -129,6 +129,33 @@ paths:
           $ref: "#/components/responses/InternalServerError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+  /api/subscriptions:
+    get:
+      tags: [Subscriptions]
+      operationId: listSubscriptions
+      summary: 读取当前 Bark Key 的已保存订阅
+      description: |
+        使用 `Authorization: Bearer` 识别设备。不要把 Key 放在 query 中。
+        无订阅时仍返回 HTTP 200 且 `success: false`。
+      security:
+        - barkBearer: []
+      responses:
+        "200":
+          description: |
+            `success: true` 时 `data.subscriptions` 为订阅数组；
+            `success: false` 表示该 Key 没有订阅。
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListSubscriptionsApiResponse"
+        "401":
+          description: 缺少或无效的 Bearer Bark Key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
   /api/bark-urls:
     get:
       tags: [Metadata]
@@ -443,6 +470,44 @@ components:
           type: string
           pattern: "^[A-Za-z0-9]{1,64}$"
           writeOnly: true
+    BarkDestinationView:
+      type: object
+      additionalProperties: false
+      required: [type, base_url, device_key]
+      properties:
+        type:
+          type: string
+          const: bark
+        base_url:
+          type: string
+          format: uri
+          examples: [https://api.day.app]
+        device_key:
+          type: string
+          pattern: "^[A-Za-z0-9]{1,64}$"
+    SavedSubscription:
+      type: object
+      additionalProperties: false
+      required: [destination, targets, alerts, created_at, updated_at]
+      properties:
+        destination:
+          $ref: "#/components/schemas/BarkDestinationView"
+        targets:
+          type: array
+          items:
+            $ref: "#/components/schemas/MonitoringTarget"
+        alerts:
+          type: array
+          items:
+            $ref: "#/components/schemas/AlertRule"
+        created_at:
+          type: integer
+          format: int64
+          description: 创建时间，Unix 毫秒时间戳。
+        updated_at:
+          type: integer
+          format: int64
+          description: 最近更新时间，Unix 毫秒时间戳。
     MonitoringTarget:
       type: object
       additionalProperties: false
@@ -792,6 +857,25 @@ components:
         saved:
           type: boolean
           description: "`true` 表示订阅已激活；`false` 表示确认仍在后台重试。"
+    ListSubscriptionsApiResponse:
+      type: object
+      additionalProperties: false
+      required: [success, message]
+      properties:
+        success:
+          type: boolean
+          description: 有订阅时为 `true`；没有订阅时为 `false`。
+        message:
+          type: string
+        data:
+          type: object
+          additionalProperties: false
+          required: [subscriptions]
+          properties:
+            subscriptions:
+              type: array
+              items:
+                $ref: "#/components/schemas/SavedSubscription"
     BarkUrlsApiResponse:
       type: object
       additionalProperties: false

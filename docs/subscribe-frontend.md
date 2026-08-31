@@ -22,7 +22,7 @@
 | `locations.ts` | Leaflet 地图与监测地点 |
 | `alerts.ts` | 灾害类别、来源、烈度规则 |
 | `status.ts` | `/api/status` 已连接数据源，展示在预警类型标题后 |
-| `draft.ts` | localStorage 草稿（地点/规则，不含登录 Key） |
+| `draft.ts` | 把服务端已保存订阅映射为表单草稿，并提供规范化与签名 |
 | `toast.ts` | 页面内提示 |
 | `http.ts` | API 响应解析 |
 | `geo.ts` | 坐标与地点校验 |
@@ -35,10 +35,11 @@
 - 生成代次 `initializationGeneration` 在 teardown 时递增，忽略进行中的 fetch。
 - Leaflet：仅在 `map` 存在时调用 `map.remove()`。
 - `ownerDocument` 上的 `pointerdown` / `keydown` 必须配对 `removeEventListener`。
-- `persistTimer`、toast 定时器、逆地理编码 timeout/abort 全部取消。
+- toast 定时器、逆地理编码 timeout/abort 全部取消。
 
 ## 不要做的
 
 - 不要再给 `subscribeApp.ts` 堆新职责；新逻辑放到对应模块。
 - 不要用 `document.getElementById` 找订阅页节点。
-- 不要把 Bark Key 写入订阅草稿。登录身份在 `disaster_bark_key`；是否有效只认 `bark.mangguo.cloud/check`。订阅 502 或 Bearer 401 时复核 `/check`，仅在 `rejected` 时调用 `onInvalidBarkKey`。
+- 不要把未提交的表单草稿写入 localStorage；刷新时通过 Bearer `GET /api/subscriptions` hydrate，页面内编辑只保存在内存中。
+- 登录身份在 `disaster_bark_key`；是否有效只认 `bark.mangguo.cloud/check`。订阅 502 或 Bearer 401 时复核 `/check`，仅在 `rejected` 时调用 `onInvalidBarkKey`。
