@@ -1,7 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { DRAFT_STORAGE_KEY } from "../api";
 import { writeCachedBarkKey, readCachedBarkKey } from "../bark/session";
 import { TestPage } from "./TestPage";
 
@@ -126,26 +125,6 @@ describe("TestPage", () => {
   });
 
   it("previews draft subscription fields and renders three dynamic levels", async () => {
-    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({
-      schema_version: 3,
-      bark_url: "https://draft.example",
-      updated_at: 1_700_000_000_000,
-      targets: [{
-        id: "home",
-        label: "上海家中",
-        point: { latitude: "31.2304", longitude: "121.4737" },
-        region: { province: "上海市", city: "上海市", district: "浦东新区" },
-      }],
-      alerts_by_category: {
-        earthquake_warning: {
-          enabled: true,
-          rule: {
-            category: "earthquake_warning",
-            estimated_intensity_bands: [{ min: 3, max: 7, interruption_level: "critical" }],
-          },
-        },
-      },
-    }));
     stubApis({});
     renderTestPage();
 
