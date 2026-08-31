@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { writeCachedBarkKey } from "../bark/session";
@@ -106,50 +106,13 @@ describe("SubscribePage", () => {
     expect(screen.queryByText("通知 APP：Bark")).toBeNull();
     expect(screen.getByRole("link", { name: "测试" })).toHaveAttribute("href", "/subscribe/test");
     expect(screen.getByRole("link", { name: "更换设备" })).toHaveAttribute("href", "/");
-    expect(screen.getByRole("button", { name: "重新加载" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "重新加载" })).toBeNull();
     expect(container.querySelector("#bark-id")).toBeNull();
     expect(container.querySelector("#bark-url")).toBeNull();
     expect(container.querySelector("#retry-config")).toBeNull();
     expect(container.querySelector("input#bark-id")).toBeNull();
     expect(await screen.findByRole("heading", { name: "灾害预警" })).toBeInTheDocument();
-  });
-
-  it("reloads subscription options from the React identity action", async () => {
-    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
-      const url = String(input);
-      if (url.includes("/api/bark-urls")) {
-        return jsonResponse({ bark_urls: ["https://bark.example"] });
-      }
-      if (url.includes("/api/subscription-options")) {
-        return jsonResponse({ categories: [] });
-      }
-      if (url.includes("/api/status")) {
-        return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
-      }
-      return jsonResponse({});
-    });
-    vi.stubGlobal("fetch", fetchMock);
-
-    render(
-      <MemoryRouter initialEntries={[{ pathname: "/subscribe", state: { barkKey: KEY } }]}>
-        <Routes>
-          <Route path="/" element={<div>entry</div>} />
-          <Route path="/subscribe" element={<SubscribePage />} />
-        </Routes>
-      </MemoryRouter>,
-    );
-
-    await screen.findByRole("heading", { name: "灾害预警" });
-    const callsFor = (path: string) => fetchMock.mock.calls.filter(([input]) => String(input).includes(path));
-    await vi.waitFor(() => expect(callsFor("/api/bark-urls").length).toBeGreaterThan(0));
-    const barkCallsBefore = callsFor("/api/bark-urls").length;
-    const optionCallsBefore = callsFor("/api/subscription-options").length;
-
-    fireEvent.click(screen.getByRole("button", { name: "重新加载" }));
-    await vi.waitFor(() => {
-      expect(callsFor("/api/bark-urls")).toHaveLength(barkCallsBefore + 1);
-      expect(callsFor("/api/subscription-options")).toHaveLength(optionCallsBefore + 1);
-    });
+    expect(screen.getByText(/本服务仅用于灾害信息转发与个人提醒/)).toBeInTheDocument();
   });
 
   it("renders from a cached Bark Key when location state is missing", async () => {

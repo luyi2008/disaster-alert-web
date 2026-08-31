@@ -4,13 +4,11 @@ import { clearCachedBarkKey } from "../bark/session";
 
 type DeviceIdentityProps = {
   barkId: string;
-  onReloadConfig?: () => void;
   currentPage?: "subscribe" | "test";
 };
 
 export function DeviceIdentity({
   barkId,
-  onReloadConfig,
   currentPage = "subscribe",
 }: DeviceIdentityProps) {
   return (
@@ -32,11 +30,6 @@ export function DeviceIdentity({
           <Link className="btn-ghost" to="/" onClick={() => clearCachedBarkKey()}>
             更换设备
           </Link>
-          {onReloadConfig ? (
-            <button className="btn-ghost" type="button" onClick={onReloadConfig}>
-              重新加载
-            </button>
-          ) : null}
         </div>
       </div>
     </div>

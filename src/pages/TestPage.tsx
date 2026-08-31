@@ -4,6 +4,7 @@ import { maskBarkId } from "../bark/maskBarkId";
 import { maybeExpireBarkSession } from "../bark/session";
 import { AppBrand } from "../components/AppBrand";
 import { DeviceIdentity } from "../components/DeviceIdentity";
+import { LegalFooter } from "../components/LegalFooter";
 import {
   fetchBarkUrls,
   fetchHistoryCatalog,
@@ -425,6 +426,7 @@ export function TestPage() {
         </section>
       </section>
       <p className="test-updated">上次更新 {formatDraftUpdatedAt(draftUpdatedAt)}</p>
+      <LegalFooter />
     </main>
   );
 }

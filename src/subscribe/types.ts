@@ -97,7 +97,6 @@ export type MountSubscribeOptions = {
 };
 
 export type SubscribeAppHandle = {
-  reloadConfiguration: () => void;
   teardown: () => void;
 };
 
