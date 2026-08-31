@@ -2,8 +2,32 @@ import { describe, expect, it } from "vitest";
 import { escapeHtml } from "./html";
 import { cleanApiMessage, httpFailureMessage, parseApiResponse, safeJson } from "./http";
 import { createTarget, targetCoordinates, validateLocations } from "./geo";
-import { createEmptyDraft, draftForStorage, restoreDraftFromStorage, writeDraft } from "./draft";
-import { DRAFT_STORAGE_KEY, draftOmitsBarkKey } from "../api";
+import { createEmptyDraft, canonicalDraft, draftFromSavedSubscription, draftSignature, selectSavedSubscription } from "./draft";
+import type { SavedSubscription } from "./types";
+
+const KEY = "ynJ5Ft4atkMkWeo2PAvFhF";
+
+function sampleRow(overrides: Partial<SavedSubscription> = {}): SavedSubscription {
+  return {
+    destination: {
+      type: "bark",
+      base_url: "https://bark.mangguo.cloud",
+      device_key: KEY,
+    },
+    targets: [{
+      label: "天曜11号",
+      point: { latitude: 30.6377, longitude: 104.1119 },
+      region: { province: "四川省", city: "成都市", district: "锦江区" },
+    }],
+    alerts: [{
+      category: "earthquake_warning",
+      sources: { mode: "all" },
+      estimated_intensity_bands: [{ min: 3, max: 7, interruption_level: "critical" }],
+    }],
+    updated_at: 1_788_160_120_826,
+    ...overrides,
+  };
+}
 
 describe("escapeHtml", () => {
   it("escapes markup characters", () => {
@@ -43,15 +67,48 @@ describe("locations", () => {
   });
 });
 
-describe("draft storage", () => {
-  it("stores configuration fields and leaves login identity to a separate key", () => {
+describe("saved subscription mapping", () => {
+  it("selects the row for the session key and prefers a whitelisted base_url", () => {
+    const other: SavedSubscription = sampleRow({
+      destination: { type: "bark", base_url: "https://other.example", device_key: KEY },
+    });
+    const preferred = sampleRow();
+    const chosen = selectSavedSubscription(
+      [other, preferred],
+      KEY,
+      ["https://bark.mangguo.cloud"],
+    );
+    expect(chosen?.destination?.base_url).toBe("https://bark.mangguo.cloud");
+  });
+
+  it("returns null when success payload has no matching key", () => {
+    expect(selectSavedSubscription([sampleRow()], "otherKeyotherKeyother12", ["https://bark.mangguo.cloud"])).toBeNull();
+    expect(selectSavedSubscription([], KEY, [])).toBeNull();
+    expect(selectSavedSubscription(undefined, KEY, [])).toBeNull();
+  });
+
+  it("maps numeric points to 4-decimal strings and enables payload alerts only", () => {
+    const draft = draftFromSavedSubscription(sampleRow(), ["https://bark.mangguo.cloud"]);
+    expect(draft.targets).toHaveLength(1);
+    expect(draft.targets[0].id).toEqual(expect.any(String));
+    expect(draft.targets[0].point).toEqual({ latitude: "30.6377", longitude: "104.1119" });
+    expect(draft.targets[0].region.city).toBe("成都市");
+    expect(draft.alerts_by_category.earthquake_warning?.enabled).toBe(true);
+    expect(draft.alerts_by_category.earthquake_report).toBeUndefined();
+    expect(draft.bark_url).toBe("https://bark.mangguo.cloud");
+  });
+
+  it("falls back to the first whitelist URL when destination is not listed", () => {
+    const draft = draftFromSavedSubscription(sampleRow(), ["https://api.day.app"]);
+    expect(draft.bark_url).toBe("https://api.day.app");
+  });
+
+  it("canonicalizes the in-memory draft without a storage blob", () => {
     const draft = createEmptyDraft();
     draft.bark_url = "https://bark.example";
-    writeDraft(draft);
-    const stored = JSON.parse(localStorage.getItem(DRAFT_STORAGE_KEY) || "{}");
-    expect(draftOmitsBarkKey(stored)).toBe(true);
-    expect(stored.updated_at).toEqual(expect.any(Number));
-    expect(draftForStorage(draft).bark_url).toBe("https://bark.example");
-    expect(restoreDraftFromStorage().bark_url).toBe("https://bark.example");
+    const snapshot = canonicalDraft(draft);
+    expect(snapshot.bark_url).toBe("https://bark.example");
+    expect(snapshot).not.toHaveProperty("barkKey");
+    expect(draftSignature(draft)).toBe(JSON.stringify(snapshot));
   });
 });

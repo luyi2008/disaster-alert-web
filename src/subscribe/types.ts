@@ -45,6 +45,30 @@ export type AlertRuleDraft = {
   max_center_distance_km?: number | string;
 };
 
+export type SavedDestination = {
+  type?: string;
+  base_url?: string;
+  device_key?: string;
+};
+
+export type SavedSubscriptionTarget = {
+  label?: string;
+  point?: { latitude?: unknown; longitude?: unknown };
+  region?: { province?: string; city?: string; district?: string };
+};
+
+export type SavedSubscription = {
+  destination?: SavedDestination;
+  targets?: SavedSubscriptionTarget[];
+  alerts?: AlertRuleDraft[];
+  created_at?: number;
+  updated_at?: number;
+};
+
+export type SavedSubscriptionsData = {
+  subscriptions?: SavedSubscription[];
+};
+
 export type AlertEntry = {
   enabled: boolean;
   rule: AlertRuleDraft;
