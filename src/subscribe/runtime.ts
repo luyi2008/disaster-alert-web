@@ -99,10 +99,10 @@ export type SubscribeRuntime = {
   };
   lastSubmittedSignature: string;
   lastSubmittedIdentity: string;
-  persistTimer: ReturnType<typeof setTimeout> | null;
   optionCategories: CategoryOption[];
   deviceKey: string;
   barkUrl: string;
+  barkUrls: string[];
   configurationReady: boolean;
   subscriptionRequestInFlight: boolean;
   initializationGeneration: number;
@@ -133,10 +133,10 @@ export function createRuntime(root: HTMLElement, options: MountSubscribeOptions)
     },
     lastSubmittedSignature: "",
     lastSubmittedIdentity: "",
-    persistTimer: null,
     optionCategories: [],
     deviceKey: String(options.deviceKey || ""),
     barkUrl: "",
+    barkUrls: [],
     configurationReady: false,
     subscriptionRequestInFlight: false,
     initializationGeneration: 0,

@@ -1,10 +1,9 @@
 import { bindAlertRules } from "./alerts";
-import { cloneTarget, targetCoordinates, validateLocations } from "./geo";
+import { targetCoordinates, validateLocations } from "./geo";
 import {
+  draftFromSavedSubscription,
   draftSignature,
-  incompleteTarget,
-  restoreDraftFromStorage,
-  writeDraft,
+  selectSavedSubscription,
 } from "./draft";
 import { parseApiResponse } from "./http";
 import { bindLocations } from "./locations";
@@ -15,6 +14,7 @@ import { bindToast } from "./toast";
 import type { MountSubscribeOptions, SubscribeAppHandle } from "./types";
 import { localValidateBarkKey } from "../bark/localValidate";
 import { clearCachedBarkKey, maybeExpireBarkSession } from "../bark/session";
+import { fetchSavedSubscriptions } from "../api";
 
 export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOptions): SubscribeAppHandle {
   const ctx = createRuntime(root, options);
@@ -39,17 +39,6 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
 
   function persistDraft(): void {
     updateDraftStatus();
-    if (ctx.persistTimer) clearTimeout(ctx.persistTimer);
-    ctx.persistTimer = setTimeout(() => {
-      writeDraft(ctx.subscriptionDraft);
-      ctx.persistTimer = null;
-    }, 150);
-  }
-
-  function flushDraft(): void {
-    if (ctx.persistTimer) clearTimeout(ctx.persistTimer);
-    writeDraft(ctx.subscriptionDraft);
-    ctx.persistTimer = null;
   }
 
   const locations = bindLocations(ctx, { persistDraft, show: toast.show });
@@ -96,7 +85,8 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
     if (!res.ok || !json.success || !Array.isArray(data?.bark_urls) || !data.bark_urls.length) {
       throw new Error(json.message || "没有可用的通知地址");
     }
-    const firstUrl = data.bark_urls.find((value): value is string => typeof value === "string" && Boolean(value));
+    ctx.barkUrls = data.bark_urls.filter((value): value is string => typeof value === "string" && Boolean(value));
+    const firstUrl = ctx.barkUrls[0];
     if (!firstUrl) throw new Error("没有可用的通知地址");
     ctx.barkUrl = firstUrl;
     ctx.subscriptionDraft.bark_url = firstUrl;
@@ -106,14 +96,48 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
     const generation = ++ctx.initializationGeneration;
     ctx.configurationReady = false;
     setSubscriptionRequestInFlight(false);
-    return Promise.all([loadBarkUrls(generation), alerts.loadSubscriptionOptions(ctx.subscriptionDraft, generation)])
-      .then(() => {
+    return Promise.all([
+      loadBarkUrls(generation),
+      fetchSavedSubscriptions(ctx.deviceKey).catch(
+        (): Awaited<ReturnType<typeof fetchSavedSubscriptions>> => ({
+          status: 0,
+          body: { success: false, message: "" },
+        }),
+      ),
+    ])
+      .then(async ([, saved]) => {
+        if (generation !== ctx.initializationGeneration) return;
+        if (await maybeExpireBarkSession(ctx.deviceKey, saved.status, "bearer")) {
+          options.onInvalidBarkKey?.();
+          return;
+        }
+        let savedRowApplied = false;
+        if (saved.status === 200 && saved.body.success) {
+          const row = selectSavedSubscription(
+            saved.body.data?.subscriptions,
+            ctx.deviceKey,
+            ctx.barkUrls,
+          );
+          if (row) {
+            const mapped = draftFromSavedSubscription(row, ctx.barkUrls);
+            ctx.subscriptionDraft = mapped;
+            if (mapped.bark_url) ctx.barkUrl = mapped.bark_url;
+            savedRowApplied = true;
+          }
+        } else if (saved.status !== 200) {
+          toast.show(saved.body.message || "无法加载已保存的订阅", "error");
+        }
+        await alerts.loadSubscriptionOptions(ctx.subscriptionDraft, generation);
         if (generation !== ctx.initializationGeneration) return;
         ctx.configurationReady = true;
         setSubscriptionRequestInFlight(false);
+        locations.renderLocations();
         locations.fitTargetMarkers();
+        if (savedRowApplied && ctx.lastSubmittedSignature === "") {
+          ctx.lastSubmittedSignature = draftSignature(ctx.subscriptionDraft);
+          ctx.lastSubmittedIdentity = currentDestinationIdentity();
+        }
         updateDraftStatus();
-        persistDraft();
         toast.dismissPersistentToasts();
       })
       .catch((error: { message?: string }) => {
@@ -197,7 +221,6 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
       ctx.lastSubmittedSignature = submittedSignature;
       ctx.lastSubmittedIdentity = currentDestinationIdentity();
       updateDraftStatus();
-      flushDraft();
       const data = json.data as { saved?: boolean } | undefined;
       if (data?.saved === true) {
         toast.show("订阅已保存，Bark 确认通知已发送", "success");
@@ -224,7 +247,7 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
       toast.show("尚未加载到可用的通知地址", "error");
       return;
     }
-    if (!confirm("确定删除该 Bark 服务与 Key 对应的服务端订阅？当前浏览器中的配置草稿会保留。")) return;
+    if (!confirm("确定删除该 Bark 服务与 Key 对应的服务端订阅？")) return;
     if (ctx.subscriptionRequestInFlight) return;
     setSubscriptionRequestInFlight(true);
     toast.show("正在取消订阅...", "info");
@@ -241,7 +264,7 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
       ctx.lastSubmittedSignature = "";
       ctx.lastSubmittedIdentity = "";
       updateDraftStatus();
-      toast.show("已删除服务端订阅；浏览器配置草稿已保留", "success");
+      toast.show("已删除服务端订阅", "success");
       void status.refreshStatus();
     } catch (error) {
       toast.show((error as { message?: string }).message || "网络请求失败", "error");
@@ -250,22 +273,10 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
     }
   });
 
-  const draft = restoreDraftFromStorage();
-  ctx.subscriptionDraft = draft;
-  const incomplete = incompleteTarget(draft);
-  if (incomplete) {
-    ctx.uiState.activeTargetId = incomplete.id;
-    ctx.uiState.locationMode = "editing";
-    ctx.uiState.editingTarget = cloneTarget(incomplete);
-  }
   locations.renderLocations();
   locations.renderLocationEditor();
   void initializeConfiguration();
   void status.refreshStatus();
-
-  ctx.cleanup.add(() => {
-    if (ctx.persistTimer) clearTimeout(ctx.persistTimer);
-  });
 
   return {
     teardown() {
