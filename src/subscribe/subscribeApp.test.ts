@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { DRAFT_STORAGE_KEY } from "../api";
 import { readCachedBarkKey, writeCachedBarkKey } from "../bark/session";
 import bodyHtml from "./body.html?raw";
 import footerHtml from "./footer.html?raw";
@@ -134,18 +133,6 @@ describe("mountSubscribeApp", () => {
   it("submits deviceKey from options and the first bark URL, ignoring DOM and saved draft URLs", async () => {
     const fetchMock = stubSubscribeFetches();
     vi.stubGlobal("fetch", fetchMock);
-
-    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({
-      schema_version: 3,
-      bark_url: SECOND_URL,
-      targets: [{
-        id: "t1",
-        label: "home",
-        point: { latitude: "35.0000", longitude: "139.0000" },
-        region: { province: "", city: "", district: "" },
-      }],
-      alerts_by_category: {},
-    }));
 
     const host = document.createElement("div");
     fillHost(host);
@@ -296,18 +283,6 @@ describe("mountSubscribeApp", () => {
       return jsonResponse({});
     }));
 
-    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({
-      schema_version: 3,
-      bark_url: FIRST_URL,
-      targets: [{
-        id: "t1",
-        label: "home",
-        point: { latitude: "35.0000", longitude: "139.0000" },
-        region: { province: "", city: "", district: "" },
-      }],
-      alerts_by_category: {},
-    }));
-
     const host = document.createElement("div");
     fillHost(host);
     document.body.append(host);
@@ -348,18 +323,6 @@ describe("mountSubscribeApp", () => {
         return new Response(JSON.stringify({ success: false, message: "Bark 拒绝" }), { status: 502 });
       }
       return jsonResponse({});
-    }));
-
-    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({
-      schema_version: 3,
-      bark_url: FIRST_URL,
-      targets: [{
-        id: "t1",
-        label: "home",
-        point: { latitude: "35.0000", longitude: "139.0000" },
-        region: { province: "", city: "", district: "" },
-      }],
-      alerts_by_category: {},
     }));
 
     const host = document.createElement("div");

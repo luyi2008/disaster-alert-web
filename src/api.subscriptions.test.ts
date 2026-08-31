@@ -17,7 +17,8 @@ describe("fetchSavedSubscriptions", () => {
     const result = await fetchSavedSubscriptions(KEY);
     expect(result.status).toBe(200);
     expect(result.body.success).toBe(false);
-    const [url, init] = fetchMock.mock.calls[0];
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const [url, init] = fetchMock.mock.calls[0]!;
     expect(String(url)).toContain("/api/subscriptions");
     expect(String(url)).not.toContain("device_key=");
     expect(new Headers((init as RequestInit).headers).get("Authorization")).toBe(`Bearer ${KEY}`);
