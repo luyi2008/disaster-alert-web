@@ -9,7 +9,7 @@ describe("fetchSavedSubscriptions", () => {
   });
 
   it("GETs /api/subscriptions with a Bearer header and keeps success: false", async () => {
-    const fetchMock = vi.fn(async () => new Response(
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => new Response(
       JSON.stringify({ success: false, message: "没有订阅" }),
       { status: 200 },
     ));
@@ -21,6 +21,6 @@ describe("fetchSavedSubscriptions", () => {
     const [url, init] = fetchMock.mock.calls[0]!;
     expect(String(url)).toContain("/api/subscriptions");
     expect(String(url)).not.toContain("device_key=");
-    expect(new Headers((init as RequestInit).headers).get("Authorization")).toBe(`Bearer ${KEY}`);
+    expect(new Headers(init?.headers).get("Authorization")).toBe(`Bearer ${KEY}`);
   });
 });
