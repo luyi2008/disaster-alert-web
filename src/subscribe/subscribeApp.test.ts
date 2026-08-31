@@ -195,6 +195,50 @@ describe("mountSubscribeApp", () => {
     app.teardown();
   });
 
+  it("disables adding locations until the server subscription is hydrated", async () => {
+    let resolveSubscriptions!: (response: Response) => void;
+    const subscriptionsResponse = new Promise<Response>((resolve) => {
+      resolveSubscriptions = resolve;
+    });
+    vi.stubGlobal("fetch", vi.fn((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/subscriptions")) return subscriptionsResponse;
+      if (url.includes("/api/bark-urls")) return Promise.resolve(jsonResponse({ bark_urls: [FIRST_URL] }));
+      if (url.includes("/api/subscription-options")) {
+        return Promise.resolve(jsonResponse({ categories: [simpleCategory] }));
+      }
+      if (url.includes("/api/status")) {
+        return Promise.resolve(jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 }));
+      }
+      return Promise.resolve(jsonResponse({}));
+    }));
+
+    const host = document.createElement("div");
+    fillHost(host);
+    document.body.append(host);
+    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceKey: KEY });
+    const startAddLocation = host.querySelector("#start-add-location") as HTMLButtonElement;
+
+    expect(startAddLocation.disabled).toBe(true);
+
+    resolveSubscriptions(jsonResponse({
+      subscriptions: [{
+        destination: { type: "bark", base_url: FIRST_URL, device_key: KEY },
+        targets: [{
+          label: "server home",
+          point: { latitude: 35, longitude: 139 },
+          region: { province: "", city: "", district: "" },
+        }],
+        alerts: [],
+      }],
+    }));
+
+    await vi.waitFor(() => expect(startAddLocation.disabled).toBe(false));
+    expect(host.querySelector("#locations-list")?.textContent).toContain("server home");
+    expect(host.querySelector("#locations-list")?.textContent).toContain("35.0000, 139.0000");
+    app.teardown();
+  });
+
   it("does not treat 200 success:false as a load error", async () => {
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
