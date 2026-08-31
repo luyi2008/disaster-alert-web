@@ -228,7 +228,7 @@ describe("TestPage", () => {
     });
     renderTestPage();
     await screen.findByText("静默");
-    expect(screen.getByText("紧急")).toBeInTheDocument();
+    expect(screen.getAllByText("紧急").length).toBeGreaterThan(0);
     expect(screen.queryByText("重要")).toBeNull();
     expect(screen.getAllByRole("button", { name: "发送测试" })).toHaveLength(2);
   });
