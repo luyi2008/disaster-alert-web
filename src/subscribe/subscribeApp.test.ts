@@ -79,6 +79,19 @@ const simpleCategory = {
 function stubSubscribeFetches() {
   return vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
     const url = String(input);
+    if (url.includes("/api/subscriptions")) {
+      return jsonResponse({
+        subscriptions: [{
+          destination: { type: "bark", base_url: FIRST_URL, device_key: KEY },
+          targets: [{
+            label: "home",
+            point: { latitude: 35, longitude: 139 },
+            region: { province: "", city: "", district: "" },
+          }],
+          alerts: [],
+        }],
+      });
+    }
     if (url.includes("/api/bark-urls")) {
       return jsonResponse({ bark_urls: [FIRST_URL, SECOND_URL] });
     }
@@ -130,7 +143,7 @@ describe("mountSubscribeApp", () => {
     document.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
   });
 
-  it("submits deviceKey from options and the first bark URL, ignoring DOM and saved draft URLs", async () => {
+  it("hydrates and submits the server subscription with bearer authentication", async () => {
     const fetchMock = stubSubscribeFetches();
     vi.stubGlobal("fetch", fetchMock);
 
@@ -168,8 +181,69 @@ describe("mountSubscribeApp", () => {
         base_url: FIRST_URL,
         device_key: KEY,
       });
+      expect(body.targets[0].point).toEqual({ latitude: 35, longitude: 139 });
     });
 
+    const subscriptionsCall = fetchMock.mock.calls.find(([input]) => (
+      String(input).includes("/api/subscriptions")
+    ));
+    expect(subscriptionsCall).toBeDefined();
+    expect(String(subscriptionsCall?.[0])).not.toContain("device_key=");
+    expect(new Headers((subscriptionsCall?.[1] as RequestInit | undefined)?.headers).get("Authorization"))
+      .toBe(`Bearer ${KEY}`);
+
+    app.teardown();
+  });
+
+  it("does not treat 200 success:false as a load error", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/subscriptions")) {
+        return new Response(JSON.stringify({ success: false, message: "没有订阅" }), { status: 200 });
+      }
+      if (url.includes("/api/bark-urls")) return jsonResponse({ bark_urls: [FIRST_URL] });
+      if (url.includes("/api/subscription-options")) return jsonResponse({ categories: [simpleCategory] });
+      if (url.includes("/api/status")) return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
+      return jsonResponse({});
+    }));
+    const host = document.createElement("div");
+    fillHost(host);
+    document.body.append(host);
+    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceKey: KEY });
+    const submit = host.querySelector("#submit") as HTMLButtonElement;
+    await vi.waitFor(() => expect(submit.disabled).toBe(false));
+    expect(host.textContent).not.toContain("无法加载已保存的订阅");
+    app.teardown();
+  });
+
+  it("expires the Bark session when subscriptions return 401 and /check rejects the key", async () => {
+    const onInvalidBarkKey = vi.fn();
+    writeCachedBarkKey(KEY);
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/bark-check")) {
+        return new Response(JSON.stringify({
+          data: { device_key: KEY, valid: true, registered: false, reason: null },
+        }));
+      }
+      if (url.includes("/api/subscriptions")) {
+        return new Response(JSON.stringify({ success: false, message: "unauthorized" }), { status: 401 });
+      }
+      if (url.includes("/api/bark-urls")) return jsonResponse({ bark_urls: [FIRST_URL] });
+      if (url.includes("/api/status")) return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
+      return jsonResponse({});
+    }));
+    const host = document.createElement("div");
+    fillHost(host);
+    document.body.append(host);
+    const app = mountSubscribeApp(host, {
+      api: "",
+      instanceTermsAccepted: true,
+      deviceKey: KEY,
+      onInvalidBarkKey,
+    });
+    await vi.waitFor(() => expect(onInvalidBarkKey).toHaveBeenCalledOnce());
+    expect(readCachedBarkKey()).toBeNull();
     app.teardown();
   });
 
@@ -268,6 +342,19 @@ describe("mountSubscribeApp", () => {
           data: { device_key: KEY, valid: true, registered: false, reason: null },
         }));
       }
+      if (url.includes("/api/subscriptions")) {
+        return jsonResponse({
+          subscriptions: [{
+            destination: { type: "bark", base_url: FIRST_URL, device_key: KEY },
+            targets: [{
+              label: "home",
+              point: { latitude: 35, longitude: 139 },
+              region: { province: "", city: "", district: "" },
+            }],
+            alerts: [],
+          }],
+        });
+      }
       if (url.includes("/api/bark-urls")) {
         return jsonResponse({ bark_urls: [FIRST_URL] });
       }
@@ -309,6 +396,19 @@ describe("mountSubscribeApp", () => {
         return new Response(JSON.stringify({
           data: { device_key: KEY, valid: true, registered: true, reason: null },
         }));
+      }
+      if (url.includes("/api/subscriptions")) {
+        return jsonResponse({
+          subscriptions: [{
+            destination: { type: "bark", base_url: FIRST_URL, device_key: KEY },
+            targets: [{
+              label: "home",
+              point: { latitude: 35, longitude: 139 },
+              region: { province: "", city: "", district: "" },
+            }],
+            alerts: [],
+          }],
+        });
       }
       if (url.includes("/api/bark-urls")) {
         return jsonResponse({ bark_urls: [FIRST_URL] });
