@@ -27,7 +27,7 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
 
   function updateDraftStatus(): void {
     if (!ctx.instanceTermsAccepted) {
-      el.draftStatus.textContent = "当前实例未确认部署责任，不能新增或覆盖订阅；仍可取消已有订阅。";
+      el.draftStatus.textContent = "当前实例未确认部署责任，不能新增或保存订阅；仍可取消已有订阅。";
     } else if (!ctx.lastSubmittedSignature) {
       el.draftStatus.textContent = "";
     } else if (draftSignature(ctx.subscriptionDraft) === ctx.lastSubmittedSignature && currentDestinationIdentity() === ctx.lastSubmittedIdentity) {
@@ -128,7 +128,9 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
         } else if (saved.status !== 200) {
           toast.show(saved.body.message || "无法加载已保存的订阅", "error");
         }
-        await alerts.loadSubscriptionOptions(ctx.subscriptionDraft, generation);
+        await alerts.loadSubscriptionOptions(ctx.subscriptionDraft, generation, {
+          missingEnabled: !savedRowApplied,
+        });
         if (generation !== ctx.initializationGeneration) return;
         ctx.configurationReady = true;
         setSubscriptionRequestInFlight(false);
@@ -152,7 +154,7 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
   ctx.cleanup.listen(el.form, "submit", async (event) => {
     event.preventDefault();
     if (!ctx.instanceTermsAccepted) {
-      toast.show("当前实例尚未确认部署责任，不能新增或覆盖订阅", "error");
+      toast.show("当前实例尚未确认部署责任，不能新增或保存订阅", "error");
       return;
     }
     if (!ctx.configurationReady) {
@@ -201,7 +203,7 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
       alerts: alerts.enabledAlertRules().map(alerts.alertRuleForPayload),
     };
     setSubscriptionRequestInFlight(true);
-    toast.show("正在覆盖保存订阅...", "info");
+    toast.show("正在保存订阅...", "info");
     try {
       const res = await fetch(`${ctx.api}/api/subscribe`, {
         method: "POST",

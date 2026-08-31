@@ -62,7 +62,7 @@ export function TermsDialog({ open }: TermsDialogProps) {
       </div>
       <p id="instance-terms-summary">
         此实例未设置 <code>INSTANCE_TERMS_ACCEPTED=true</code>
-        。服务仍在运行，但新增和覆盖订阅已在服务端禁用。
+        。服务仍在运行，但新增和保存订阅已在服务端禁用。
       </p>
       <ul>
         <li>

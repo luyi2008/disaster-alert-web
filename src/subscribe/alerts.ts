@@ -1,5 +1,6 @@
 import { escapeHtml } from "./html";
 import { parseApiResponse } from "./http";
+import { mergeAlertsByCategory } from "./mergeAlerts";
 import { animateHeight } from "./motion";
 import type { SubscribeRuntime } from "./runtime";
 import type {
@@ -15,7 +16,11 @@ import type {
 const notifyLevelOrder: NotifyLevel[] = ["passive", "active", "critical"];
 
 export type AlertController = {
-  loadSubscriptionOptions: (draft: SubscriptionDraft, generation: number) => Promise<void>;
+  loadSubscriptionOptions: (
+    draft: SubscriptionDraft,
+    generation: number,
+    mergeOptions: { missingEnabled: boolean },
+  ) => Promise<void>;
   renderDisasterGroups: () => void;
   validateAlertRules: () => string;
   enabledAlertRules: () => AlertRuleDraft[];
@@ -377,35 +382,26 @@ export function bindAlertRules(
     if (ctx.notifyBandsEl) renderNotifyBands();
   }
 
-  async function loadSubscriptionOptions(draft: SubscriptionDraft, generation: number): Promise<void> {
+  async function loadSubscriptionOptions(
+    draft: SubscriptionDraft,
+    generation: number,
+    mergeOptions: { missingEnabled: boolean },
+  ): Promise<void> {
     const res = await fetch(`${ctx.api}/api/subscription-options`);
     const json = await parseApiResponse(res);
     if (generation !== ctx.initializationGeneration) return;
     const data = json.data as { categories?: CategoryOption[] } | undefined;
     if (!res.ok || !json.success || !Array.isArray(data?.categories)) throw new Error(json.message || "无法获取灾害来源");
     ctx.optionCategories = data.categories;
-    const legacyConfigured = Array.isArray(draft.legacy_alerts) ? draft.legacy_alerts : [];
-    const configuredByCategory = new Map(legacyConfigured
-      .filter((alert) => alert && typeof alert === "object" && typeof alert.category === "string")
-      .map((alert) => [alert.category, alert]));
-    const legacyDisabled = Array.isArray(draft.legacy_disabled_alerts) ? draft.legacy_disabled_alerts : [];
-    const disabledByCategory = new Map(legacyDisabled
-      .filter((alert) => alert && typeof alert === "object" && typeof alert.category === "string")
-      .map((alert) => [alert.category, alert]));
     const savedEntries = draft.alerts_by_category && typeof draft.alerts_by_category === "object"
       ? draft.alerts_by_category
       : {};
-    ctx.subscriptionDraft.alerts_by_category = Object.fromEntries(ctx.optionCategories.map((category) => {
-      const savedEntry = savedEntries[category.id];
-      const legacyRule = configuredByCategory.get(category.id) || disabledByCategory.get(category.id);
-      const candidate = savedEntry?.rule || legacyRule || category.default_alert;
-      const enabled = savedEntry && typeof savedEntry.enabled === "boolean"
-        ? savedEntry.enabled
-        : legacyConfigured.length || legacyDisabled.length
-          ? configuredByCategory.has(category.id)
-          : true;
-      return [category.id, { enabled, rule: sanitizeAlertRule(category, candidate) }];
-    }));
+    ctx.subscriptionDraft.alerts_by_category = mergeAlertsByCategory(
+      ctx.optionCategories,
+      savedEntries,
+      mergeOptions.missingEnabled,
+      sanitizeAlertRule,
+    );
     delete ctx.subscriptionDraft.legacy_alerts;
     delete ctx.subscriptionDraft.legacy_disabled_alerts;
     renderDisasterGroups();
