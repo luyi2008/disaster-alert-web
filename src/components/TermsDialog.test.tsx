@@ -1,7 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { TermsDialog } from "./TermsDialog";
-import { BARK_KEY_STORAGE_KEY } from "../bark/session";
 
 describe("TermsDialog", () => {
   it("hides when the instance has accepted terms", () => {
@@ -17,8 +16,3 @@ describe("TermsDialog", () => {
   });
 });
 
-describe("login identity storage", () => {
-  it("keeps the Bark Key in its own session key", () => {
-    expect(BARK_KEY_STORAGE_KEY).toBe("disaster_bark_key");
-  });
-});

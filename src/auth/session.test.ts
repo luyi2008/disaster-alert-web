@@ -23,7 +23,7 @@ describe("getSession", () => {
 
 describe("signOut", () => {
   it("POSTs /api/auth/sign-out with credentials", async () => {
-    const fetchMock = vi.fn(async () => new Response(null, { status: 200 }));
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => new Response(null, { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
     await signOut();
     expect(String(fetchMock.mock.calls[0]![0])).toContain("/api/auth/sign-out");

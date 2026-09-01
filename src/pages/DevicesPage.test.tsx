@@ -32,7 +32,7 @@ describe("DevicesPage", () => {
   });
 
   it("does not POST a short token", async () => {
-    const fetchMock = vi.fn(async () => json({ devices: [] }));
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => json({ devices: [] }));
     vi.stubGlobal("fetch", fetchMock);
     render(
       <MemoryRouter initialEntries={["/devices"]}>
@@ -50,7 +50,7 @@ describe("DevicesPage", () => {
 
   it("POSTs only the token string when binding", async () => {
     const token = "ynJ5Ft4atkMkWeo2PAvFhF";
-    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
       if (init?.method === "POST") {
         return json({ device: { id: "dev-1", userId: "u1", name: "设备1", createdAt: 1, updatedAt: 1 } });
       }

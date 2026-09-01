@@ -25,19 +25,9 @@ export function draftSignature(draft: SubscriptionDraft): string {
 
 export function selectSavedSubscription(
   subscriptions: SavedSubscription[] | undefined,
-  deviceKey: string,
-  barkUrls: string[],
 ): SavedSubscription | null {
   const list = Array.isArray(subscriptions) ? subscriptions : [];
-  const byKey = list.filter((row) => row.destination?.device_key === deviceKey);
-  if (!byKey.length) {
-    return null;
-  }
-  const allow = new Set(barkUrls);
-  const preferred = byKey.filter((row) => (
-    typeof row.destination?.base_url === "string" && allow.has(row.destination.base_url)
-  ));
-  return preferred[0] || byKey[0];
+  return list[0] ?? null;
 }
 
 function formatCoord(value: unknown): string {
@@ -45,12 +35,10 @@ function formatCoord(value: unknown): string {
   return Number.isFinite(n) ? n.toFixed(4) : "";
 }
 
-export function draftFromSavedSubscription(row: SavedSubscription, barkUrls: string[]): SubscriptionDraft {
+export function draftFromSavedSubscription(row: SavedSubscription): SubscriptionDraft {
   const draft = createEmptyDraft();
   const base = row.destination?.base_url;
-  draft.bark_url = typeof base === "string" && barkUrls.includes(base)
-    ? base
-    : (barkUrls[0] || "");
+  draft.bark_url = typeof base === "string" ? base : "";
   const sourceTargets = Array.isArray(row.targets) ? row.targets : [];
   draft.targets = sourceTargets.slice(0, 3).map((target) => {
     const created = createTarget();

@@ -1,10 +1,10 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { writeCachedBarkKey, readCachedBarkKey } from "../bark/session";
 import { formatDraftUpdatedAt } from "../simulate/subscriptionPreview";
 import { TestPage } from "./TestPage";
 
+const DEVICE_ID = "11111111-1111-1111-1111-111111111111";
 const KEY = "ynJ5Ft4atkMkWeo2PAvFhF";
 const UPDATED_AT = 1_700_000_000_000;
 
@@ -86,24 +86,16 @@ function stubApis(options: {
   history?: unknown;
   simulateStatus?: number;
   historyStatus?: number;
-  check?: { valid: boolean; registered: boolean };
   subscriptions?: unknown;
   subscriptionsSuccess?: boolean;
   subscriptionsStatus?: number;
 }) {
   const fetchMock = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
     const url = String(input);
-    if (url.includes("/bark-check")) {
-      const check = options.check ?? { valid: true, registered: true };
+    if (url === "/api/devices" || /\/api\/devices$/.test(url)) {
       return jsonResponse({
-        device_key: KEY,
-        valid: check.valid,
-        registered: check.registered,
-        reason: null,
+        devices: [{ id: DEVICE_ID, userId: "u1", name: "设备1", createdAt: 1, updatedAt: 1 }],
       });
-    }
-    if (url.includes("/api/bark-urls")) {
-      return jsonResponse({ bark_urls: ["https://bark.example"] });
     }
     if (url.includes("/api/subscription-options")) {
       return jsonResponse(warningBands(options.bands ?? [
@@ -112,28 +104,28 @@ function stubApis(options: {
         { min: 3, max: 7, interruption_level: "critical" },
       ]));
     }
-    if (url.includes("/api/subscriptions")) {
+    if (url.includes("/devices/") && url.endsWith("/subscription")) {
       const status = options.subscriptionsStatus ?? 200;
       const success = options.subscriptionsSuccess ?? status < 400;
       return envelopeResponse(
         success,
         options.subscriptions ?? savedSubscriptions(),
         status,
-        status === 401 ? "缺少或无效的 Bearer Bark Key" : "ok",
+        status === 401 ? "未登录" : "ok",
       );
     }
     if (url.includes("/api/history")) {
       const status = options.historyStatus ?? 200;
-      return jsonResponse(options.history ?? historyRecords(), status, status === 401 ? "缺少或无效的 Bearer Bark Key" : "ok");
+      return jsonResponse(options.history ?? historyRecords(), status);
     }
-    if (url.includes("/api/simulate")) {
+    if (url.includes("/simulate")) {
       const status = options.simulateStatus ?? 200;
       return jsonResponse({
         event_id: "SIM-TEST",
         pushed: 1,
         skipped: 0,
         temporary: false,
-      }, status, status === 401 ? "缺少或无效的 Bearer Bark Key" : "已向目标设备尝试推送");
+      }, status, status === 401 ? "未登录" : "已向目标设备尝试推送");
     }
     return jsonResponse({});
   });
@@ -143,10 +135,11 @@ function stubApis(options: {
 
 function renderTestPage() {
   return render(
-    <MemoryRouter initialEntries={[{ pathname: "/subscribe/test", state: { barkKey: KEY } }]}>
+    <MemoryRouter initialEntries={[`/devices/${DEVICE_ID}/subscribe/test`]}>
       <Routes>
-        <Route path="/" element={<div>entry</div>} />
-        <Route path="/subscribe/test" element={<TestPage />} />
+        <Route path="/login" element={<div>login</div>} />
+        <Route path="/devices" element={<div>devices</div>} />
+        <Route path="/devices/:id/subscribe/test" element={<TestPage />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -155,40 +148,25 @@ function renderTestPage() {
 describe("TestPage", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
-    localStorage.clear();
-  });
-
-  it("redirects to the entry page without a validated bark key", () => {
-    render(
-      <MemoryRouter initialEntries={["/subscribe/test"]}>
-        <Routes>
-          <Route path="/" element={<div>entry</div>} />
-          <Route path="/subscribe/test" element={<TestPage />} />
-        </Routes>
-      </MemoryRouter>,
-    );
-    expect(screen.getByText("entry")).toBeInTheDocument();
   });
 
   it("previews saved subscription fields and renders three dynamic levels", async () => {
     const fetchMock = stubApis({});
     renderTestPage();
 
-    expect(screen.getAllByText("Bark · ••••FhF").length).toBeGreaterThan(0);
-    expect(screen.queryByText("订阅项目与通知规则")).toBeNull();
+    expect(await screen.findAllByText("设备1")).not.toHaveLength(0);
     expect(await screen.findByText("上海家中 · 上海市 · 浦东新区")).toBeInTheDocument();
     expect(screen.getByText("地震预警")).toBeInTheDocument();
     expect(screen.getByText("3–7")).toBeInTheDocument();
     expect(screen.getByText(`上次更新 ${formatDraftUpdatedAt(UPDATED_AT)}`)).toBeInTheDocument();
-    const subscriptionsCall = fetchMock.mock.calls.find(([input]) => String(input).includes("/api/subscriptions"));
-    expect(subscriptionsCall).toBeTruthy();
-    expect(new Headers(subscriptionsCall?.[1]?.headers).get("Authorization")).toBe(`Bearer ${KEY}`);
+    const hydrateCall = fetchMock.mock.calls.find(([input]) => String(input).endsWith("/subscription"));
+    expect(hydrateCall).toBeTruthy();
+    expect(new Headers(hydrateCall?.[1]?.headers).get("Authorization")).toBeNull();
     await screen.findByText("bark.example");
     expect(screen.getByText("静默")).toBeInTheDocument();
     expect(screen.getByText("重要")).toBeInTheDocument();
     expect(screen.getAllByText("紧急").length).toBeGreaterThan(0);
     expect(screen.getAllByRole("button", { name: "发送测试" })).toHaveLength(3);
-    expect(screen.getByText(/本服务仅用于灾害信息转发与个人提醒/)).toBeInTheDocument();
   });
 
   it("shows the server-only empty preview when subscriptions returns success false", async () => {
@@ -198,51 +176,30 @@ describe("TestPage", () => {
     });
     renderTestPage();
 
-    await screen.findByText("bark.example");
-    expect(await screen.findByText("尚未选择地点")).toBeInTheDocument();
+    expect(screen.getByText("模拟接口只认本实例已保存的订阅，请先回到订阅页保存。")).toBeInTheDocument();
     expect(screen.getByText("尚未配置规则")).toBeInTheDocument();
     expect(screen.getByText("模拟接口只认本实例已保存的订阅，请先回到订阅页保存。")).toBeInTheDocument();
-    expect(screen.queryByText("ok")).toBeNull();
   });
 
-  it("expires the session when loading subscriptions returns 401 and check rejects the key", async () => {
-    writeCachedBarkKey(KEY);
-    stubApis({
-      subscriptionsStatus: 401,
-      check: { valid: true, registered: false },
-    });
+  it("goes to login when subscription GET returns 401", async () => {
+    stubApis({ subscriptionsStatus: 401 });
     renderTestPage();
-
-    expect(await screen.findByText("entry")).toBeInTheDocument();
-    expect(readCachedBarkKey()).toBeNull();
+    expect(await screen.findByText("login")).toBeInTheDocument();
   });
 
-  it("renders only the levels returned by subscription options", async () => {
-    stubApis({
-      bands: [
-        { min: 1, max: 2, interruption_level: "passive" },
-        { min: 3, max: 7, interruption_level: "critical" },
-      ],
-    });
-    renderTestPage();
-    await screen.findByText("静默");
-    expect(screen.getAllByText("紧急").length).toBeGreaterThan(0);
-    expect(screen.queryByText("重要")).toBeNull();
-    expect(screen.getAllByRole("button", { name: "发送测试" })).toHaveLength(2);
-  });
-
-  it("posts notify_level with the current bearer key", async () => {
+  it("posts notify_level to the device simulate route", async () => {
     const fetchMock = stubApis({});
     renderTestPage();
     const buttons = await screen.findAllByRole("button", { name: "发送测试" });
     fireEvent.click(buttons[1]);
     await waitFor(() => {
       const simulateCall = fetchMock.mock.calls.find(([input, init]) => (
-        String(input).includes("/api/simulate?notify_level=active") && (init as RequestInit | undefined)?.method === "POST"
+        String(input).includes(`/api/devices/${DEVICE_ID}/simulate?notify_level=active`)
+        && (init as RequestInit | undefined)?.method === "POST"
       ));
       expect(simulateCall).toBeTruthy();
-      const headers = new Headers(simulateCall?.[1]?.headers);
-      expect(headers.get("Authorization")).toBe(`Bearer ${KEY}`);
+      expect(simulateCall?.[1]?.credentials).toBe("include");
+      expect(new Headers(simulateCall?.[1]?.headers).get("Authorization")).toBeNull();
     });
     expect(await screen.findByText(/已向目标设备尝试推送/)).toBeInTheDocument();
   });
@@ -256,50 +213,20 @@ describe("TestPage", () => {
     await waitFor(() => {
       const simulateCall = fetchMock.mock.calls.find(([input, init]) => {
         const url = String(input);
-        return url.includes("/api/simulate?")
+        return url.includes(`/api/devices/${DEVICE_ID}/simulate?`)
           && url.includes("source=major")
           && url.includes("key=wenchuan-2008")
           && (init as RequestInit | undefined)?.method === "POST";
       });
       expect(simulateCall).toBeTruthy();
-      const headers = new Headers(simulateCall?.[1]?.headers);
-      expect(headers.get("Authorization")).toBe(`Bearer ${KEY}`);
     });
   });
 
-  it("opens from a cached key without location state", async () => {
-    writeCachedBarkKey(KEY);
-    stubApis({});
-    render(
-      <MemoryRouter initialEntries={["/subscribe/test"]}>
-        <Routes>
-          <Route path="/" element={<div>entry</div>} />
-          <Route path="/subscribe/test" element={<TestPage />} />
-        </Routes>
-      </MemoryRouter>,
-    );
-    expect(screen.getAllByText("Bark · ••••FhF").length).toBeGreaterThan(0);
-    await screen.findByText("静默");
-  });
-
-  it("expires the session when simulate 401 and /check rejects the key", async () => {
-    writeCachedBarkKey(KEY);
-    stubApis({ simulateStatus: 401, check: { valid: true, registered: false } });
+  it("goes to login when simulate returns 401", async () => {
+    stubApis({ simulateStatus: 401 });
     renderTestPage();
     const buttons = await screen.findAllByRole("button", { name: "发送测试" });
     fireEvent.click(buttons[0]);
-    expect(await screen.findByText("entry")).toBeInTheDocument();
-    expect(readCachedBarkKey()).toBeNull();
-  });
-
-  it("keeps the session when simulate 401 but /check still accepts the key", async () => {
-    writeCachedBarkKey(KEY);
-    stubApis({ simulateStatus: 401, check: { valid: true, registered: true } });
-    renderTestPage();
-    const buttons = await screen.findAllByRole("button", { name: "发送测试" });
-    fireEvent.click(buttons[0]);
-    expect(await screen.findByText("缺少或无效的 Bearer Bark Key")).toBeInTheDocument();
-    expect(readCachedBarkKey()).toBe(KEY);
-    expect(screen.queryByText("entry")).toBeNull();
+    expect(await screen.findByText("login")).toBeInTheDocument();
   });
 });

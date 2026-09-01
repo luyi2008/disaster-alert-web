@@ -1,61 +1,49 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
-import { afterEach, describe, expect, it } from "vitest";
-import { readCachedBarkKey, writeCachedBarkKey } from "../bark/session";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { DeviceIdentity } from "./DeviceIdentity";
 
-const KEY = "ynJ5Ft4atkMkWeo2PAvFhF";
+const DEVICE_ID = "11111111-1111-1111-1111-111111111111";
 
 afterEach(() => {
-  localStorage.clear();
+  vi.unstubAllGlobals();
 });
 
 describe("DeviceIdentity", () => {
-  it("shows a masked Bark ID without an app label", () => {
+  it("shows the device name and account actions", () => {
     const { container } = render(
       <MemoryRouter>
-        <DeviceIdentity barkId={KEY} />
+        <DeviceIdentity deviceId={DEVICE_ID} deviceName="设备1" />
       </MemoryRouter>,
     );
-    expect(screen.getByText("Bark · ••••FhF")).toBeInTheDocument();
-    expect(screen.queryByText("通知 APP：Bark")).toBeNull();
-    expect(screen.queryByText(`Bark ID：${KEY}`)).toBeNull();
-    expect(screen.getByRole("link", { name: "测试" })).toHaveAttribute("href", "/subscribe/test");
-    expect(screen.getByRole("link", { name: "更换设备" })).toHaveAttribute("href", "/");
-    expect(screen.queryByRole("button", { name: "重新加载" })).toBeNull();
+    expect(screen.getByText("设备1")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "测试" })).toHaveAttribute("href", `/devices/${DEVICE_ID}/subscribe/test`);
+    expect(screen.getByRole("link", { name: "换设备" })).toHaveAttribute("href", "/devices");
+    expect(screen.getByRole("button", { name: "登出" })).toBeInTheDocument();
     expect(container.querySelector("input")).toBeNull();
-    expect(container.querySelector("select")).toBeNull();
   });
 
-  it("places test before change-device", () => {
+  it("signs out and goes to login", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 200 })));
     render(
-      <MemoryRouter>
-        <DeviceIdentity barkId={KEY} />
+      <MemoryRouter initialEntries={["/devices/x/subscribe"]}>
+        <Routes>
+          <Route path="/login" element={<div>login</div>} />
+          <Route path="/devices/x/subscribe" element={<DeviceIdentity deviceId={DEVICE_ID} deviceName="设备1" />} />
+        </Routes>
       </MemoryRouter>,
     );
-    const testLink = screen.getByRole("link", { name: "测试" });
-    const changeDevice = screen.getByRole("link", { name: "更换设备" });
-    expect(testLink.compareDocumentPosition(changeDevice) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  });
-
-  it("clears the cached Bark Key when changing device", () => {
-    writeCachedBarkKey(KEY);
-    render(
-      <MemoryRouter>
-        <DeviceIdentity barkId={KEY} />
-      </MemoryRouter>,
-    );
-    fireEvent.click(screen.getByRole("link", { name: "更换设备" }));
-    expect(readCachedBarkKey()).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "登出" }));
+    expect(await screen.findByText("login")).toBeInTheDocument();
   });
 
   it("shows a back-to-subscribe link on the test page", () => {
     render(
       <MemoryRouter>
-        <DeviceIdentity barkId={KEY} currentPage="test" />
+        <DeviceIdentity deviceId={DEVICE_ID} deviceName="设备1" currentPage="test" />
       </MemoryRouter>,
     );
-    expect(screen.getByRole("link", { name: "返回订阅" })).toHaveAttribute("href", "/subscribe");
+    expect(screen.getByRole("link", { name: "返回订阅" })).toHaveAttribute("href", `/devices/${DEVICE_ID}/subscribe`);
     expect(screen.queryByRole("link", { name: "测试" })).toBeNull();
   });
 });

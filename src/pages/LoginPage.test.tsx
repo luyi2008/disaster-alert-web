@@ -20,7 +20,7 @@ function renderLogin() {
 
 describe("LoginPage", () => {
   it("does not send OTP for an invalid phone number", () => {
-    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
       if (String(input).includes("/api/auth/mock/wechat/ticket")) {
         return new Response(JSON.stringify({ success: true, data: { ticketId: "ticket-1" } }), { status: 200 });
       }
@@ -35,7 +35,7 @@ describe("LoginPage", () => {
   });
 
   it("verifies OTP and goes to devices", async () => {
-    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
       const url = String(input);
       if (url.includes("/api/auth/mock/wechat/ticket")) {
         return new Response(JSON.stringify({ success: true, data: { ticketId: "ticket-1" } }), { status: 200 });
@@ -62,7 +62,7 @@ describe("LoginPage", () => {
   });
 
   it("confirms the mock WeChat ticket and goes to devices", async () => {
-    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
       const url = String(input);
       if (url.includes("/api/auth/mock/wechat/ticket")) {
         return new Response(JSON.stringify({ success: true, data: { ticketId: "ticket-1" } }), { status: 200 });

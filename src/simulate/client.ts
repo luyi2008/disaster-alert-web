@@ -1,5 +1,6 @@
 import type { ApiEnvelope } from "../api";
 import { apiUrl } from "../api";
+import { bffFetch } from "../auth/session";
 import { parseApiResponse } from "../subscribe/http";
 
 export type SimulateResult = {
@@ -39,25 +40,10 @@ export type SimulateCallResult<T> = {
   body: ApiEnvelope<T>;
 };
 
-function withBarkAuth(barkKey: string, init: RequestInit = {}): RequestInit {
-  const headers = new Headers(init.headers);
-  headers.set("Authorization", `Bearer ${barkKey}`);
-  return { ...init, headers };
-}
-
-async function requestEnvelope<T>(path: string, init?: RequestInit): Promise<SimulateCallResult<T>> {
-  const response = await fetch(apiUrl(path), init);
+async function requestEnvelope<T>(path: string, init?: RequestInit, viaBff = false): Promise<SimulateCallResult<T>> {
+  const response = viaBff ? await bffFetch(path, init) : await fetch(apiUrl(path), init);
   const body = await parseApiResponse(response) as ApiEnvelope<T>;
   return { status: response.status, body };
-}
-
-export async function fetchBarkUrls(): Promise<string[]> {
-  const { body } = await requestEnvelope<{ bark_urls?: unknown }>("/api/bark-urls");
-  const urls = body.data?.bark_urls;
-  if (!body.success || !Array.isArray(urls)) {
-    return [];
-  }
-  return urls.filter((item): item is string => typeof item === "string" && Boolean(item));
 }
 
 export async function fetchSubscriptionOptions(): Promise<unknown> {
@@ -68,34 +54,30 @@ export async function fetchSubscriptionOptions(): Promise<unknown> {
   return body.data ?? {};
 }
 
-export async function fetchHistoryCatalog(
-  barkKey: string,
-  source = "major",
-): Promise<SimulateCallResult<HistoryCatalog>> {
-  return requestEnvelope<HistoryCatalog>(
-    `/api/history?source=${encodeURIComponent(source)}`,
-    withBarkAuth(barkKey),
-  );
+export async function fetchHistoryCatalog(source = "major"): Promise<SimulateCallResult<HistoryCatalog>> {
+  return requestEnvelope<HistoryCatalog>(`/api/history?source=${encodeURIComponent(source)}`);
 }
 
 export async function simulateNotifyLevel(
-  barkKey: string,
+  deviceId: string,
   level: string,
 ): Promise<SimulateCallResult<SimulateResult>> {
   return requestEnvelope<SimulateResult>(
-    `/api/simulate?notify_level=${encodeURIComponent(level)}`,
-    withBarkAuth(barkKey, { method: "POST" }),
+    `/api/devices/${encodeURIComponent(deviceId)}/simulate?notify_level=${encodeURIComponent(level)}`,
+    { method: "POST", body: "{}" },
+    true,
   );
 }
 
 export async function simulateHistoryReplay(
-  barkKey: string,
+  deviceId: string,
   source: string,
   key: string,
 ): Promise<SimulateCallResult<SimulateResult>> {
   const query = new URLSearchParams({ source, key });
   return requestEnvelope<SimulateResult>(
-    `/api/simulate?${query}`,
-    withBarkAuth(barkKey, { method: "POST" }),
+    `/api/devices/${encodeURIComponent(deviceId)}/simulate?${query}`,
+    { method: "POST", body: "{}" },
+    true,
   );
 }

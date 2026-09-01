@@ -1,14 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { readCachedBarkKey, writeCachedBarkKey } from "../bark/session";
 import bodyHtml from "./body.html?raw";
 import footerHtml from "./footer.html?raw";
 import headerHtml from "./header.html?raw";
 import { mountSubscribeApp } from "./subscribeApp";
 
 const { mapRemove } = vi.hoisted(() => ({ mapRemove: vi.fn() }));
+const DEVICE_ID = "11111111-1111-1111-1111-111111111111";
 const KEY = "ynJ5Ft4atkMkWeo2PAvFhF";
 const FIRST_URL = "https://bark.first.example";
-const SECOND_URL = "https://bark.second.example";
 
 vi.mock("leaflet", () => {
   const map = {
@@ -120,13 +119,10 @@ function savedRow(alerts: unknown[] = [simpleAlert]) {
 function stubSubscribeFetches() {
   return vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
     const url = String(input);
-    if (url.includes("/api/subscriptions")) {
+    if (url.includes("/devices/") && url.endsWith("/subscription")) {
       return jsonResponse({
         subscriptions: [savedRow()],
       });
-    }
-    if (url.includes("/api/bark-urls")) {
-      return jsonResponse({ bark_urls: [FIRST_URL, SECOND_URL] });
     }
     if (url.includes("/api/subscription-options")) {
       return jsonResponse({ categories: [simpleCategory] });
@@ -137,7 +133,7 @@ function stubSubscribeFetches() {
         total_subscriptions: 0,
       });
     }
-    if (url.includes("/api/subscribe")) {
+    if (url.includes("/subscribe") && !url.includes("subscription-options")) {
       return jsonResponse({ saved: true });
     }
     return jsonResponse({});
@@ -163,7 +159,7 @@ describe("mountSubscribeApp", () => {
     fillHost(host);
     document.body.append(host);
 
-    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceKey: KEY });
+    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceId: DEVICE_ID });
     const form = host.querySelector("#subscribe-form");
     expect(form).not.toBe(decoy);
     expect((form as HTMLFormElement | null)?.id).toBe("subscribe-form");
@@ -176,25 +172,18 @@ describe("mountSubscribeApp", () => {
     document.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
   });
 
-  it("hydrates and submits the server subscription with bearer authentication", async () => {
+  it("hydrates and submits the device subscription through the BFF", async () => {
     const fetchMock = stubSubscribeFetches();
     vi.stubGlobal("fetch", fetchMock);
 
     const host = document.createElement("div");
     fillHost(host);
-    const decoyKey = document.createElement("input");
-    decoyKey.id = "bark-id";
-    decoyKey.value = "WRONGKEYWRONGKEYWRONG1";
-    const decoyUrl = document.createElement("select");
-    decoyUrl.id = "bark-url";
-    decoyUrl.innerHTML = `<option value="${SECOND_URL}" selected>${SECOND_URL}</option>`;
-    host.append(decoyKey, decoyUrl);
     document.body.append(host);
 
     const app = mountSubscribeApp(host, {
       api: "",
       instanceTermsAccepted: true,
-      deviceKey: KEY,
+      deviceId: DEVICE_ID,
     });
 
     const submit = host.querySelector("#submit") as HTMLButtonElement;
@@ -203,27 +192,22 @@ describe("mountSubscribeApp", () => {
 
     await vi.waitFor(() => {
       const subscribeCall = fetchMock.mock.calls.find(([input, init]) => (
-        String(input).includes("/api/subscribe") && (init as RequestInit | undefined)?.method === "POST"
+        String(input).includes(`/api/devices/${DEVICE_ID}/subscribe`) && (init as RequestInit | undefined)?.method === "POST"
       ));
       if (!subscribeCall) {
         throw new Error("missing subscribe request");
       }
       const body = JSON.parse(String((subscribeCall[1] as RequestInit).body));
-      expect(body.destination).toEqual({
-        type: "bark",
-        base_url: FIRST_URL,
-        device_key: KEY,
-      });
+      expect(body.destination).toBeUndefined();
       expect(body.targets[0].point).toEqual({ latitude: 35, longitude: 139 });
+      expect(subscribeCall[1]?.credentials).toBe("include");
     });
 
-    const subscriptionsCall = fetchMock.mock.calls.find(([input]) => (
-      String(input).includes("/api/subscriptions")
+    const hydrateCall = fetchMock.mock.calls.find(([input]) => (
+      String(input).includes(`/api/devices/${DEVICE_ID}/subscription`)
     ));
-    expect(subscriptionsCall).toBeDefined();
-    expect(String(subscriptionsCall?.[0])).not.toContain("device_key=");
-    expect(new Headers((subscriptionsCall?.[1] as RequestInit | undefined)?.headers).get("Authorization"))
-      .toBe(`Bearer ${KEY}`);
+    expect(hydrateCall).toBeDefined();
+    expect(new Headers((hydrateCall?.[1] as RequestInit | undefined)?.headers).get("Authorization")).toBeNull();
 
     app.teardown();
   });
@@ -235,8 +219,7 @@ describe("mountSubscribeApp", () => {
     });
     vi.stubGlobal("fetch", vi.fn((input: RequestInfo | URL) => {
       const url = String(input);
-      if (url.includes("/api/subscriptions")) return subscriptionsResponse;
-      if (url.includes("/api/bark-urls")) return Promise.resolve(jsonResponse({ bark_urls: [FIRST_URL] }));
+      if (url.includes("/devices/") && url.includes("/subscription")) return subscriptionsResponse;
       if (url.includes("/api/subscription-options")) {
         return Promise.resolve(jsonResponse({ categories: [simpleCategory] }));
       }
@@ -249,7 +232,7 @@ describe("mountSubscribeApp", () => {
     const host = document.createElement("div");
     fillHost(host);
     document.body.append(host);
-    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceKey: KEY });
+    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceId: DEVICE_ID });
     const startAddLocation = host.querySelector("#start-add-location") as HTMLButtonElement;
 
     expect(startAddLocation.disabled).toBe(true);
@@ -274,7 +257,7 @@ describe("mountSubscribeApp", () => {
   it("does not treat 200 success:false as a load error", async () => {
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
-      if (url.includes("/api/subscriptions")) {
+      if (url.includes("/devices/") && url.endsWith("/subscription")) {
         return new Response(JSON.stringify({ success: false, message: "没有订阅" }), { status: 200 });
       }
       if (url.includes("/api/bark-urls")) return jsonResponse({ bark_urls: [FIRST_URL] });
@@ -285,7 +268,7 @@ describe("mountSubscribeApp", () => {
     const host = document.createElement("div");
     fillHost(host);
     document.body.append(host);
-    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceKey: KEY });
+    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceId: DEVICE_ID });
     const submit = host.querySelector("#submit") as HTMLButtonElement;
     await vi.waitFor(() => expect(submit.disabled).toBe(false));
     expect(host.textContent).not.toContain("无法加载已保存的订阅");
@@ -297,7 +280,7 @@ describe("mountSubscribeApp", () => {
   it("enables only the categories present in the saved subscription alerts", async () => {
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
-      if (url.includes("/api/subscriptions")) {
+      if (url.includes("/devices/") && url.endsWith("/subscription")) {
         return jsonResponse({
           subscriptions: [savedRow([{
             category: "typhoon",
@@ -316,7 +299,7 @@ describe("mountSubscribeApp", () => {
     const host = document.createElement("div");
     fillHost(host);
     document.body.append(host);
-    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceKey: KEY });
+    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceId: DEVICE_ID });
     const submit = host.querySelector("#submit") as HTMLButtonElement;
     await vi.waitFor(() => expect(submit.disabled).toBe(false));
     const checked = (category: string) => (
@@ -329,20 +312,13 @@ describe("mountSubscribeApp", () => {
     app.teardown();
   });
 
-  it("expires the Bark session when subscriptions return 401 and /check rejects the key", async () => {
-    const onInvalidBarkKey = vi.fn();
-    writeCachedBarkKey(KEY);
+  it("calls onUnauthorized when the subscription GET returns 401", async () => {
+    const onUnauthorized = vi.fn();
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
-      if (url.includes("/bark-check")) {
-        return new Response(JSON.stringify({
-          data: { device_key: KEY, valid: true, registered: false, reason: null },
-        }));
+      if (url.includes("/devices/") && url.endsWith("/subscription")) {
+        return new Response(JSON.stringify({ success: false, message: "未登录" }), { status: 401 });
       }
-      if (url.includes("/api/subscriptions")) {
-        return new Response(JSON.stringify({ success: false, message: "unauthorized" }), { status: 401 });
-      }
-      if (url.includes("/api/bark-urls")) return jsonResponse({ bark_urls: [FIRST_URL] });
       if (url.includes("/api/status")) return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
       return jsonResponse({});
     }));
@@ -352,11 +328,10 @@ describe("mountSubscribeApp", () => {
     const app = mountSubscribeApp(host, {
       api: "",
       instanceTermsAccepted: true,
-      deviceKey: KEY,
-      onInvalidBarkKey,
+      deviceId: DEVICE_ID,
+      onUnauthorized,
     });
-    await vi.waitFor(() => expect(onInvalidBarkKey).toHaveBeenCalledOnce());
-    expect(readCachedBarkKey()).toBeNull();
+    await vi.waitFor(() => expect(onUnauthorized).toHaveBeenCalledOnce());
     app.teardown();
   });
 
@@ -410,7 +385,7 @@ describe("mountSubscribeApp", () => {
     fillHost(host);
     document.body.append(host);
 
-    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceKey: KEY });
+    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceId: DEVICE_ID });
     const sources = host.querySelector("#alert-type-sources") as HTMLElement;
     await vi.waitFor(() => {
       expect(sources.hidden).toBe(false);
@@ -445,23 +420,12 @@ describe("mountSubscribeApp", () => {
     app.teardown();
   });
 
-  it("expires the Bark session when subscribe returns 502 and /check rejects the key", async () => {
-    const onInvalidBarkKey = vi.fn();
-    writeCachedBarkKey(KEY);
-    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+  it("shows a 502 from the BFF without treating it as a logout", async () => {
+    const onUnauthorized = vi.fn();
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
-      if (url.includes("/bark-check")) {
-        return new Response(JSON.stringify({
-          data: { device_key: KEY, valid: true, registered: false, reason: null },
-        }));
-      }
-      if (url.includes("/api/subscriptions")) {
-        return jsonResponse({
-          subscriptions: [savedRow()],
-        });
-      }
-      if (url.includes("/api/bark-urls")) {
-        return jsonResponse({ bark_urls: [FIRST_URL] });
+      if (url.includes("/devices/") && url.endsWith("/subscription")) {
+        return jsonResponse({ subscriptions: [savedRow()] });
       }
       if (url.includes("/api/subscription-options")) {
         return jsonResponse({ categories: [simpleCategory] });
@@ -469,7 +433,7 @@ describe("mountSubscribeApp", () => {
       if (url.includes("/api/status")) {
         return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
       }
-      if (url.includes("/api/subscribe")) {
+      if (url.includes("/subscribe") && init?.method === "POST") {
         return new Response(JSON.stringify({ success: false, message: "Bark 拒绝" }), { status: 502 });
       }
       return jsonResponse({});
@@ -481,62 +445,14 @@ describe("mountSubscribeApp", () => {
     const app = mountSubscribeApp(host, {
       api: "",
       instanceTermsAccepted: true,
-      deviceKey: KEY,
-      onInvalidBarkKey,
-    });
-    const submit = host.querySelector("#submit") as HTMLButtonElement;
-    await vi.waitFor(() => expect(submit.disabled).toBe(false));
-    (host.querySelector("#subscribe-form") as HTMLFormElement).requestSubmit();
-    await vi.waitFor(() => expect(onInvalidBarkKey).toHaveBeenCalledTimes(1));
-    expect(readCachedBarkKey()).toBeNull();
-    app.teardown();
-  });
-
-  it("keeps the Bark session when subscribe returns 502 but /check still accepts the key", async () => {
-    const onInvalidBarkKey = vi.fn();
-    writeCachedBarkKey(KEY);
-    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
-      const url = String(input);
-      if (url.includes("/bark-check")) {
-        return new Response(JSON.stringify({
-          data: { device_key: KEY, valid: true, registered: true, reason: null },
-        }));
-      }
-      if (url.includes("/api/subscriptions")) {
-        return jsonResponse({
-          subscriptions: [savedRow()],
-        });
-      }
-      if (url.includes("/api/bark-urls")) {
-        return jsonResponse({ bark_urls: [FIRST_URL] });
-      }
-      if (url.includes("/api/subscription-options")) {
-        return jsonResponse({ categories: [simpleCategory] });
-      }
-      if (url.includes("/api/status")) {
-        return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
-      }
-      if (url.includes("/api/subscribe")) {
-        return new Response(JSON.stringify({ success: false, message: "Bark 拒绝" }), { status: 502 });
-      }
-      return jsonResponse({});
-    }));
-
-    const host = document.createElement("div");
-    fillHost(host);
-    document.body.append(host);
-    const app = mountSubscribeApp(host, {
-      api: "",
-      instanceTermsAccepted: true,
-      deviceKey: KEY,
-      onInvalidBarkKey,
+      deviceId: DEVICE_ID,
+      onUnauthorized,
     });
     const submit = host.querySelector("#submit") as HTMLButtonElement;
     await vi.waitFor(() => expect(submit.disabled).toBe(false));
     (host.querySelector("#subscribe-form") as HTMLFormElement).requestSubmit();
     await vi.waitFor(() => expect(host.textContent).toContain("Bark 拒绝"));
-    expect(onInvalidBarkKey).not.toHaveBeenCalled();
-    expect(readCachedBarkKey()).toBe(KEY);
+    expect(onUnauthorized).not.toHaveBeenCalled();
     app.teardown();
   });
 });

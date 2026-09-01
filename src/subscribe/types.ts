@@ -116,8 +116,9 @@ export type GeocodeJob = {
 export type MountSubscribeOptions = {
   api?: string;
   instanceTermsAccepted?: boolean;
-  deviceKey?: string;
-  onInvalidBarkKey?: () => void;
+  deviceId: string;
+  onUnauthorized?: () => void;
+  onMissingDevice?: () => void;
 };
 
 export type SubscribeAppHandle = {

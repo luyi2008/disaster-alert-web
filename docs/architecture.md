@@ -5,7 +5,7 @@
 本文描述本仓库**当前实际的**架构（而非规划中的架构），包含系统边界、模块划分、数据流、部署拓扑、关键设计决策，以及已识别的架构风险。
 
 - 订阅页 DOM 层的具体拆分约定见 [subscribe-frontend.md](subscribe-frontend.md)。
-- Bark Key 作为本机登录身份的产品需求见 [bark-key-session-prd.md](bark-key-session-prd.md)。
+- 账号登录与设备绑定见 [superpowers/specs/2026-09-01-account-login-design.md](superpowers/specs/2026-09-01-account-login-design.md)（源仓 [disaster-alert](https://github.com/luyi2008/disaster-alert)）。旧 PRD [bark-key-session-prd.md](bark-key-session-prd.md) 仅作历史对照。
 - 后端契约快照见 [openapi.yaml](openapi.yaml)。
 - 部署操作步骤见 [README](../README.md)。
 
@@ -15,7 +15,7 @@
 
 本仓库是一个**纯静态前端**，只负责两件事：让用户配置订阅，以及展示单条通知的详情。
 
-它**不做**的事情：不采集灾害数据、不做规则匹配、不发送 Bark 推送、不持有数据库、没有自己的后端进程。所有这些都在独立仓库 [disaster-alert](https://github.com/luyi2008/disaster-alert) 中。
+它**不做**的事情：不采集灾害数据、不做规则匹配、不发送 Bark 推送、不持有用户账号或设备 token 目录。登录与设备资产在 [disaster-alert-bff](https://github.com/luyi2008/disaster-alert-bff)；匹配与推送在 [disaster-alert](https://github.com/luyi2008/disaster-alert)。
 
 两个仓库**独立发版**，不需要对齐 git tag。这带来一个必然结果：契约靠人工维护的 `docs/openapi.yaml` 快照对齐，CI 不会拉取服务端仓库校验。
 
@@ -28,16 +28,18 @@ graph TB
         Web["nginx 静态站点<br/>0.0.0.0:30011"]
     end
     Proxy["主机反向代理<br/>（HTTPS 终止，不在本仓库）"]
+    BFF["disaster-alert-bff<br/>127.0.0.1:30012"]
     API["disaster-alert API<br/>127.0.0.1:30010<br/>（独立仓库）"]
     Tiles["basemaps.cartocdn.com<br/>地图瓦片"]
     Bark["Bark 推送服务"]
     Sources["Wolfx / FAN Studio / Huania<br/>灾害数据源"]
 
-    User -->|"/ 、 /subscribe 和 /incidents/*"| Proxy
+    User -->|"/login /devices /settings /incidents/*"| Proxy
     Proxy --> Web
-    Proxy -->|"/api/* 和 /health"| API
+    Proxy -->|"/api/auth /api/devices /api/settings"| BFF
+    Proxy -->|"公开只读 /api 与 /health"| API
+    BFF -->|"HTTP JSON + 服务凭证"| API
     User -.->|"直连瓦片"| Tiles
-    User -.->|"生产：直连 /check（CORS *.mangguo.cloud）"| Bark
     API --> Sources
     API -->|"推送通知（含详情深链）"| Bark
     Bark -->|"深链回到 /incidents/..."| User
@@ -49,7 +51,7 @@ graph TB
 | --- | --- |
 | 同源反代 | 站点与 API 共用域名时，由主机上的反向代理分流。容器自身**不代理** `/api`，单独部署容器无法完成订阅。 |
 | 瓦片直连 | 地图瓦片由浏览器直接向 CDN 请求，不经过本站或 API。 |
-| Bark Key 校验 | 入口页生产环境直连 `https://bark.mangguo.cloud/check`；该服务需 CORS 回显 `*.mangguo.cloud` 的 Origin。开发时 Vite 把 `/bark-check` 代理到同一地址。生产 nginx **不**反代该接口。 |
+| BFF 登录 | 浏览器只带 session cookie 访问 `/api/auth`、`/api/devices`、`/api/settings` 以及设备订阅读写。不把 Bark token 当站点身份，也不再请求 `/api/bark-urls` 或 `/check`。 |
 | 闭环入口 | 详情页的唯一正常入口是 Bark 推送里的深链，路径中带通知凭据。 |
 
 ---
@@ -82,21 +84,21 @@ graph TB
     App["App.tsx<br/>BrowserRouter"]
 
     Main --> App
-    App -->|"路由 /"| EntryPage
-    App -->|"路由 /subscribe"| SubPage
+    App -->|"路由 / 、 /login"| AuthPages
+    App -->|"路由 /devices"| DevicesPage
+    App -->|"路由 /devices/:id/subscribe"| SubPage
     App -->|"路由 /incidents/:id/notifications/:token"| IncPage
 
-    subgraph EntryPage["BarkKeyPage —— 标准 React"]
+    subgraph AuthPages["LoginPage / HomeRedirect"]
         direction TB
-        E1["粘贴测试链接，提取 22 位 Key"]
-        E2["本地格式校验后 GET check"]
-        E3["valid 且 registered 才可进入 /subscribe"]
-        E1 --> E2 --> E3
+        E1["手机 OTP 或微信 mock"]
+        E2["BFF session cookie"]
+        E1 --> E2
     end
 
     subgraph SubPage["SubscribePage —— 命令式 DOM"]
         direction TB
-        S1["React 只做外壳：<br/>无 key 则重定向 /；拉取 /api/status、渲染责任声明弹窗"]
+        S1["React 只做外壳：<br/>无 session 则 /login；按设备 id 挂载"]
         S2["注入 shell.html?raw 到宿主节点"]
         S3["mountSubscribeApp(host, options)"]
         S4["返回 teardown 函数"]
@@ -243,13 +245,13 @@ stateDiagram-v2
 
 ### 4.4 服务端 hydrate 与内存编辑
 
-订阅页用当前 Bark Key 作为 Bearer 凭据请求 `GET /api/subscriptions`，再由 `selectSavedSubscription` 选择匹配当前 Key、优先命中 Bark URL 白名单的记录。`draftFromSavedSubscription` 把该记录映射为表单草稿；灾种选项随后加载并与映射结果合并。HTTP 200 且 `success: false` 表示服务端没有该 Key 的订阅，页面从空配置开始。
+订阅页用当前设备 UUID 请求 `GET /api/devices/:id/subscription`（BFF cookie），再由 `selectSavedSubscription` 取第一条记录。`draftFromSavedSubscription` 把该记录映射为表单草稿；灾种选项随后加载并与映射结果合并。HTTP 200 且 `success: false` 表示该设备没有订阅，页面从空配置开始。401 回 `/login`；设备不存在回 `/devices`。
 
-表单编辑只保存在当前页面的内存中，提交时才通过 `POST /api/subscribe` 覆盖服务端订阅；刷新或离开页面会丢弃未提交修改。加载已保存订阅失败时会提示错误，但不会阻止用户继续编辑并保存。浏览器里遗留的 `disaster_subscription_draft_v3` 或 v2 键不会被读取，也不会被删除。
+表单编辑只保存在当前页面的内存中，提交时才通过 `POST /api/devices/:id/subscribe` 覆盖订阅（body 只有 `targets` 与 `alerts`，不含 `destination`）；刷新或离开页面会丢弃未提交修改。加载已保存订阅失败时会提示错误，但不会阻止用户继续编辑并保存。浏览器里遗留的 `disaster_subscription_draft_v3` 或 v2 键不会被读取，也不会被删除。
 
-**Bark Key 是站点登录身份**，只存在独立键 `disaster_bark_key`。入口页经 `bark.mangguo.cloud/check` 确认 `valid` 且 `registered` 后写入；「更换设备」或 `/check` 复核判定失效时清除。
+登录身份是 BFF HttpOnly cookie，不再使用 `disaster_bark_key`。Bark token 只在 `/devices` 绑定时提交一次。
 
-「有未提交更改」的提示靠 `draftSignature`（草稿的稳定 JSON 序列化）与 hydrate 或最近成功提交后的 `lastSubmittedSignature` 比对，配合 `lastSubmittedIdentity`（Bark URL + Key）判断投递目标是否也变了。
+「有未提交更改」的提示靠 `draftSignature`（草稿的稳定 JSON 序列化）与 hydrate 或最近成功提交后的 `lastSubmittedSignature` 比对。
 
 ### 4.5 提交流程
 
@@ -258,6 +260,7 @@ sequenceDiagram
     participant U as 用户
     participant A as subscribeApp
     participant AL as alerts
+    participant BFF as disaster-alert-bff
     participant API as disaster-alert API
 
     U->>A: 提交表单
@@ -265,9 +268,8 @@ sequenceDiagram
     A->>A: 配置加载完成？
     A->>AL: commitBands / validateAlertRules
     A->>A: 至少一个地点 + validateLocations
-    A->>A: Bark Key 仅含字母数字且不超过 64 位
-    A->>A: Bark URL 在服务端白名单内
-    A->>API: POST /api/subscribe（覆盖语义）
+    A->>BFF: POST /api/devices/:id/subscribe（{ targets, alerts }）
+    BFF->>API: 带服务凭证覆盖订阅
     alt data.saved === true
         API-->>A: 已保存，Bark 确认已发送
         A->>API: 刷新 /api/status

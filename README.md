@@ -2,24 +2,25 @@
 
 [disaster-alert](https://github.com/luyi2008/disaster-alert) 的订阅页和通知详情页。本仓库只包含前端，不运行灾害数据源或 Bark 推送。
 
-打开站点先进入 `/`：粘贴 Bark 测试链接，本地校验并通过 `bark.mangguo.cloud` 确认 Key 已注册后，把 Key 作为本机登录会话写入并进入 `/subscribe`。之后打开 `/` 若会话仍在则直接进订阅页；「更换设备」会清除会话。通知详情仍由 Bark 深链打开 `/incidents/...`。
+打开站点先进入 `/`：已登录则去设备列表，未登录则去 `/login`。用手机号 OTP 或微信 mock 登录后，在 `/devices` 输入 22 位 Bark token 绑定设备，再进入该设备的订阅页。通知详情仍由 Bark 深链打开 `/incidents/...`，不要求登录。
 
 服务端完全独立发版，两边不需要对齐 git tag。
 
 ## 本地开发
 
-先在 API 仓库启动 `disaster-alert`（默认 `http://127.0.0.1:30010`），再：
+先在 API 仓库启动 `disaster-alert`（默认 `http://127.0.0.1:30010`），在 BFF 仓库启动 `disaster-alert-bff`（默认 `http://127.0.0.1:30012`，开发可 `AUTH_MOCK=true`），再：
 
 ```bash
 npm install
 npm run dev
 ```
 
-Vite 会把 `/api` 和 `/health` 代理到 API。浏览器打开 Vite 地址即可。
+Vite 会把 `/api/auth`、`/api/devices`、`/api/settings` 代理到 BFF，其余 `/api` 与 `/health` 代理到 API。浏览器打开 Vite 地址即可。
 
 可选环境变量：
 
-- `VITE_DEV_API_ORIGIN`：开发代理目标，默认 `http://127.0.0.1:30010`
+- `VITE_DEV_API_ORIGIN`：开发时代理公开只读 API 的目标，默认 `http://127.0.0.1:30010`
+- `VITE_DEV_BFF_ORIGIN`：开发时代理 `/api/auth`、`/api/devices`、`/api/settings` 的目标，默认 `http://127.0.0.1:30012`
 - `VITE_API_BASE`：构建时 API 前缀。同源反代时保持为空
 
 ```bash
@@ -82,8 +83,9 @@ PR 不会部署、也不会写 `.env`。未配置上述 secrets 时，合并后�
 站点若与 API 共用域名，由运维反代：
 
 ```
-/api/*  /health  -> disaster-alert（默认 127.0.0.1:30010）
-/  /subscribe  /incidents/*  -> 本镜像（0.0.0.0:30011）
+/api/auth/*  /api/devices/*  /api/settings/*  -> disaster-alert-bff（默认 127.0.0.1:30012）
+/api/incidents/*  /api/status  /api/subscription-options  /api/reverse-geocode  /api/history  /health  -> disaster-alert（默认 127.0.0.1:30010）
+/  /login  /devices  /settings  /incidents/*  -> 本镜像（0.0.0.0:30011）
 ```
 
 反代、CDN 和日志不要记录 `/incidents/` 的完整 URL（路径里含通知凭据）。
@@ -92,6 +94,6 @@ PR 不会部署、也不会写 `.env`。未配置上述 secrets 时，合并后�
 
 整体架构、模块划分、数据流与部署拓扑，见 [docs/architecture.md](docs/architecture.md)。
 
-Bark Key 作为本机登录身份的产品需求，见 [docs/bark-key-session-prd.md](docs/bark-key-session-prd.md)。
+账号登录设计见 [docs/superpowers/specs/2026-09-01-account-login-design.md](docs/superpowers/specs/2026-09-01-account-login-design.md)。
 
 订阅页的 DOM 工作区如何拆分、卸载和查询节点，见 [docs/subscribe-frontend.md](docs/subscribe-frontend.md)。

@@ -1,11 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
-import { apiUrl, fetchStatus } from "../api";
-import { clearCachedBarkKey } from "../bark/session";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { apiUrl, fetchDevices, fetchStatus } from "../api";
 import { DeviceIdentity } from "../components/DeviceIdentity";
 import { LegalFooter } from "../components/LegalFooter";
 import { TermsDialog } from "../components/TermsDialog";
-import { resolveBarkKey, type SubscribeLocationState } from "../subscribe/barkKeyState";
 import bodyHtml from "../subscribe/body.html?raw";
 import headerHtml from "../subscribe/header.html?raw";
 import { mountSubscribeApp } from "../subscribe/subscribeApp";
@@ -13,16 +11,15 @@ import "../styles/base.css";
 import "../styles/subscribe.css";
 import "leaflet/dist/leaflet.css";
 
-export type { SubscribeLocationState };
-
 export function SubscribePage() {
-  const location = useLocation();
+  const { id } = useParams();
   const navigate = useNavigate();
-  const barkKey = resolveBarkKey(location.state);
   const rootRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const [termsAccepted, setTermsAccepted] = useState<boolean | null>(null);
+  const [deviceName, setDeviceName] = useState<string | null>(null);
+  const [missing, setMissing] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -43,10 +40,41 @@ export function SubscribePage() {
   }, []);
 
   useEffect(() => {
+    if (!id) {
+      return;
+    }
+    let cancelled = false;
+    fetchDevices()
+      .then((result) => {
+        if (cancelled) {
+          return;
+        }
+        if (result.status === 401) {
+          navigate("/login", { replace: true });
+          return;
+        }
+        const device = result.body.data?.devices.find((row) => row.id === id);
+        if (!device) {
+          setMissing(true);
+          return;
+        }
+        setDeviceName(device.name);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setMissing(true);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [id, navigate]);
+
+  useEffect(() => {
     const root = rootRef.current;
     const header = headerRef.current;
     const body = bodyRef.current;
-    if (!root || !header || !body || termsAccepted === null || !barkKey) {
+    if (!root || !header || !body || termsAccepted === null || !id || !deviceName) {
       return;
     }
     header.innerHTML = headerHtml;
@@ -54,21 +82,19 @@ export function SubscribePage() {
     const app = mountSubscribeApp(root, {
       api: apiUrl(""),
       instanceTermsAccepted: termsAccepted,
-      deviceKey: barkKey,
-      onInvalidBarkKey: () => {
-        clearCachedBarkKey();
-        navigate("/", { replace: true });
-      },
+      deviceId: id,
+      onUnauthorized: () => navigate("/login", { replace: true }),
+      onMissingDevice: () => navigate("/devices", { replace: true }),
     });
     return () => {
       app.teardown();
       header.innerHTML = "";
       body.innerHTML = "";
     };
-  }, [termsAccepted, barkKey, navigate]);
+  }, [termsAccepted, id, deviceName, navigate]);
 
-  if (!barkKey) {
-    return <Navigate to="/" replace />;
+  if (!id || missing) {
+    return <Navigate to="/devices" replace />;
   }
 
   return (
@@ -77,7 +103,7 @@ export function SubscribePage() {
       <main ref={rootRef}>
         <div className="app-bar">
           <div className="shell-slot" ref={headerRef} />
-          <DeviceIdentity barkId={barkKey} />
+          {deviceName ? <DeviceIdentity deviceId={id} deviceName={deviceName} /> : null}
         </div>
         <section className="panel">
           <div className="shell-slot" ref={bodyRef} />

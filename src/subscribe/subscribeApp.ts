@@ -5,16 +5,13 @@ import {
   draftSignature,
   selectSavedSubscription,
 } from "./draft";
-import { parseApiResponse } from "./http";
 import { bindLocations } from "./locations";
 import { animateHeight } from "./motion";
 import { createRuntime } from "./runtime";
 import { bindStatus } from "./status";
 import { bindToast } from "./toast";
 import type { MountSubscribeOptions, SubscribeAppHandle } from "./types";
-import { localValidateBarkKey } from "../bark/localValidate";
-import { clearCachedBarkKey, maybeExpireBarkSession } from "../bark/session";
-import { fetchSavedSubscriptions } from "../api";
+import { deleteDeviceSubscription, fetchDeviceSubscription, saveDeviceSubscription } from "../api";
 
 export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOptions): SubscribeAppHandle {
   const ctx = createRuntime(root, options);
@@ -22,7 +19,7 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
   const { el } = ctx;
 
   function currentDestinationIdentity(): string {
-    return `${ctx.barkUrl}\n${ctx.deviceKey}`;
+    return ctx.deviceId;
   }
 
   function updateDraftStatus(): void {
@@ -78,49 +75,32 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
     });
   });
 
-  async function loadBarkUrls(generation: number): Promise<void> {
-    const res = await fetch(`${ctx.api}/api/bark-urls`);
-    const json = await parseApiResponse(res);
-    if (generation !== ctx.initializationGeneration) return;
-    const data = json.data as { bark_urls?: unknown } | undefined;
-    if (!res.ok || !json.success || !Array.isArray(data?.bark_urls) || !data.bark_urls.length) {
-      throw new Error(json.message || "没有可用的通知地址");
-    }
-    ctx.barkUrls = data.bark_urls.filter((value): value is string => typeof value === "string" && Boolean(value));
-    const firstUrl = ctx.barkUrls[0];
-    if (!firstUrl) throw new Error("没有可用的通知地址");
-    ctx.barkUrl = firstUrl;
-    ctx.subscriptionDraft.bark_url = firstUrl;
-  }
-
   function initializeConfiguration(): Promise<void> {
     const generation = ++ctx.initializationGeneration;
     ctx.configurationReady = false;
     setSubscriptionRequestInFlight(false);
-    return Promise.all([
-      loadBarkUrls(generation),
-      fetchSavedSubscriptions(ctx.deviceKey).catch(
-        (): Awaited<ReturnType<typeof fetchSavedSubscriptions>> => ({
+    return fetchDeviceSubscription(ctx.deviceId)
+      .catch(
+        (): Awaited<ReturnType<typeof fetchDeviceSubscription>> => ({
           status: 0,
           body: { success: false, message: "" },
         }),
-      ),
-    ])
-      .then(async ([, saved]) => {
+      )
+      .then(async (saved) => {
         if (generation !== ctx.initializationGeneration) return;
-        if (await maybeExpireBarkSession(ctx.deviceKey, saved.status, "bearer")) {
-          options.onInvalidBarkKey?.();
+        if (saved.status === 401) {
+          options.onUnauthorized?.();
+          return;
+        }
+        if (saved.status === 404) {
+          options.onMissingDevice?.();
           return;
         }
         let savedRowApplied = false;
         if (saved.status === 200 && saved.body.success) {
-          const row = selectSavedSubscription(
-            saved.body.data?.subscriptions,
-            ctx.deviceKey,
-            ctx.barkUrls,
-          );
+          const row = selectSavedSubscription(saved.body.data?.subscriptions);
           if (row) {
-            const mapped = draftFromSavedSubscription(row, ctx.barkUrls);
+            const mapped = draftFromSavedSubscription(row);
             ctx.subscriptionDraft = mapped;
             if (mapped.bark_url) ctx.barkUrl = mapped.bark_url;
             savedRowApplied = true;
@@ -179,20 +159,8 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
       toast.show(locationError, "error");
       return;
     }
-    const barkID = ctx.deviceKey.trim();
-    if (localValidateBarkKey(barkID)) {
-      toast.show("Bark ID 无效", "error");
-      clearCachedBarkKey();
-      options.onInvalidBarkKey?.();
-      return;
-    }
-    if (!ctx.barkUrl) {
-      toast.show("尚未加载到可用的通知地址", "error");
-      return;
-    }
     const submittedSignature = draftSignature(ctx.subscriptionDraft);
     const payload = {
-      destination: { type: "bark", base_url: ctx.barkUrl, device_key: barkID },
       targets: ctx.subscriptionDraft.targets.map((target) => ({
         label: target.label.trim(),
         point: { latitude: Number(target.point.latitude), longitude: Number(target.point.longitude) },
@@ -205,31 +173,26 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
     setSubscriptionRequestInFlight(true);
     toast.show("正在保存订阅...", "info");
     try {
-      const res = await fetch(`${ctx.api}/api/subscribe`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const fallbackMessage = res.status === 502
-        ? "Bark 接收测试失败，请检查 Bark ID；若确认无误，请稍后重试"
-        : "";
-      const json = await parseApiResponse(res, fallbackMessage);
-      if (!res.ok || !json.success) {
-        if (await maybeExpireBarkSession(barkID, res.status, "subscribe")) {
-          options.onInvalidBarkKey?.();
-          return;
-        }
-        throw new Error(json.message || "保存失败");
+      const { status: httpStatus, body } = await saveDeviceSubscription(ctx.deviceId, payload);
+      if (httpStatus === 401) {
+        options.onUnauthorized?.();
+        return;
+      }
+      if (httpStatus === 404) {
+        options.onMissingDevice?.();
+        return;
+      }
+      if (httpStatus >= 400 || !body.success) {
+        throw new Error(body.message || "保存失败");
       }
       ctx.lastSubmittedSignature = submittedSignature;
       ctx.lastSubmittedIdentity = currentDestinationIdentity();
       updateDraftStatus();
-      const data = json.data as { saved?: boolean } | undefined;
-      if (data?.saved === true) {
+      if (body.data?.saved === true) {
         toast.show("订阅已保存，Bark 确认通知已发送", "success");
         void status.refreshStatus();
       } else {
-        toast.show(json.message || "Bark 服务暂时不可用，订阅确认将在后台重试", "warning");
+        toast.show(body.message || "Bark 服务暂时不可用，订阅确认将在后台重试", "warning");
       }
     } catch (error) {
       toast.show((error as { message?: string }).message || "网络请求失败", "error");
@@ -239,31 +202,21 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
   });
 
   ctx.cleanup.listen(el.unsubscribe, "click", async () => {
-    const barkID = ctx.deviceKey.trim();
-    if (localValidateBarkKey(barkID)) {
-      toast.show("Bark ID 无效", "error");
-      clearCachedBarkKey();
-      options.onInvalidBarkKey?.();
-      return;
-    }
-    if (!ctx.barkUrl) {
-      toast.show("尚未加载到可用的通知地址", "error");
-      return;
-    }
-    if (!confirm("确定删除该 Bark 服务与 Key 对应的服务端订阅？")) return;
+    if (!confirm("确定删除该设备对应的服务端订阅？")) return;
     if (ctx.subscriptionRequestInFlight) return;
     setSubscriptionRequestInFlight(true);
     toast.show("正在取消订阅...", "info");
     try {
-      const res = await fetch(`${ctx.api}/api/unsubscribe`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          destination: { type: "bark", base_url: ctx.barkUrl, device_key: barkID },
-        }),
-      });
-      const json = await parseApiResponse(res);
-      if (!res.ok || !json.success) throw new Error(json.message || "取消失败");
+      const { status: httpStatus, body } = await deleteDeviceSubscription(ctx.deviceId);
+      if (httpStatus === 401) {
+        options.onUnauthorized?.();
+        return;
+      }
+      if (httpStatus === 404) {
+        options.onMissingDevice?.();
+        return;
+      }
+      if (httpStatus >= 400 || !body.success) throw new Error(body.message || "取消失败");
       ctx.lastSubmittedSignature = "";
       ctx.lastSubmittedIdentity = "";
       updateDraftStatus();

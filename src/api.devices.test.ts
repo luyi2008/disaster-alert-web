@@ -12,7 +12,7 @@ afterEach(() => {
 
 describe("BFF device client", () => {
   it("lists devices with credentials and without a Bark token header", async () => {
-    const fetchMock = vi.fn(async () => new Response(
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => new Response(
       JSON.stringify({ success: true, message: "ok", data: { devices: [{ id: "dev-1", userId: "u1", name: "设备1", createdAt: 1, updatedAt: 1 }] } }),
       { status: 200 },
     ));
@@ -26,7 +26,7 @@ describe("BFF device client", () => {
   });
 
   it("binds a token body only", async () => {
-    const fetchMock = vi.fn(async () => new Response(
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => new Response(
       JSON.stringify({ success: true, message: "ok", data: { device: { id: "dev-1", userId: "u1", name: "设备1", createdAt: 1, updatedAt: 1 } } }),
       { status: 200 },
     ));
@@ -39,7 +39,7 @@ describe("BFF device client", () => {
   });
 
   it("GETs /api/devices/:id/subscription without Authorization", async () => {
-    const fetchMock = vi.fn(async () => new Response(
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => new Response(
       JSON.stringify({ success: false, message: "没有订阅" }),
       { status: 200 },
     ));
@@ -54,7 +54,7 @@ describe("BFF device client", () => {
   });
 
   it("POSTs subscribe targets and alerts without destination", async () => {
-    const fetchMock = vi.fn(async () => new Response(
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => new Response(
       JSON.stringify({ success: true, message: "ok", data: { saved: true } }),
       { status: 200 },
     ));

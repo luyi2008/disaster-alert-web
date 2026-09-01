@@ -1,13 +1,10 @@
 import { useEffect, useState } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
-import { fetchSavedSubscriptions } from "../api";
-import { maskBarkId } from "../bark/maskBarkId";
-import { maybeExpireBarkSession } from "../bark/session";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { fetchDeviceSubscription, fetchDevices } from "../api";
 import { AppBrand } from "../components/AppBrand";
 import { DeviceIdentity } from "../components/DeviceIdentity";
 import { LegalFooter } from "../components/LegalFooter";
 import {
-  fetchBarkUrls,
   fetchHistoryCatalog,
   fetchSubscriptionOptions,
   simulateHistoryReplay,
@@ -24,7 +21,6 @@ import {
   type AlertRuleCard,
   type RuleCardTone,
 } from "../simulate/subscriptionPreview";
-import { resolveBarkKey } from "../subscribe/barkKeyState";
 import {
   createEmptyDraft,
   draftFromSavedSubscription,
@@ -149,9 +145,10 @@ function formatDistance(value: number | undefined, unit: string): string | null 
 }
 
 export function TestPage() {
-  const location = useLocation();
+  const { id } = useParams();
   const navigate = useNavigate();
-  const barkKey = resolveBarkKey(location.state);
+  const [deviceName, setDeviceName] = useState<string | null>(null);
+  const [missing, setMissing] = useState(false);
   const [draft, setDraft] = useState(createEmptyDraft);
   const [draftUpdatedAt, setDraftUpdatedAt] = useState<number | null>(null);
   const [barkUrl, setBarkUrl] = useState("");
@@ -166,49 +163,63 @@ export function TestPage() {
   const [actionStatus, setActionStatus] = useState<ActionStatus | null>(null);
 
   useEffect(() => {
-    if (!barkKey) {
+    if (!id) {
+      return;
+    }
+    let cancelled = false;
+    fetchDevices().then((result) => {
+      if (cancelled) {
+        return;
+      }
+      if (result.status === 401) {
+        navigate("/login", { replace: true });
+        return;
+      }
+      const device = result.body.data?.devices.find((row) => row.id === id);
+      if (!device) {
+        setMissing(true);
+        return;
+      }
+      setDeviceName(device.name);
+    }).catch(() => {
+      if (!cancelled) {
+        setMissing(true);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [id, navigate]);
+
+  useEffect(() => {
+    if (!id) {
       return;
     }
     let cancelled = false;
     Promise.all([
-      fetchBarkUrls(),
       fetchSubscriptionOptions(),
-      fetchSavedSubscriptions(barkKey).catch(
-        (error: { message?: string }): Awaited<ReturnType<typeof fetchSavedSubscriptions>> => ({
-          status: 0,
-          body: {
-            success: false,
-            message: error?.message || "无法加载已保存的订阅",
-          },
-        }),
-      ),
+      fetchDeviceSubscription(id),
     ])
-      .then(async ([urls, options, saved]) => {
+      .then(async ([options, saved]) => {
         if (cancelled) {
           return;
         }
         setLevels(notifyLevelsFromOptions(options));
-        setBarkUrl(urls[0] || "");
-        if (await maybeExpireBarkSession(barkKey, saved.status, "bearer")) {
-          if (!cancelled) {
-            navigate("/", { replace: true });
-          }
+        if (saved.status === 401) {
+          navigate("/login", { replace: true });
           return;
         }
-        if (cancelled) {
+        if (saved.status === 404) {
+          setMissing(true);
           return;
         }
         if (saved.status === 200 && saved.body.success) {
-          const row = selectSavedSubscription(
-            saved.body.data?.subscriptions,
-            barkKey,
-            urls,
-          );
+          const row = selectSavedSubscription(saved.body.data?.subscriptions);
           if (row) {
-            const mapped = draftFromSavedSubscription(row, urls);
+            const mapped = draftFromSavedSubscription(row);
             setDraft(mapped);
             setDraftUpdatedAt(row.updated_at ?? null);
-            setBarkUrl(mapped.bark_url || urls[0] || "");
+            setBarkUrl(mapped.bark_url || "");
           }
         } else if (saved.status !== 200) {
           setLoadError(saved.body.message || "无法加载已保存的订阅");
@@ -223,24 +234,15 @@ export function TestPage() {
     return () => {
       cancelled = true;
     };
-  }, [barkKey, navigate]);
+  }, [id, navigate]);
 
   useEffect(() => {
-    if (!barkKey || tab !== "history") {
+    if (!id || tab !== "history") {
       return;
     }
     let cancelled = false;
-    fetchHistoryCatalog(barkKey)
-      .then(async ({ status, body }) => {
-        if (cancelled) {
-          return;
-        }
-        if (await maybeExpireBarkSession(barkKey, status, "bearer")) {
-          if (!cancelled) {
-            navigate("/", { replace: true });
-          }
-          return;
-        }
+    fetchHistoryCatalog()
+      .then(({ status, body }) => {
         if (cancelled) {
           return;
         }
@@ -266,10 +268,10 @@ export function TestPage() {
     return () => {
       cancelled = true;
     };
-  }, [barkKey, tab, navigate]);
+  }, [id, tab]);
 
-  if (!barkKey) {
-    return <Navigate to="/" replace />;
+  if (!id || missing) {
+    return <Navigate to="/devices" replace />;
   }
 
   const alertCards = alertRuleCards(draft);
@@ -280,8 +282,8 @@ export function TestPage() {
     setActionStatus(null);
     try {
       const { status, body } = await send();
-      if (await maybeExpireBarkSession(barkKey, status, "bearer")) {
-        navigate("/", { replace: true });
+      if (status === 401) {
+        navigate("/login", { replace: true });
         return;
       }
       const text = resultMessage(status, body.message, body.data);
@@ -300,13 +302,13 @@ export function TestPage() {
     <main className="test-page">
       <div className="app-bar">
         <AppBrand />
-        <DeviceIdentity barkId={barkKey} currentPage="test" />
+        {deviceName ? <DeviceIdentity deviceId={id} deviceName={deviceName} currentPage="test" /> : null}
       </div>
       <section className="panel test-sheet">
         <div className="test-status-strip" aria-label="设备状态">
           <div className="test-status-cell">
             <StatusIcon name="cloud" />
-            <span title={barkKey}>{maskBarkId(barkKey)}</span>
+            <span>{deviceName || "设备"}</span>
           </div>
           <div className="test-status-cell">
             <StatusIcon name="server" />
@@ -404,7 +406,7 @@ export function TestPage() {
                     type="button"
                     className="btn-ghost"
                     disabled={pendingAction !== null}
-                    onClick={() => runAction(`level:${level.id}`, () => simulateNotifyLevel(barkKey, level.id))}
+                    onClick={() => runAction(`level:${level.id}`, () => simulateNotifyLevel(id, level.id))}
                   >
                     {pendingAction === `level:${level.id}` ? "发送中…" : "发送测试"}
                   </button>
@@ -449,7 +451,7 @@ export function TestPage() {
                       disabled={pendingAction !== null}
                       onClick={() => runAction(
                         `history:${record.key}`,
-                        () => simulateHistoryReplay(barkKey, record.source || historySource, record.key),
+                        () => simulateHistoryReplay(id, record.source || historySource, record.key),
                       )}
                     >
                       {pendingAction === `history:${record.key}` ? "发送中…" : "测试"}

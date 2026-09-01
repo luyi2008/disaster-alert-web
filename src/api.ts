@@ -193,13 +193,3 @@ export async function deleteDeviceSubscription(
 ): Promise<{ status: number; body: ApiEnvelope<unknown> }> {
   return bffEnvelope(`/api/devices/${encodeURIComponent(deviceId)}/subscribe`, { method: "DELETE" });
 }
-
-export async function fetchSavedSubscriptions(
-  barkKey: string,
-): Promise<{ status: number; body: ApiEnvelope<SavedSubscriptionsData> }> {
-  const response = await fetch(apiUrl("/api/subscriptions"), {
-    headers: { Authorization: `Bearer ${barkKey}` },
-  });
-  const body = await parseApiResponse(response) as ApiEnvelope<SavedSubscriptionsData>;
-  return { status: response.status, body };
-}
