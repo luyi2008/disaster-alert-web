@@ -38,8 +38,10 @@ export function Field({
   children: ReactNode;
 }) {
   return (
-    <label className={`ds-field${error ? " is-invalid" : ""}`} htmlFor={htmlFor}>
-      <span className="ds-field-label">{label}</span>
+    <div className={`ds-field${error ? " is-invalid" : ""}`}>
+      <label className="ds-field-label" htmlFor={htmlFor}>
+        {label}
+      </label>
       {children}
       {error ? (
         <span className="ds-field-error" role="alert">
@@ -48,6 +50,6 @@ export function Field({
       ) : hint ? (
         <span className="ds-field-hint">{hint}</span>
       ) : null}
-    </label>
+    </div>
   );
 }

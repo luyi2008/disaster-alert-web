@@ -651,6 +651,10 @@
   background: var(--panel);
 }
 
+.add-panel {
+  max-width: 480px;
+}
+
 .device-card-head {
   display: flex;
   align-items: flex-start;
@@ -700,36 +704,16 @@
   text-align: center;
 }
 
-.add-code {
-  display: grid;
-  gap: 8px;
-  justify-items: start;
-}
-
-.add-code strong {
+.ds-input-token {
   font-family: var(--font-mono);
-  font-size: 32px;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.02em;
 }
 
-.add-steps {
-  margin: 0;
-  padding-left: 18px;
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.7;
-}
-
-.add-qr {
-  display: grid;
-  place-items: center;
-  width: 160px;
-  height: 160px;
-  border: 1px dashed var(--line);
-  border-radius: var(--radius-sm);
-  color: var(--muted);
-  font-size: 13px;
-  text-align: center;
+.add-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
 }
 
 @keyframes ds-spin {

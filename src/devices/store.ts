@@ -88,28 +88,27 @@ export function getDevice(id: string | undefined): ManagedDevice | null {
   return readDevices().find((device) => device.id === id) ?? null;
 }
 
-export function generateDeviceCode(): string {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  const pick = (n: number) =>
-    Array.from({ length: n }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join("");
-  return `${pick(4)}-${pick(4)}`;
-}
-
-export function bindDevice(input: { name: string; os: DeviceOs; kind: DeviceKind }): ManagedDevice {
+export function bindDevice(input: { token: string; name?: string }): ManagedDevice {
   const devices = readDevices();
+  const token = input.token.trim();
+  const name = input.name?.trim() || `Device · ${token.slice(-4)}`;
   const device: ManagedDevice = {
     id: `dev-${Date.now().toString(36)}`,
-    name: input.name,
-    kind: input.kind,
-    os: input.os,
+    name,
+    kind: "phone",
+    os: "iOS",
     online: true,
     notificationsEnabled: true,
     lastActiveAt: Date.now(),
     addedAt: Date.now(),
-    barkKey: null,
+    barkKey: token,
   };
   writeDevices([device, ...devices]);
   return device;
+}
+
+export function tokenAlreadyBound(token: string): boolean {
+  return readDevices().some((device) => device.barkKey === token);
 }
 
 export function formatLastActive(timestamp: number, now = Date.now()): string {
