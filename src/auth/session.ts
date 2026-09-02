@@ -31,3 +31,17 @@ export async function getSession(): Promise<AuthSession> {
 export async function signOut(): Promise<void> {
   await bffFetch("/api/auth/sign-out", { method: "POST" });
 }
+
+export function sessionLabel(session: AuthSession): string {
+  if (!session) {
+    return "账号";
+  }
+  const name = session.user.name?.trim();
+  if (name) {
+    return name;
+  }
+  if (session.user.phoneNumber) {
+    return session.user.phoneNumber;
+  }
+  return "已登录";
+}

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getSession, signOut } from "./session";
+import { getSession, sessionLabel, signOut } from "./session";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -18,6 +18,12 @@ describe("getSession", () => {
   it("returns null when the body has no user", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response("null", { status: 200 })));
     await expect(getSession()).resolves.toBeNull();
+  });
+});
+
+describe("sessionLabel", () => {
+  it("prefers the display name", () => {
+    expect(sessionLabel({ user: { id: "u1", name: "微信用户", phoneNumber: "+86138" } })).toBe("微信用户");
   });
 });
 

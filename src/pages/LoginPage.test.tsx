@@ -34,6 +34,29 @@ describe("LoginPage", () => {
     expect(fetchMock.mock.calls.some(([url]) => String(url).includes("send-otp"))).toBe(false);
   });
 
+  it("keeps a reserved error slot under the phone field", () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("null", { status: 200 })));
+    renderLogin();
+    const phoneField = screen.getByLabelText("手机号").closest(".ds-field");
+    const message = phoneField?.querySelector(".ds-field-message");
+    expect(message).not.toBeNull();
+    expect(message).toBeEmptyDOMElement();
+  });
+
+  it("greys out Alipay and Google while leaving WeChat available", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      if (String(input).includes("/api/auth/mock/wechat/ticket")) {
+        return new Response(JSON.stringify({ success: true, data: { ticketId: "ticket-1" } }), { status: 200 });
+      }
+      return new Response("null", { status: 200 });
+    }));
+    renderLogin();
+    expect(screen.getByRole("button", { name: "支付宝登录本期暂未开放" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Google 登录本期暂未开放" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "微信" }));
+    expect(await screen.findByText("ticket-1")).toBeInTheDocument();
+  });
+
   it("verifies OTP and goes to devices", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
       const url = String(input);
@@ -74,6 +97,7 @@ describe("LoginPage", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
     renderLogin();
+    fireEvent.click(screen.getByRole("button", { name: "微信" }));
     expect(await screen.findByText("ticket-1")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "模拟确认" }));
     expect(await screen.findByText("devices")).toBeInTheDocument();
