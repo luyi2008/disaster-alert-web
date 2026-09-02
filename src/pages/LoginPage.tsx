@@ -151,7 +151,7 @@ export function LoginPage() {
           </div>
           {formError ? <Toast kind="error">{formError}</Toast> : null}
           <form className="login-stack" onSubmit={onSubmit}>
-            <Field label="手机号" htmlFor="phone" error={phoneError}>
+            <Field label="手机号" htmlFor="phone" error={phoneError} reserveMessage>
               <PhoneInput
                 id="phone"
                 dial={dial}

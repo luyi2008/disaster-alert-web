@@ -29,26 +29,31 @@ export function Field({
   htmlFor,
   error,
   hint,
+  reserveMessage = false,
   children,
 }: {
   label: string;
   htmlFor?: string;
   error?: string | null;
   hint?: string;
+  reserveMessage?: boolean;
   children: ReactNode;
 }) {
+  const message = error || hint || "";
+  const showMessage = Boolean(error || hint || reserveMessage);
   return (
     <div className={`ds-field${error ? " is-invalid" : ""}`}>
       <label className="ds-field-label" htmlFor={htmlFor}>
         {label}
       </label>
       {children}
-      {error ? (
-        <span className="ds-field-error" role="alert">
-          {error}
+      {showMessage ? (
+        <span
+          className={`ds-field-message${error ? " is-error" : hint ? " is-hint" : ""}`}
+          role={error ? "alert" : undefined}
+        >
+          {message}
         </span>
-      ) : hint ? (
-        <span className="ds-field-hint">{hint}</span>
       ) : null}
     </div>
   );

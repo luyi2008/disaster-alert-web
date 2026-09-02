@@ -79,17 +79,25 @@
 }
 
 .ds-field-hint,
-.ds-field-error {
+.ds-field-error,
+.ds-field-message {
   margin: 0;
   font-size: 13px;
   line-height: 1.45;
 }
 
-.ds-field-hint {
+.ds-field-message {
+  display: block;
+  min-height: calc(13px * 1.45);
+}
+
+.ds-field-hint,
+.ds-field-message.is-hint {
   color: var(--muted);
 }
 
-.ds-field-error {
+.ds-field-error,
+.ds-field-message.is-error {
   color: var(--err);
 }
 

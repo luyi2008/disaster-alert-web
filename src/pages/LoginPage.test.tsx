@@ -28,6 +28,15 @@ describe("LoginPage", () => {
     expect(screen.queryByText("Confirm you are human")).toBeNull();
   });
 
+  it("keeps a reserved error slot under the phone field before validation", () => {
+    const { container } = renderLogin();
+    const phoneField = screen.getByLabelText("手机号").closest(".ds-field");
+    const message = phoneField?.querySelector(".ds-field-message");
+    expect(message).not.toBeNull();
+    expect(message).toBeEmptyDOMElement();
+    expect(container.querySelector(".login-stack .ds-field .ds-field-message")).toBe(message);
+  });
+
   it("asks for captcha, then sends a code and signs in", async () => {
     renderLogin();
     fireEvent.change(screen.getByPlaceholderText("138 0013 8000"), { target: { value: "13800138000" } });
