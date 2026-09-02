@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import { apiUrl, fetchStatus } from "../api";
 import { clearCachedBarkKey } from "../bark/session";
 import { DeviceIdentity } from "../components/DeviceIdentity";
@@ -18,7 +18,8 @@ export type { SubscribeLocationState };
 export function SubscribePage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const barkKey = resolveBarkKey(location.state);
+  const { deviceId } = useParams();
+  const barkKey = resolveBarkKey(location.state, deviceId);
   const rootRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -77,7 +78,7 @@ export function SubscribePage() {
       <main ref={rootRef}>
         <div className="app-bar">
           <div className="shell-slot" ref={headerRef} />
-          <DeviceIdentity barkId={barkKey} />
+          <DeviceIdentity barkId={barkKey} deviceId={deviceId} />
         </div>
         <section className="panel">
           <div className="shell-slot" ref={bodyRef} />

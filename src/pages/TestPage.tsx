@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import { fetchSavedSubscriptions } from "../api";
 import { maskBarkId } from "../bark/maskBarkId";
 import { maybeExpireBarkSession } from "../bark/session";
@@ -151,7 +151,8 @@ function formatDistance(value: number | undefined, unit: string): string | null 
 export function TestPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const barkKey = resolveBarkKey(location.state);
+  const { deviceId } = useParams();
+  const barkKey = resolveBarkKey(location.state, deviceId);
   const [draft, setDraft] = useState(createEmptyDraft);
   const [draftUpdatedAt, setDraftUpdatedAt] = useState<number | null>(null);
   const [barkUrl, setBarkUrl] = useState("");
@@ -300,7 +301,7 @@ export function TestPage() {
     <main className="test-page">
       <div className="app-bar">
         <AppBrand />
-        <DeviceIdentity barkId={barkKey} currentPage="test" />
+        <DeviceIdentity barkId={barkKey} currentPage="test" deviceId={deviceId} />
       </div>
       <section className="panel test-sheet">
         <div className="test-status-strip" aria-label="设备状态">

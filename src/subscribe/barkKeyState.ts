@@ -1,5 +1,6 @@
 import { localValidateBarkKey } from "../bark/localValidate";
 import { readCachedBarkKey } from "../bark/session";
+import { getDevice } from "../devices/store";
 
 export type SubscribeLocationState = {
   barkKey?: string;
@@ -16,6 +17,16 @@ export function barkKeyFromState(state: unknown): string | null {
   return barkKey;
 }
 
-export function resolveBarkKey(state: unknown): string | null {
-  return barkKeyFromState(state) ?? readCachedBarkKey();
+export function resolveBarkKey(state: unknown, deviceId?: string): string | null {
+  const fromState = barkKeyFromState(state);
+  if (fromState) {
+    return fromState;
+  }
+  if (deviceId) {
+    const fromDevice = getDevice(deviceId)?.barkKey;
+    if (fromDevice) {
+      return fromDevice;
+    }
+  }
+  return readCachedBarkKey();
 }
