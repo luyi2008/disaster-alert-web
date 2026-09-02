@@ -31,9 +31,8 @@ function proxyTo(target: string): ProxyOptions {
 export default defineConfig({
   plugins: [react()],
   server: {
-    host: "127.0.0.1",
+    host: true,
     port: 5173,
-    strictPort: true,
     proxy: {
       "/api/auth": proxyTo(bffOrigin),
       "/api/devices": proxyTo(bffOrigin),

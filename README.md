@@ -15,7 +15,7 @@ npm install
 npm run dev
 ```
 
-Vite 默认绑在 `http://127.0.0.1:5173`。浏览器请打开这个地址，不要用 `http://localhost:5173`：Better Auth 按 Origin 精确校验，BFF 默认 `TRUSTED_ORIGINS=http://127.0.0.1:5173`，`localhost` 会被当成另一个源并返回 `INVALID_ORIGIN`。开发代理仍会把 `localhost` / `[::1]` 改写成 `127.0.0.1`，与该默认值对齐。若要用局域网 IP 打开页面，把该 Origin 加进 BFF 的 `TRUSTED_ORIGINS`。
+Vite 监听本机所有地址（`localhost` 和 `127.0.0.1` 都能打开）。BFF 默认只信任 Origin `http://127.0.0.1:5173`；开发代理会把 `localhost` / `[::1]` 改写成该值。若用局域网 IP 打开页面，把该 Origin 加进 BFF 的 `TRUSTED_ORIGINS`。
 
 Vite 会把 `/api/auth`、`/api/devices`、`/api/settings` 代理到 BFF，其余 `/api` 与 `/health` 代理到 API。
 
