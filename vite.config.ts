@@ -1,6 +1,6 @@
 import { defineConfig, type ProxyOptions } from "vite";
 import react from "@vitejs/plugin-react";
-import { rewriteLoopbackHost } from "./src/dev/rewriteLoopbackHost";
+import { rewriteLoopbackHost } from "./src/dev/rewriteLoopbackHost.ts";
 
 const apiOrigin = process.env.VITE_DEV_API_ORIGIN ?? "http://127.0.0.1:30010";
 const bffOrigin = process.env.VITE_DEV_BFF_ORIGIN ?? "http://127.0.0.1:30012";
