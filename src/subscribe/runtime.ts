@@ -101,6 +101,7 @@ export type SubscribeRuntime = {
   lastSubmittedIdentity: string;
   optionCategories: CategoryOption[];
   deviceId: string;
+  deviceKey: string;
   barkUrl: string;
   configurationReady: boolean;
   subscriptionRequestInFlight: boolean;
@@ -134,6 +135,7 @@ export function createRuntime(root: HTMLElement, options: MountSubscribeOptions)
     lastSubmittedIdentity: "",
     optionCategories: [],
     deviceId: String(options.deviceId || ""),
+    deviceKey: String(options.deviceKey || ""),
     barkUrl: "",
     configurationReady: false,
     subscriptionRequestInFlight: false,

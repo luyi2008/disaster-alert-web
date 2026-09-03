@@ -159,7 +159,7 @@ describe("mountSubscribeApp", () => {
     fillHost(host);
     document.body.append(host);
 
-    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceId: DEVICE_ID });
+    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceId: DEVICE_ID, deviceKey: KEY });
     const form = host.querySelector("#subscribe-form");
     expect(form).not.toBe(decoy);
     expect((form as HTMLFormElement | null)?.id).toBe("subscribe-form");
@@ -184,6 +184,7 @@ describe("mountSubscribeApp", () => {
       api: "",
       instanceTermsAccepted: true,
       deviceId: DEVICE_ID,
+      deviceKey: KEY,
     });
 
     const submit = host.querySelector("#submit") as HTMLButtonElement;
@@ -204,7 +205,7 @@ describe("mountSubscribeApp", () => {
     });
 
     const hydrateCall = fetchMock.mock.calls.find(([input]) => (
-      String(input).includes(`/api/devices/${DEVICE_ID}/subscription`)
+      String(input).includes(`/api/devices/${KEY}/subscription`)
     ));
     expect(hydrateCall).toBeDefined();
     expect(new Headers((hydrateCall?.[1] as RequestInit | undefined)?.headers).get("Authorization")).toBeNull();
@@ -232,7 +233,7 @@ describe("mountSubscribeApp", () => {
     const host = document.createElement("div");
     fillHost(host);
     document.body.append(host);
-    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceId: DEVICE_ID });
+    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceId: DEVICE_ID, deviceKey: KEY });
     const startAddLocation = host.querySelector("#start-add-location") as HTMLButtonElement;
 
     expect(startAddLocation.disabled).toBe(true);
@@ -268,7 +269,7 @@ describe("mountSubscribeApp", () => {
     const host = document.createElement("div");
     fillHost(host);
     document.body.append(host);
-    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceId: DEVICE_ID });
+    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceId: DEVICE_ID, deviceKey: KEY });
     const submit = host.querySelector("#submit") as HTMLButtonElement;
     await vi.waitFor(() => expect(submit.disabled).toBe(false));
     expect(host.textContent).not.toContain("无法加载已保存的订阅");
@@ -299,7 +300,7 @@ describe("mountSubscribeApp", () => {
     const host = document.createElement("div");
     fillHost(host);
     document.body.append(host);
-    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceId: DEVICE_ID });
+    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceId: DEVICE_ID, deviceKey: KEY });
     const submit = host.querySelector("#submit") as HTMLButtonElement;
     await vi.waitFor(() => expect(submit.disabled).toBe(false));
     const checked = (category: string) => (
@@ -329,6 +330,7 @@ describe("mountSubscribeApp", () => {
       api: "",
       instanceTermsAccepted: true,
       deviceId: DEVICE_ID,
+      deviceKey: KEY,
       onUnauthorized,
     });
     await vi.waitFor(() => expect(onUnauthorized).toHaveBeenCalledOnce());
@@ -385,7 +387,7 @@ describe("mountSubscribeApp", () => {
     fillHost(host);
     document.body.append(host);
 
-    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceId: DEVICE_ID });
+    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceId: DEVICE_ID, deviceKey: KEY });
     const sources = host.querySelector("#alert-type-sources") as HTMLElement;
     await vi.waitFor(() => {
       expect(sources.hidden).toBe(false);
@@ -446,6 +448,7 @@ describe("mountSubscribeApp", () => {
       api: "",
       instanceTermsAccepted: true,
       deviceId: DEVICE_ID,
+      deviceKey: KEY,
       onUnauthorized,
     });
     const submit = host.querySelector("#submit") as HTMLButtonElement;

@@ -79,7 +79,7 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
     const generation = ++ctx.initializationGeneration;
     ctx.configurationReady = false;
     setSubscriptionRequestInFlight(false);
-    return fetchDeviceSubscription(ctx.deviceId)
+    return fetchDeviceSubscription(ctx.deviceKey)
       .catch(
         (): Awaited<ReturnType<typeof fetchDeviceSubscription>> => ({
           status: 0,

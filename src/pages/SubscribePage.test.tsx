@@ -128,8 +128,8 @@ describe("SubscribePage", () => {
     expect(await screen.findByRole("heading", { name: "灾害预警" })).toBeInTheDocument();
     await vi.waitFor(() => {
       const hydrateCall = fetchMock.mock.calls.find(([input]) => String(input).includes("/subscription"));
-      expect(String(hydrateCall?.[0])).toContain(`/api/devices/${DEVICE_ID}/subscription`);
-      expect(String(hydrateCall?.[0])).not.toContain(`/api/devices/${DEVICE_KEY}/`);
+      expect(String(hydrateCall?.[0])).toContain(`/api/devices/${DEVICE_KEY}/subscription`);
+      expect(String(hydrateCall?.[0])).not.toContain(`/api/devices/${DEVICE_ID}/`);
     });
   });
 });

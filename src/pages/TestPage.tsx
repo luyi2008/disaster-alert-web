@@ -198,7 +198,7 @@ export function TestPage() {
     let cancelled = false;
     Promise.all([
       fetchSubscriptionOptions(),
-      fetchDeviceSubscription(device.id),
+      fetchDeviceSubscription(device.deviceKey),
     ])
       .then(async ([options, saved]) => {
         if (cancelled) {

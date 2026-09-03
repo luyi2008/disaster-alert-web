@@ -69,16 +69,17 @@ describe("BFF device client", () => {
     expect(matchDevice([DEVICE], "missing")).toBeUndefined();
   });
 
-  it("GETs /api/devices/:id/subscription without Authorization", async () => {
+  it("GETs /api/devices/:device_key/subscription without Authorization", async () => {
     const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => new Response(
       JSON.stringify({ success: false, message: "没有订阅" }),
       { status: 200 },
     ));
     vi.stubGlobal("fetch", fetchMock);
-    const result = await fetchDeviceSubscription("dev-1");
+    const result = await fetchDeviceSubscription(DEVICE.deviceKey);
     expect(result.status).toBe(200);
     expect(result.body.success).toBe(false);
-    expect(String(fetchMock.mock.calls[0]![0])).toContain("/api/devices/dev-1/subscription");
+    expect(String(fetchMock.mock.calls[0]![0])).toContain(`/api/devices/${DEVICE.deviceKey}/subscription`);
+    expect(String(fetchMock.mock.calls[0]![0])).not.toContain(`/api/devices/${DEVICE.id}/`);
     expect(String(fetchMock.mock.calls[0]![0])).not.toContain("device_key=");
     expect(new Headers(fetchMock.mock.calls[0]![1]?.headers).get("Authorization")).toBeNull();
     expect(fetchMock.mock.calls[0]![1]?.credentials).toBe("include");

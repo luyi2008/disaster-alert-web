@@ -83,6 +83,7 @@ export function SubscribePage() {
       api: apiUrl(""),
       instanceTermsAccepted: termsAccepted,
       deviceId: device.id,
+      deviceKey: device.deviceKey,
       onUnauthorized: () => navigate("/login", { replace: true }),
       onMissingDevice: () => navigate("/devices", { replace: true }),
     });

@@ -117,6 +117,7 @@ export type MountSubscribeOptions = {
   api?: string;
   instanceTermsAccepted?: boolean;
   deviceId: string;
+  deviceKey: string;
   onUnauthorized?: () => void;
   onMissingDevice?: () => void;
 };

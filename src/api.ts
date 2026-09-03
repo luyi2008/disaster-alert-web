@@ -189,9 +189,9 @@ export async function deleteDevice(id: string): Promise<{ status: number; body: 
 }
 
 export async function fetchDeviceSubscription(
-  deviceId: string,
+  deviceKey: string,
 ): Promise<{ status: number; body: ApiEnvelope<SavedSubscriptionsData> }> {
-  return bffEnvelope(`/api/devices/${encodeURIComponent(deviceId)}/subscription`);
+  return bffEnvelope(`/api/devices/${encodeURIComponent(deviceKey)}/subscription`);
 }
 
 export async function saveDeviceSubscription(

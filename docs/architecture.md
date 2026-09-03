@@ -245,7 +245,7 @@ stateDiagram-v2
 
 ### 4.4 服务端 hydrate 与内存编辑
 
-订阅页用当前设备 UUID 请求 `GET /api/devices/:id/subscription`（BFF cookie），再由 `selectSavedSubscription` 取第一条记录。`draftFromSavedSubscription` 把该记录映射为表单草稿；灾种选项随后加载并与映射结果合并。HTTP 200 且 `success: false` 表示该设备没有订阅，页面从空配置开始。401 回 `/login`；设备不存在回 `/devices`。
+订阅页用当前设备 `deviceKey` 请求 `GET /api/devices/:device_key/subscription`（BFF cookie），再由 `selectSavedSubscription` 取第一条记录。`draftFromSavedSubscription` 把该记录映射为表单草稿；灾种选项随后加载并与映射结果合并。HTTP 200 且 `success: false` 表示该设备没有订阅，页面从空配置开始。401 回 `/login`；设备不存在回 `/devices`。
 
 表单编辑只保存在当前页面的内存中，提交时才通过 `POST /api/devices/:id/subscribe` 覆盖订阅（body 只有 `targets` 与 `alerts`，不含 `destination`）；刷新或离开页面会丢弃未提交修改。加载已保存订阅失败时会提示错误，但不会阻止用户继续编辑并保存。浏览器里遗留的 `disaster_subscription_draft_v3` 或 v2 键不会被读取，也不会被删除。
 

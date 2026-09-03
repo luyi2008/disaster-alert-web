@@ -170,6 +170,8 @@ describe("TestPage", () => {
     expect(screen.getByText(`上次更新 ${formatDraftUpdatedAt(UPDATED_AT)}`)).toBeInTheDocument();
     const hydrateCall = fetchMock.mock.calls.find(([input]) => String(input).endsWith("/subscription"));
     expect(hydrateCall).toBeTruthy();
+    expect(String(hydrateCall?.[0])).toContain(`/api/devices/${DEVICE_KEY}/subscription`);
+    expect(String(hydrateCall?.[0])).not.toContain(`/api/devices/${DEVICE_ID}/`);
     expect(new Headers(hydrateCall?.[1]?.headers).get("Authorization")).toBeNull();
     await screen.findByText("bark.example");
     expect(screen.getByText("静默")).toBeInTheDocument();
