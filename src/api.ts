@@ -195,17 +195,17 @@ export async function fetchDeviceSubscription(
 }
 
 export async function saveDeviceSubscription(
-  deviceId: string,
+  deviceKey: string,
   payload: { targets: unknown; alerts: unknown },
 ): Promise<{ status: number; body: ApiEnvelope<{ saved?: boolean }> }> {
-  return bffEnvelope(`/api/devices/${encodeURIComponent(deviceId)}/subscribe`, {
+  return bffEnvelope(`/api/devices/${encodeURIComponent(deviceKey)}/subscribe`, {
     method: "POST",
     body: JSON.stringify(payload),
   });
 }
 
 export async function deleteDeviceSubscription(
-  deviceId: string,
+  deviceKey: string,
 ): Promise<{ status: number; body: ApiEnvelope<unknown> }> {
-  return bffEnvelope(`/api/devices/${encodeURIComponent(deviceId)}/subscribe`, { method: "DELETE" });
+  return bffEnvelope(`/api/devices/${encodeURIComponent(deviceKey)}/subscribe`, { method: "DELETE" });
 }

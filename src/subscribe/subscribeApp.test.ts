@@ -193,7 +193,7 @@ describe("mountSubscribeApp", () => {
 
     await vi.waitFor(() => {
       const subscribeCall = fetchMock.mock.calls.find(([input, init]) => (
-        String(input).includes(`/api/devices/${DEVICE_ID}/subscribe`) && (init as RequestInit | undefined)?.method === "POST"
+        String(input).includes(`/api/devices/${KEY}/subscribe`) && (init as RequestInit | undefined)?.method === "POST"
       ));
       if (!subscribeCall) {
         throw new Error("missing subscribe request");
@@ -201,6 +201,7 @@ describe("mountSubscribeApp", () => {
       const body = JSON.parse(String((subscribeCall[1] as RequestInit).body));
       expect(body.destination).toBeUndefined();
       expect(body.targets[0].point).toEqual({ latitude: 35, longitude: 139 });
+      expect(String(subscribeCall[0])).not.toContain(`/api/devices/${DEVICE_ID}/`);
       expect(subscribeCall[1]?.credentials).toBe("include");
     });
 

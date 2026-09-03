@@ -173,7 +173,7 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
     setSubscriptionRequestInFlight(true);
     toast.show("正在保存订阅...", "info");
     try {
-      const { status: httpStatus, body } = await saveDeviceSubscription(ctx.deviceId, payload);
+      const { status: httpStatus, body } = await saveDeviceSubscription(ctx.deviceKey, payload);
       if (httpStatus === 401) {
         options.onUnauthorized?.();
         return;
@@ -207,7 +207,7 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
     setSubscriptionRequestInFlight(true);
     toast.show("正在取消订阅...", "info");
     try {
-      const { status: httpStatus, body } = await deleteDeviceSubscription(ctx.deviceId);
+      const { status: httpStatus, body } = await deleteDeviceSubscription(ctx.deviceKey);
       if (httpStatus === 401) {
         options.onUnauthorized?.();
         return;
