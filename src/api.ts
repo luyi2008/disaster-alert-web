@@ -153,9 +153,15 @@ export async function fetchDevices(): Promise<{ status: number; body: ApiEnvelop
 }
 
 export async function bindDevice(
-  token: string,
+  deviceToken: string,
+  name?: string,
 ): Promise<{ status: number; body: ApiEnvelope<{ device: DeviceRecord }> }> {
-  return bffEnvelope("/api/devices", { method: "POST", body: JSON.stringify({ token }) });
+  const body: { device_token: string; name?: string } = { device_token: deviceToken };
+  const trimmedName = name?.trim();
+  if (trimmedName) {
+    body.name = trimmedName;
+  }
+  return bffEnvelope("/api/devices", { method: "POST", body: JSON.stringify(body) });
 }
 
 export async function renameDevice(

@@ -183,7 +183,7 @@ export function LoginPage() {
             </span>
             <h1>灾害预警</h1>
             <p>及时知情，及时避险</p>
-            <span>用手机号或微信登录后，再绑定设备上的 Bark token。</span>
+            <span>用手机号或微信登录后，再绑定设备的 device_token。</span>
           </div>
           {formError ? <Toast kind={statusKind === "ok" ? "success" : "error"}>{formError}</Toast> : null}
           <form className="login-stack" onSubmit={(event) => void loginWithOtp(event)}>

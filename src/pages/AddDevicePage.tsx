@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { bindDevice, renameDevice } from "../api";
-import { localValidateBarkKey, localValidateMessage } from "../bark/localValidate";
+import { bindDevice } from "../api";
 import { AppShell, Toast } from "../components/ds/AppShell";
 import { Button, Field } from "../components/ds/Button";
+import { deviceTokenMessage, validateDeviceToken } from "../devices/deviceToken";
 import "../styles/base.css";
 import "../styles/ds.css";
 
@@ -19,13 +19,13 @@ export function AddDevicePage() {
     event.preventDefault();
     setFormError(null);
     const trimmed = token.trim();
-    const failure = localValidateBarkKey(trimmed);
+    const failure = validateDeviceToken(trimmed);
     if (failure) {
-      setTokenError(localValidateMessage(failure).replace("Bark Key", "Bark token").replace("Bark 测试链接或 Key", "Bark token"));
+      setTokenError(deviceTokenMessage(failure));
       return;
     }
     setTokenError(null);
-    const result = await bindDevice(trimmed);
+    const result = await bindDevice(trimmed, name);
     if (result.status === 401) {
       navigate("/login", { replace: true });
       return;
@@ -34,32 +34,27 @@ export function AddDevicePage() {
       setFormError(result.body.message || "无法绑定设备");
       return;
     }
-    const created = result.body.data.device;
-    const nextName = name.trim();
-    if (nextName && nextName !== created.name) {
-      await renameDevice(created.id, nextName);
-    }
     setOk(true);
     navigate("/devices");
   }
 
   return (
-    <AppShell title="添加设备" description="输入设备 token。名称可选。">
+    <AppShell title="添加设备" description="输入 APNs device_token。名称可选。">
       {formError ? <Toast kind="error">{formError}</Toast> : null}
       {ok ? <Toast kind="success">设备已添加。</Toast> : null}
       <form className="add-panel" onSubmit={(event) => void onSubmit(event)}>
         <Field
-          label="Bark token"
-          htmlFor="bark-token"
+          label="device_token"
+          htmlFor="device-token"
           error={tokenError}
-          hint={tokenError ? undefined : "必填，22 位字母或数字"}
+          hint={tokenError ? undefined : "必填，最长 128 位，不能为 deleted"}
         >
           <input
-            id="bark-token"
+            id="device-token"
             className={`ds-input ds-input-token${tokenError ? " is-invalid" : ""}`}
             autoComplete="off"
             spellCheck={false}
-            placeholder="22 位字母或数字"
+            placeholder="APNs device_token"
             value={token}
             onChange={(event) => {
               setToken(event.target.value);
@@ -67,7 +62,7 @@ export function AddDevicePage() {
             }}
           />
         </Field>
-        <Field label="名称" htmlFor="device-name" hint="可选">
+        <Field label="名称" htmlFor="device-name" hint="可选，省略时自动生成">
           <input
             id="device-name"
             className="ds-input"

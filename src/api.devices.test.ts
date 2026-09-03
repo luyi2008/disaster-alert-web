@@ -25,17 +25,30 @@ describe("BFF device client", () => {
     expect(new Headers(fetchMock.mock.calls[0]![1]?.headers).get("Authorization")).toBeNull();
   });
 
-  it("binds a token body only", async () => {
+  it("binds device_token and optional name", async () => {
     const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => new Response(
       JSON.stringify({ success: true, message: "ok", data: { device: { id: "dev-1", userId: "u1", name: "设备1", createdAt: 1, updatedAt: 1 } } }),
       { status: 200 },
     ));
     vi.stubGlobal("fetch", fetchMock);
-    await bindDevice("ynJ5Ft4atkMkWeo2PAvFhF");
+    await bindDevice("short-apns-token", "厨房 iPhone");
     const [, init] = fetchMock.mock.calls[0]!;
     expect(init?.method).toBe("POST");
-    expect(JSON.parse(String(init?.body))).toEqual({ token: "ynJ5Ft4atkMkWeo2PAvFhF" });
+    expect(JSON.parse(String(init?.body))).toEqual({
+      device_token: "short-apns-token",
+      name: "厨房 iPhone",
+    });
     expect(init?.credentials).toBe("include");
+  });
+
+  it("omits name when binding without one", async () => {
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => new Response(
+      JSON.stringify({ success: true, message: "ok", data: { device: { id: "dev-1", userId: "u1", name: "设备1", createdAt: 1, updatedAt: 1 } } }),
+      { status: 200 },
+    ));
+    vi.stubGlobal("fetch", fetchMock);
+    await bindDevice("short-apns-token");
+    expect(JSON.parse(String(fetchMock.mock.calls[0]![1]?.body))).toEqual({ device_token: "short-apns-token" });
   });
 
   it("GETs /api/devices/:id/subscription without Authorization", async () => {

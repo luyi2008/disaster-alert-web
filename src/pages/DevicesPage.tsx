@@ -55,7 +55,7 @@ export function DevicesPage() {
   return (
     <AppShell
       title="设备"
-      description="每台设备使用自己的 Bark token、地点和规则。"
+      description="每台设备使用自己的推送 token、地点和规则。"
       action={
         <Link className="ds-btn ds-btn-primary" to="/devices/add">
           添加设备
@@ -68,7 +68,7 @@ export function DevicesPage() {
       ) : devices.length === 0 ? (
         <EmptyState
           title="还没有设备"
-          body="输入 Bark token 添加后才能配置订阅。不要粘贴测试链接，只输入 22 位 token。"
+          body="输入 APNs device_token 添加后才能配置订阅。最长 128 位，不能为 deleted。"
           action={{ href: "/devices/add", label: "添加设备" }}
         />
       ) : (
