@@ -136,11 +136,21 @@ export async function fetchIncidentDetail(
 
 export type DeviceRecord = {
   id: string;
-  userId: string;
+  userId?: string;
   name: string;
+  deviceKey: string;
+  deviceTokenMasked: string;
   createdAt: number;
   updatedAt: number;
 };
+
+export function deviceRouteKey(device: Pick<DeviceRecord, "id" | "deviceKey">): string {
+  return device.deviceKey || device.id;
+}
+
+export function matchDevice(devices: DeviceRecord[], routeId: string): DeviceRecord | undefined {
+  return devices.find((row) => row.deviceKey === routeId || row.id === routeId);
+}
 
 async function bffEnvelope<T>(path: string, init?: RequestInit): Promise<{ status: number; body: ApiEnvelope<T> }> {
   const response = await bffFetch(path, init);

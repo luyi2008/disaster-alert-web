@@ -4,6 +4,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { SubscribePage } from "./SubscribePage";
 
 const DEVICE_ID = "11111111-1111-1111-1111-111111111111";
+const DEVICE_KEY = "ynJ5Ft4atkMkWeo2PAvFhF";
+const DEVICE_TOKEN_MASKED = "toke****naaa";
 
 vi.mock("leaflet", () => {
   const map = {
@@ -73,7 +75,7 @@ describe("SubscribePage", () => {
       return jsonResponse({});
     }));
     render(
-      <MemoryRouter initialEntries={[`/devices/${DEVICE_ID}/subscribe`]}>
+      <MemoryRouter initialEntries={[`/devices/${DEVICE_KEY}/subscribe`]}>
         <Routes>
           <Route path="/devices" element={<div>devices</div>} />
           <Route path="/devices/:id/subscribe" element={<SubscribePage />} />
@@ -84,11 +86,18 @@ describe("SubscribePage", () => {
   });
 
   it("renders device identity in React", async () => {
-    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes("/api/devices") && !url.includes("subscribe") && !url.includes("subscription")) {
         return jsonResponse({
-          devices: [{ id: DEVICE_ID, userId: "u1", name: "设备1", createdAt: 1, updatedAt: 1 }],
+          devices: [{
+            id: DEVICE_ID,
+            name: "设备1",
+            deviceKey: DEVICE_KEY,
+            deviceTokenMasked: DEVICE_TOKEN_MASKED,
+            createdAt: 1,
+            updatedAt: 1,
+          }],
         });
       }
       if (url.includes("/api/status")) {
@@ -101,10 +110,11 @@ describe("SubscribePage", () => {
         return jsonResponse({ categories: [] });
       }
       return jsonResponse({});
-    }));
+    });
+    vi.stubGlobal("fetch", fetchMock);
 
     const { container } = render(
-      <MemoryRouter initialEntries={[`/devices/${DEVICE_ID}/subscribe`]}>
+      <MemoryRouter initialEntries={[`/devices/${DEVICE_KEY}/subscribe`]}>
         <Routes>
           <Route path="/devices/:id/subscribe" element={<SubscribePage />} />
         </Routes>
@@ -112,9 +122,14 @@ describe("SubscribePage", () => {
     );
 
     expect(await screen.findByText("设备1")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "测试" })).toHaveAttribute("href", `/devices/${DEVICE_ID}/subscribe/test`);
+    expect(screen.getByRole("link", { name: "测试" })).toHaveAttribute("href", `/devices/${DEVICE_KEY}/subscribe/test`);
     expect(screen.getByRole("link", { name: "换设备" })).toHaveAttribute("href", "/devices");
     expect(container.querySelector("#bark-id")).toBeNull();
     expect(await screen.findByRole("heading", { name: "灾害预警" })).toBeInTheDocument();
+    await vi.waitFor(() => {
+      const hydrateCall = fetchMock.mock.calls.find(([input]) => String(input).includes("/subscription"));
+      expect(String(hydrateCall?.[0])).toContain(`/api/devices/${DEVICE_ID}/subscription`);
+      expect(String(hydrateCall?.[0])).not.toContain(`/api/devices/${DEVICE_KEY}/`);
+    });
   });
 });
