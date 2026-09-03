@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   bindDevice,
+  deleteDeviceSubscription,
   deviceRouteKey,
   fetchDeviceSubscription,
   fetchDevices,
@@ -91,11 +92,25 @@ describe("BFF device client", () => {
       { status: 200 },
     ));
     vi.stubGlobal("fetch", fetchMock);
-    await saveDeviceSubscription("dev-1", { targets: [], alerts: [] });
+    await saveDeviceSubscription(DEVICE.deviceKey, { targets: [], alerts: [] });
     const [url, init] = fetchMock.mock.calls[0]!;
-    expect(String(url)).toContain("/api/devices/dev-1/subscribe");
+    expect(String(url)).toContain(`/api/devices/${DEVICE.deviceKey}/subscribe`);
+    expect(String(url)).not.toContain(`/api/devices/${DEVICE.id}/`);
     expect(init?.method).toBe("POST");
     expect(JSON.parse(String(init?.body))).toEqual({ targets: [], alerts: [] });
     expect(JSON.parse(String(init?.body)).destination).toBeUndefined();
+  });
+
+  it("DELETEs subscribe by device_key without using the device id", async () => {
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => new Response(
+      JSON.stringify({ success: true, message: "ok" }),
+      { status: 200 },
+    ));
+    vi.stubGlobal("fetch", fetchMock);
+    await deleteDeviceSubscription(DEVICE.deviceKey);
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(String(url)).toContain(`/api/devices/${DEVICE.deviceKey}/subscribe`);
+    expect(String(url)).not.toContain(`/api/devices/${DEVICE.id}/`);
+    expect(init?.method).toBe("DELETE");
   });
 });

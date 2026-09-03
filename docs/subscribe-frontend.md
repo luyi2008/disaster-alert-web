@@ -42,4 +42,4 @@
 - 不要再给 `subscribeApp.ts` 堆新职责；新逻辑放到对应模块。
 - 不要用 `document.getElementById` 找订阅页节点。
 - 不要把未提交的表单草稿写入 localStorage；刷新时通过 Bearer `GET /api/subscriptions` hydrate，页面内编辑只保存在内存中。
-- 登录身份是 BFF cookie。订阅读写走 `/api/devices/:id/*`，不带 Bark token。401 回 `/login`，设备 404 回 `/devices`。
+- 登录身份是 BFF cookie。订阅读写走 `/api/devices/:device_key/subscription` 与 `/api/devices/:device_key/subscribe`，不带 Bark token。401 回 `/login`，设备 404 回 `/devices`。
