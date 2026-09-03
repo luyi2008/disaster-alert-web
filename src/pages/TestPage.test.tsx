@@ -5,7 +5,9 @@ import { formatDraftUpdatedAt } from "../simulate/subscriptionPreview";
 import { TestPage } from "./TestPage";
 
 const DEVICE_ID = "11111111-1111-1111-1111-111111111111";
-const KEY = "ynJ5Ft4atkMkWeo2PAvFhF";
+const DEVICE_KEY = "ynJ5Ft4atkMkWeo2PAvFhF";
+const DEVICE_TOKEN_MASKED = "toke****naaa";
+const KEY = DEVICE_KEY;
 const UPDATED_AT = 1_700_000_000_000;
 
 function jsonResponse(data: unknown, status = 200, message = "ok"): Response {
@@ -94,7 +96,14 @@ function stubApis(options: {
     const url = String(input);
     if (url === "/api/devices" || /\/api\/devices$/.test(url)) {
       return jsonResponse({
-        devices: [{ id: DEVICE_ID, userId: "u1", name: "设备1", createdAt: 1, updatedAt: 1 }],
+        devices: [{
+          id: DEVICE_ID,
+          name: "设备1",
+          deviceKey: DEVICE_KEY,
+          deviceTokenMasked: DEVICE_TOKEN_MASKED,
+          createdAt: 1,
+          updatedAt: 1,
+        }],
       });
     }
     if (url.includes("/api/subscription-options")) {
@@ -135,7 +144,7 @@ function stubApis(options: {
 
 function renderTestPage() {
   return render(
-    <MemoryRouter initialEntries={[`/devices/${DEVICE_ID}/subscribe/test`]}>
+    <MemoryRouter initialEntries={[`/devices/${DEVICE_KEY}/subscribe/test`]}>
       <Routes>
         <Route path="/login" element={<div>login</div>} />
         <Route path="/devices" element={<div>devices</div>} />

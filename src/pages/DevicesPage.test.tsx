@@ -15,14 +15,27 @@ function session() {
   return new Response(JSON.stringify({ user: { id: "u1", name: "微信用户" } }), { status: 200 });
 }
 
+const DEVICE_ID = "11111111-1111-1111-1111-111111111111";
+const DEVICE_KEY = "ynJ5Ft4atkMkWeo2PAvFhF";
+const DEVICE_TOKEN_MASKED = "toke****naaa";
+
 describe("DevicesPage", () => {
-  it("lists devices without showing the Bark token", async () => {
+  it("lists deviceKey and deviceTokenMasked and links subscribe/test with deviceKey", async () => {
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       if (String(input).includes("/api/auth/get-session")) {
         return session();
       }
       if (String(input).includes("/api/devices") && !String(input).includes("/subscribe")) {
-        return json({ devices: [{ id: "dev-1", userId: "u1", name: "设备1", createdAt: 1, updatedAt: 1 }] });
+        return json({
+          devices: [{
+            id: DEVICE_ID,
+            name: "设备1",
+            deviceKey: DEVICE_KEY,
+            deviceTokenMasked: DEVICE_TOKEN_MASKED,
+            createdAt: 1,
+            updatedAt: 1,
+          }],
+        });
       }
       return json({});
     }));
@@ -39,9 +52,14 @@ describe("DevicesPage", () => {
     expect(screen.queryByRole("button", { name: "改名" })?.closest(".device-card-title")).toContainElement(
       screen.getByRole("heading", { name: "设备1" }),
     );
-    expect(screen.getByRole("link", { name: "配置订阅" })).toHaveAttribute("href", "/devices/dev-1/subscribe");
+    expect(screen.getByText("deviceKey")).toBeInTheDocument();
+    expect(screen.getByText(DEVICE_KEY)).toBeInTheDocument();
+    expect(screen.getByText("deviceTokenMasked")).toBeInTheDocument();
+    expect(screen.getByText(DEVICE_TOKEN_MASKED)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "配置订阅" })).toHaveAttribute("href", `/devices/${DEVICE_KEY}/subscribe`);
+    expect(screen.getByRole("link", { name: "测试通知" })).toHaveAttribute("href", `/devices/${DEVICE_KEY}/subscribe/test`);
     expect(screen.getByRole("link", { name: "添加设备" })).toHaveAttribute("href", "/devices/add");
-    expect(screen.queryByText(/AbAb/)).toBeNull();
+    expect(screen.queryByText(DEVICE_ID)).toBeNull();
   });
 
   it("shows an empty state that points at add device", async () => {

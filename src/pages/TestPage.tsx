@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
-import { fetchDeviceSubscription, fetchDevices } from "../api";
+import { deviceRouteKey, fetchDeviceSubscription, fetchDevices, matchDevice, type DeviceRecord } from "../api";
 import { AppBrand } from "../components/AppBrand";
 import { DeviceIdentity } from "../components/DeviceIdentity";
 import { LegalFooter } from "../components/LegalFooter";
@@ -147,7 +147,7 @@ function formatDistance(value: number | undefined, unit: string): string | null 
 export function TestPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [deviceName, setDeviceName] = useState<string | null>(null);
+  const [device, setDevice] = useState<DeviceRecord | null>(null);
   const [missing, setMissing] = useState(false);
   const [draft, setDraft] = useState(createEmptyDraft);
   const [draftUpdatedAt, setDraftUpdatedAt] = useState<number | null>(null);
@@ -175,12 +175,12 @@ export function TestPage() {
         navigate("/login", { replace: true });
         return;
       }
-      const device = result.body.data?.devices.find((row) => row.id === id);
-      if (!device) {
+      const found = matchDevice(result.body.data?.devices ?? [], id);
+      if (!found) {
         setMissing(true);
         return;
       }
-      setDeviceName(device.name);
+      setDevice(found);
     }).catch(() => {
       if (!cancelled) {
         setMissing(true);
@@ -192,13 +192,13 @@ export function TestPage() {
   }, [id, navigate]);
 
   useEffect(() => {
-    if (!id) {
+    if (!device) {
       return;
     }
     let cancelled = false;
     Promise.all([
       fetchSubscriptionOptions(),
-      fetchDeviceSubscription(id),
+      fetchDeviceSubscription(device.id),
     ])
       .then(async ([options, saved]) => {
         if (cancelled) {
@@ -234,7 +234,7 @@ export function TestPage() {
     return () => {
       cancelled = true;
     };
-  }, [id, navigate]);
+  }, [device, navigate]);
 
   useEffect(() => {
     if (!id || tab !== "history") {
@@ -302,13 +302,13 @@ export function TestPage() {
     <main className="test-page">
       <div className="app-bar">
         <AppBrand />
-        {deviceName ? <DeviceIdentity deviceId={id} deviceName={deviceName} currentPage="test" /> : null}
+        {device ? <DeviceIdentity deviceId={deviceRouteKey(device)} deviceName={device.name} currentPage="test" /> : null}
       </div>
       <section className="panel test-sheet">
         <div className="test-status-strip" aria-label="设备状态">
           <div className="test-status-cell">
             <StatusIcon name="cloud" />
-            <span>{deviceName || "设备"}</span>
+            <span>{device?.name || "设备"}</span>
           </div>
           <div className="test-status-cell">
             <StatusIcon name="server" />
@@ -405,8 +405,13 @@ export function TestPage() {
                   <button
                     type="button"
                     className="btn-ghost"
-                    disabled={pendingAction !== null}
-                    onClick={() => runAction(`level:${level.id}`, () => simulateNotifyLevel(id, level.id))}
+                    disabled={pendingAction !== null || !device}
+                    onClick={() => {
+                      if (!device) {
+                        return;
+                      }
+                      void runAction(`level:${level.id}`, () => simulateNotifyLevel(device.id, level.id));
+                    }}
                   >
                     {pendingAction === `level:${level.id}` ? "发送中…" : "发送测试"}
                   </button>
@@ -448,11 +453,16 @@ export function TestPage() {
                     <button
                       type="button"
                       className="btn-ghost"
-                      disabled={pendingAction !== null}
-                      onClick={() => runAction(
-                        `history:${record.key}`,
-                        () => simulateHistoryReplay(id, record.source || historySource, record.key),
-                      )}
+                      disabled={pendingAction !== null || !device}
+                      onClick={() => {
+                        if (!device) {
+                          return;
+                        }
+                        void runAction(
+                          `history:${record.key}`,
+                          () => simulateHistoryReplay(device.id, record.source || historySource, record.key),
+                        );
+                      }}
                     >
                       {pendingAction === `history:${record.key}` ? "发送中…" : "测试"}
                     </button>

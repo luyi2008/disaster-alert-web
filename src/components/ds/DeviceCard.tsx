@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import type { DeviceRecord } from "../../api";
+import { deviceRouteKey, type DeviceRecord } from "../../api";
 
 function PencilIcon() {
   return (
@@ -38,6 +38,7 @@ export function DeviceCard({
   onRename: (device: DeviceRecord) => void;
   onDelete: (device: DeviceRecord) => void;
 }) {
+  const pathKey = deviceRouteKey(device);
   return (
     <article className="device-card">
       <header className="device-card-head">
@@ -51,14 +52,23 @@ export function DeviceCard({
               <UnlinkIcon />
             </button>
           </div>
-          <p className="device-card-meta">Bark 推送设备</p>
+          <dl className="device-card-kv">
+            <div>
+              <dt>deviceKey</dt>
+              <dd>{device.deviceKey}</dd>
+            </div>
+            <div>
+              <dt>deviceTokenMasked</dt>
+              <dd>{device.deviceTokenMasked}</dd>
+            </div>
+          </dl>
         </div>
       </header>
       <div className="device-card-actions">
-        <Link className="ds-btn ds-btn-primary" to={`/devices/${device.id}/subscribe`}>
+        <Link className="ds-btn ds-btn-primary" to={`/devices/${encodeURIComponent(pathKey)}/subscribe`}>
           配置订阅
         </Link>
-        <Link className="ds-btn ds-btn-ghost" to={`/devices/${device.id}/subscribe/test`}>
+        <Link className="ds-btn ds-btn-ghost" to={`/devices/${encodeURIComponent(pathKey)}/subscribe/test`}>
           测试通知
         </Link>
       </div>

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
-import { apiUrl, fetchDevices, fetchStatus } from "../api";
+import { apiUrl, deviceRouteKey, fetchDevices, fetchStatus, matchDevice, type DeviceRecord } from "../api";
 import { DeviceIdentity } from "../components/DeviceIdentity";
 import { LegalFooter } from "../components/LegalFooter";
 import { TermsDialog } from "../components/TermsDialog";
@@ -18,7 +18,7 @@ export function SubscribePage() {
   const headerRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const [termsAccepted, setTermsAccepted] = useState<boolean | null>(null);
-  const [deviceName, setDeviceName] = useState<string | null>(null);
+  const [device, setDevice] = useState<DeviceRecord | null>(null);
   const [missing, setMissing] = useState(false);
 
   useEffect(() => {
@@ -53,12 +53,12 @@ export function SubscribePage() {
           navigate("/login", { replace: true });
           return;
         }
-        const device = result.body.data?.devices.find((row) => row.id === id);
-        if (!device) {
+        const found = matchDevice(result.body.data?.devices ?? [], id);
+        if (!found) {
           setMissing(true);
           return;
         }
-        setDeviceName(device.name);
+        setDevice(found);
       })
       .catch(() => {
         if (!cancelled) {
@@ -74,7 +74,7 @@ export function SubscribePage() {
     const root = rootRef.current;
     const header = headerRef.current;
     const body = bodyRef.current;
-    if (!root || !header || !body || termsAccepted === null || !id || !deviceName) {
+    if (!root || !header || !body || termsAccepted === null || !id || !device) {
       return;
     }
     header.innerHTML = headerHtml;
@@ -82,7 +82,7 @@ export function SubscribePage() {
     const app = mountSubscribeApp(root, {
       api: apiUrl(""),
       instanceTermsAccepted: termsAccepted,
-      deviceId: id,
+      deviceId: device.id,
       onUnauthorized: () => navigate("/login", { replace: true }),
       onMissingDevice: () => navigate("/devices", { replace: true }),
     });
@@ -91,7 +91,7 @@ export function SubscribePage() {
       header.innerHTML = "";
       body.innerHTML = "";
     };
-  }, [termsAccepted, id, deviceName, navigate]);
+  }, [termsAccepted, id, device, navigate]);
 
   if (!id || missing) {
     return <Navigate to="/devices" replace />;
@@ -103,7 +103,7 @@ export function SubscribePage() {
       <main ref={rootRef}>
         <div className="app-bar">
           <div className="shell-slot" ref={headerRef} />
-          {deviceName ? <DeviceIdentity deviceId={id} deviceName={deviceName} /> : null}
+          {device ? <DeviceIdentity deviceId={deviceRouteKey(device)} deviceName={device.name} /> : null}
         </div>
         <section className="panel">
           <div className="shell-slot" ref={bodyRef} />
