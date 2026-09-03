@@ -8,15 +8,14 @@
       background: var(--bg);
       color: var(--text);
     }
-    main {
-      --page-gutter: 32px;
-      --page-inline: max(var(--page-gutter), calc((100% - var(--page-max)) / 2));
+    .subscribe-workspace {
+      --page-gutter: 0;
+      --page-inline: 0;
       display: flex;
       flex-direction: column;
       width: 100%;
       max-width: none;
-      min-height: 100vh;
-      min-height: 100dvh;
+      min-width: 0;
       margin: 0;
       padding: 0;
     }
@@ -33,16 +32,18 @@
       border-bottom: 1px solid var(--line);
       background: var(--panel);
     }
-    header {
-      display: grid;
-      gap: 0;
-      margin: 0;
-    }
     .app-brand {
       display: flex;
       align-items: center;
       gap: 8px;
       min-width: 0;
+    }
+    .app-brand h1 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.3;
+      letter-spacing: 0;
     }
     .app-brand-mark {
       display: inline-flex;
@@ -51,19 +52,15 @@
     .app-brand-mark svg {
       display: block;
     }
-    h1 {
-      margin: 0;
-      font-size: 15px;
-      font-weight: 600;
-      line-height: 1.3;
-      letter-spacing: 0;
-    }
     .subhead {
       margin: 4px 0 0;
       color: var(--muted);
       font-size: 13px;
       line-height: 1.45;
       font-weight: 400;
+    }
+    .subscribe-workspace > .add-actions {
+      margin-top: 16px;
     }
     .panel {
       flex: 1;
@@ -723,13 +720,13 @@
     footer a { display: inline-block; padding: 2px 1px; color: inherit; text-underline-offset: 3px; }
     footer a:hover { color: var(--muted); }
     @media (max-width: 980px) {
-      main { --page-gutter: 20px; }
+      .subscribe-workspace { --page-gutter: 0; }
       .workspace { grid-template-columns: 1fr; }
       #map { height: 320px; }
     }
     @media (max-width: 640px) {
-      main { padding-top: 0; --page-gutter: 16px; }
-      h1 { font-size: 15px; line-height: 1.3; }
+      .subscribe-workspace { padding-top: 0; --page-gutter: 0; }
+      .app-brand h1 { font-size: 15px; line-height: 1.3; }
       .grid, .form-actions { grid-template-columns: 1fr; }
       .form-actions button { width: 100%; }
       .admin-grid { grid-template-columns: 1fr; }

@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import { Navigate, useNavigate, useParams } from "react-router-dom";
-import { deviceRouteKey, fetchDeviceSubscription, fetchDevices, matchDevice, type DeviceRecord } from "../api";
-import { AppBrand } from "../components/AppBrand";
-import { DeviceIdentity } from "../components/DeviceIdentity";
+import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { fetchDeviceSubscription, fetchDevices, matchDevice, type DeviceRecord } from "../api";
+import { AppShell } from "../components/ds/AppShell";
 import { LegalFooter } from "../components/LegalFooter";
 import {
   fetchHistoryCatalog,
@@ -27,6 +26,7 @@ import {
   selectSavedSubscription,
 } from "../subscribe/draft";
 import "../styles/base.css";
+import "../styles/ds.css";
 import "../styles/subscribe.css";
 import "../styles/test.css";
 
@@ -299,11 +299,11 @@ export function TestPage() {
   };
 
   return (
-    <main className="test-page">
-      <div className="app-bar">
-        <AppBrand />
-        {device ? <DeviceIdentity deviceId={deviceRouteKey(device)} deviceName={device.name} currentPage="test" /> : null}
-      </div>
+    <AppShell
+      title="测试通知"
+      description={device ? `向「${device.name}」发送测试推送。` : "向当前设备发送测试推送。"}
+    >
+      <div className="test-page">
       <section className="panel test-sheet">
         <div className="test-status-strip" aria-label="设备状态">
           <div className="test-status-cell">
@@ -410,7 +410,7 @@ export function TestPage() {
                       if (!device) {
                         return;
                       }
-                      void runAction(`level:${level.id}`, () => simulateNotifyLevel(device.id, level.id));
+                      void runAction(`level:${level.id}`, () => simulateNotifyLevel(device.deviceKey, level.id));
                     }}
                   >
                     {pendingAction === `level:${level.id}` ? "发送中…" : "发送测试"}
@@ -460,7 +460,7 @@ export function TestPage() {
                         }
                         void runAction(
                           `history:${record.key}`,
-                          () => simulateHistoryReplay(device.id, record.source || historySource, record.key),
+                          () => simulateHistoryReplay(device.deviceKey, record.source || historySource, record.key),
                         );
                       }}
                     >
@@ -479,7 +479,13 @@ export function TestPage() {
         </section>
       </section>
       <p className="test-updated">上次更新 {formatDraftUpdatedAt(draftUpdatedAt)}</p>
+      <div className="add-actions">
+        <Link className="ds-btn ds-btn-quiet" to="/devices">
+          返回设备
+        </Link>
+      </div>
       <LegalFooter />
-    </main>
+      </div>
+    </AppShell>
   );
 }

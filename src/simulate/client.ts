@@ -59,24 +59,24 @@ export async function fetchHistoryCatalog(source = "major"): Promise<SimulateCal
 }
 
 export async function simulateNotifyLevel(
-  deviceId: string,
+  deviceKey: string,
   level: string,
 ): Promise<SimulateCallResult<SimulateResult>> {
   return requestEnvelope<SimulateResult>(
-    `/api/devices/${encodeURIComponent(deviceId)}/simulate?notify_level=${encodeURIComponent(level)}`,
+    `/api/devices/${encodeURIComponent(deviceKey)}/simulate?notify_level=${encodeURIComponent(level)}`,
     { method: "POST", body: "{}" },
     true,
   );
 }
 
 export async function simulateHistoryReplay(
-  deviceId: string,
+  deviceKey: string,
   source: string,
   key: string,
 ): Promise<SimulateCallResult<SimulateResult>> {
   const query = new URLSearchParams({ source, key });
   return requestEnvelope<SimulateResult>(
-    `/api/devices/${encodeURIComponent(deviceId)}/simulate?${query}`,
+    `/api/devices/${encodeURIComponent(deviceKey)}/simulate?${query}`,
     { method: "POST", body: "{}" },
     true,
   );

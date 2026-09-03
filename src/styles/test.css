@@ -1,6 +1,8 @@
 @import "./tokens.css";
 
 .test-page {
+  --page-gutter: 0;
+  --page-inline: 0;
   width: 100%;
   max-width: none;
   margin: 0;
@@ -9,8 +11,7 @@
 
 .test-sheet {
   flex: 1;
-  margin-left: var(--page-inline);
-  margin-right: var(--page-inline);
+  margin: 0;
   padding: 20px 20px 16px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -303,9 +304,13 @@
 }
 
 .test-updated {
-  margin: 16px var(--page-inline) 0;
+  margin: 16px 0 0;
   color: var(--muted);
   font-size: 12px;
+}
+
+.test-page > .add-actions {
+  margin-top: 16px;
 }
 
 @media (max-width: 720px) {

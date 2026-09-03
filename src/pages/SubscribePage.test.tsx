@@ -85,9 +85,12 @@ describe("SubscribePage", () => {
     expect(await screen.findByText("devices")).toBeInTheDocument();
   });
 
-  it("renders device identity in React", async () => {
+  it("renders the account shell header and a back-to-devices action", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
+      if (url.includes("/api/auth/get-session")) {
+        return new Response(JSON.stringify({ user: { id: "u1", name: "微信用户" } }), { status: 200 });
+      }
       if (url.includes("/api/devices") && !url.includes("subscribe") && !url.includes("subscription")) {
         return jsonResponse({
           devices: [{
@@ -121,11 +124,14 @@ describe("SubscribePage", () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText("设备1")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "测试" })).toHaveAttribute("href", `/devices/${DEVICE_KEY}/subscribe/test`);
-    expect(screen.getByRole("link", { name: "换设备" })).toHaveAttribute("href", "/devices");
+    expect(await screen.findByRole("heading", { name: "配置订阅" })).toBeInTheDocument();
+    expect(await screen.findByText(/设备1/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "灾害预警" })).toHaveAttribute("href", "/devices");
+    expect(screen.getByRole("link", { name: "返回设备" })).toHaveAttribute("href", "/devices");
+    expect(screen.getByRole("link", { name: /^设备$/ })).toHaveAttribute("href", "/devices");
+    expect(screen.getByRole("link", { name: "账号设置" })).toHaveAttribute("href", "/settings");
     expect(container.querySelector("#bark-id")).toBeNull();
-    expect(await screen.findByRole("heading", { name: "灾害预警" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "灾害预警" })).toBeNull();
     await vi.waitFor(() => {
       const hydrateCall = fetchMock.mock.calls.find(([input]) => String(input).includes("/subscription"));
       expect(String(hydrateCall?.[0])).toContain(`/api/devices/${DEVICE_KEY}/subscription`);

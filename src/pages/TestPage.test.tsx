@@ -94,6 +94,9 @@ function stubApis(options: {
 }) {
   const fetchMock = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
     const url = String(input);
+    if (url.includes("/api/auth/get-session")) {
+      return new Response(JSON.stringify({ user: { id: "u1", name: "微信用户" } }), { status: 200 });
+    }
     if (url === "/api/devices" || /\/api\/devices$/.test(url)) {
       return jsonResponse({
         devices: [{
@@ -163,6 +166,9 @@ describe("TestPage", () => {
     const fetchMock = stubApis({});
     renderTestPage();
 
+    expect(await screen.findByRole("heading", { name: "测试通知" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "灾害预警" })).toHaveAttribute("href", "/devices");
+    expect(screen.getByRole("link", { name: "返回设备" })).toHaveAttribute("href", "/devices");
     expect(await screen.findAllByText("设备1")).not.toHaveLength(0);
     expect(await screen.findByText("上海家中 · 上海市 · 浦东新区")).toBeInTheDocument();
     expect(screen.getByText("地震预警")).toBeInTheDocument();
@@ -205,10 +211,11 @@ describe("TestPage", () => {
     fireEvent.click(buttons[1]);
     await waitFor(() => {
       const simulateCall = fetchMock.mock.calls.find(([input, init]) => (
-        String(input).includes(`/api/devices/${DEVICE_ID}/simulate?notify_level=active`)
+        String(input).includes(`/api/devices/${DEVICE_KEY}/simulate?notify_level=active`)
         && (init as RequestInit | undefined)?.method === "POST"
       ));
       expect(simulateCall).toBeTruthy();
+      expect(String(simulateCall?.[0])).not.toContain(`/api/devices/${DEVICE_ID}/`);
       expect(simulateCall?.[1]?.credentials).toBe("include");
       expect(new Headers(simulateCall?.[1]?.headers).get("Authorization")).toBeNull();
     });
@@ -224,7 +231,8 @@ describe("TestPage", () => {
     await waitFor(() => {
       const simulateCall = fetchMock.mock.calls.find(([input, init]) => {
         const url = String(input);
-        return url.includes(`/api/devices/${DEVICE_ID}/simulate?`)
+        return url.includes(`/api/devices/${DEVICE_KEY}/simulate?`)
+          && !url.includes(`/api/devices/${DEVICE_ID}/`)
           && url.includes("source=major")
           && url.includes("key=wenchuan-2008")
           && (init as RequestInit | undefined)?.method === "POST";
