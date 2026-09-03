@@ -1,0 +1,6 @@
+---
+description: Never record walkthrough videos
+alwaysApply: true
+---
+
+Never record walkthrough videos. Do not start a screen recording, save a demo `.mp4`, or attach `<video>` artifacts. Prove UI work with screenshots, automated tests, and logs instead.
