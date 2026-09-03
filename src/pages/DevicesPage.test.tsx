@@ -34,6 +34,11 @@ describe("DevicesPage", () => {
       </MemoryRouter>,
     );
     expect(await screen.findByRole("heading", { name: "设备1" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "改名" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "解绑" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "改名" })?.closest(".device-card-title")).toContainElement(
+      screen.getByRole("heading", { name: "设备1" }),
+    );
     expect(screen.getByRole("link", { name: "配置订阅" })).toHaveAttribute("href", "/devices/dev-1/subscribe");
     expect(screen.getByRole("link", { name: "添加设备" })).toHaveAttribute("href", "/devices/add");
     expect(screen.queryByText(/AbAb/)).toBeNull();

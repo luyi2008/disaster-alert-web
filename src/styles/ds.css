@@ -568,15 +568,11 @@
 .settings-panel {
   display: grid;
   gap: 16px;
+  max-width: 480px;
   padding: 20px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--panel);
-}
-
-.add-panel,
-.settings-panel {
-  max-width: 480px;
 }
 
 .device-card-head {
@@ -586,9 +582,42 @@
   gap: 12px;
 }
 
+.device-card-title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
 .device-card-head h2 {
   margin: 0;
+  min-width: 0;
   font-size: 18px;
+  overflow-wrap: anywhere;
+}
+
+.ds-icon-btn {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.ds-icon-btn:hover {
+  background: var(--soft);
+  color: var(--text);
+}
+
+.ds-icon-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
 }
 
 .device-card-meta {
