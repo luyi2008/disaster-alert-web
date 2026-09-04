@@ -141,7 +141,7 @@
       align-items: start;
       margin-left: var(--page-inline);
       margin-right: var(--page-inline);
-      padding: 20px 20px 32px;
+      padding: 20px 0 32px;
     }
     .workspace-column { min-width: 0; }
     .workspace-section + .workspace-section { margin-top: 20px; }
