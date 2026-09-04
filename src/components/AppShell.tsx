@@ -70,7 +70,7 @@ export function AppShell({
                 </NavigationMenuLink>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <NavigationMenuTrigger>
+                <NavigationMenuTrigger className="gap-2">
                   <CircleUser className="size-4" data-icon="account" />
                   {label}
                 </NavigationMenuTrigger>
