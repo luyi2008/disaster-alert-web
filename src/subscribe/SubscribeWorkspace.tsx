@@ -247,7 +247,7 @@ export function SubscribeWorkspace({
           <div id="draft-status" className="form-actions-note">
             {instanceTermsAccepted ? "" : "当前实例未确认部署责任，不能新增或保存订阅；仍可取消已有订阅。"}
           </div>
-          <Button id="unsubscribe" type="button" variant="secondary" disabled={inFlight} onClick={() => setUnsubscribeOpen(true)}>
+          <Button id="unsubscribe" type="button" variant="outline" disabled={inFlight} onClick={() => setUnsubscribeOpen(true)}>
             取消订阅
           </Button>
           <Button

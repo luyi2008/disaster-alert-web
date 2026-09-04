@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import L from "leaflet";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
+import { BrandMark } from "../components/AppShell";
+import { ThemeToggle } from "../components/ThemeToggle";
 import { useIncidentDetail } from "./useIncidentDetail";
 import type {
   AlertRule,
@@ -56,13 +59,43 @@ function formatEpochMs(value: number): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
 
-function StatusBadge({ className, text }: { className: string; text: string }) {
-  const variant = className.includes("cancel") || className.includes("mixed")
-    ? "destructive"
-    : className.includes("final")
-      ? "secondary"
-      : "outline";
+function StatusBadge({ text, variant }: { text: string; variant: "destructive" | "secondary" | "outline" }) {
   return <Badge variant={variant}>{text}</Badge>;
+}
+
+function statusBadgeVariant(className: string): "destructive" | "secondary" | "outline" {
+  if (className.includes("cancel") || className.includes("mixed")) {
+    return "destructive";
+  }
+  if (className.includes("final")) {
+    return "secondary";
+  }
+  return "outline";
+}
+
+function DetailFold({
+  title,
+  hint,
+  children,
+}: {
+  title: string;
+  hint: string;
+  children: ReactNode;
+}) {
+  return (
+    <Collapsible defaultOpen className="detail-disclosure">
+      <CollapsibleTrigger className="detail-disclosure-trigger">
+        <span className="flex flex-col items-start gap-0.5 text-left">
+          <span>{title}</span>
+          <small className="text-muted-foreground font-normal">{hint}</small>
+        </span>
+        <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        {children}
+      </CollapsibleContent>
+    </Collapsible>
+  );
 }
 
 function interruptionBadgeVariant(value: string) {
@@ -238,9 +271,10 @@ function MessagePage({
         <div className="message-shade" aria-hidden="true" />
         <header className="message-topbar">
           <Link className="message-brand" to="/" aria-label="返回灾害态势首页">
-            <span className="brand-symbol" aria-hidden="true" />
+            <BrandMark />
             <strong>灾害态势</strong>
           </Link>
+          <ThemeToggle compact />
         </header>
         <section className="message-copy" aria-labelledby="message-title">
           <div className="message-state">
@@ -384,8 +418,11 @@ function IncidentLoaded({
         </div>
         <div className="hero-topbar">
           <div className="hero-brand">
-            <span className="brand-symbol" aria-hidden="true" />
+            <BrandMark />
             <span>灾害态势</span>
+          </div>
+          <div className="pointer-events-auto">
+            <ThemeToggle compact />
           </div>
         </div>
         <div className="hero-layout">
@@ -395,7 +432,7 @@ function IncidentLoaded({
                 <Badge variant="secondary">{categoryLabel(snapshot.event.category)}</Badge>
                 {snapshot.event.training ? <Badge variant="outline">演练 / 测试</Badge> : null}
               </div>
-              <StatusBadge className={badge.className} text={badge.text} />
+              <StatusBadge variant={statusBadgeVariant(badge.className)} text={badge.text} />
             </CardHeader>
             <span className="section-kicker">事件态势</span>
             <h1 id="overview-heading">{snapshot.event.title}</h1>
@@ -530,15 +567,7 @@ function IncidentLoaded({
             ))}
           </div>
         </section>
-        <Accordion type="multiple" className="detail-disclosure-list" defaultValue={["event", "rules", "timeline"]}>
-          <AccordionItem value="event" className="detail-disclosure">
-            <AccordionTrigger>
-              <span className="flex flex-col items-start gap-0.5">
-                <span>事件详情</span>
-                <small className="text-muted-foreground font-normal">通知时数据</small>
-              </span>
-            </AccordionTrigger>
-            <AccordionContent>
+        <DetailFold title="事件详情" hint="通知时数据">
             <div className="disclosure-content">
               <div className="section-heading">
                 <div>
@@ -582,16 +611,8 @@ function IncidentLoaded({
                 ) : null}
               </dl>
             </div>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem value="rules" className="detail-disclosure">
-            <AccordionTrigger>
-              <span className="flex flex-col items-start gap-0.5">
-                <span>预警条件</span>
-                <small className="text-muted-foreground font-normal">地点与订阅规则</small>
-              </span>
-            </AccordionTrigger>
-            <AccordionContent>
+        </DetailFold>
+        <DetailFold title="预警条件" hint="地点与订阅规则">
             <div className="disclosure-content">
               <div className="section-heading">
                 <div>
@@ -646,26 +667,16 @@ function IncidentLoaded({
                 </dl>
               </div>
             </div>
-            </AccordionContent>
-          </AccordionItem>
+        </DetailFold>
           {incident ? (
-            <AccordionItem value="timeline" className="detail-disclosure timeline-disclosure">
-              <AccordionTrigger>
-                <span className="flex flex-col items-start gap-0.5">
-                  <span>报告变更</span>
-                  <small className="text-muted-foreground font-normal">最近 {incident.timeline.length} 条</small>
-                </span>
-              </AccordionTrigger>
-              <AccordionContent>
+            <DetailFold title="报告变更" hint={`最近 ${incident.timeline.length} 条`}>
                 <ol className="timeline">
                   {[...incident.timeline].reverse().map((report) => (
                     <TimelineItem key={`${report.source}-${report.revision}-${report.observed_at_ms}`} report={report} />
                   ))}
                 </ol>
-              </AccordionContent>
-            </AccordionItem>
+            </DetailFold>
           ) : null}
-        </Accordion>
       </main>
     </div>
   );
@@ -682,7 +693,7 @@ function SourceCard({ event }: { event: PublicEvent }) {
           <CardDescription>{event.occurred_at}</CardDescription>
         </div>
         <div className="report-state">
-          <StatusBadge className={badge.className} text={badge.text} />
+          <StatusBadge variant={statusBadgeVariant(badge.className)} text={badge.text} />
         </div>
       </CardHeader>
       <CardContent className="source-vitals px-5">
@@ -717,7 +728,7 @@ function TimelineItem({ report }: { report: IncidentReportSummary }) {
           <strong>
             {report.source} · 第 {report.report_num} 报
           </strong>
-          <StatusBadge className={badge.className} text={badge.text} />
+          <StatusBadge variant={statusBadgeVariant(badge.className)} text={badge.text} />
         </div>
       </div>
     </li>

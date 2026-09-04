@@ -42,14 +42,14 @@ export function AddDevicePage() {
   }
 
   return (
-    <AppShell title="添加设备" description="输入 APNs device_token。名称可选。">
+    <AppShell title="添加设备" description="输入这台设备的推送令牌。名称可选。">
       {formError ? <StatusMessage kind="error">{formError}</StatusMessage> : null}
       {ok ? <StatusMessage kind="success">设备已添加。</StatusMessage> : null}
       <Card className="max-w-md">
         <CardContent>
           <form className="grid gap-4" onSubmit={(event) => void onSubmit(event)}>
             <Field
-              label="device_token"
+              label="推送令牌"
               htmlFor="device-token"
               error={tokenError}
               hint={tokenError ? undefined : "必填，最长 128 位，不能为 deleted"}
@@ -59,7 +59,7 @@ export function AddDevicePage() {
                 className="font-mono tracking-wide"
                 autoComplete="off"
                 spellCheck={false}
-                placeholder="APNs device_token"
+                placeholder="APNs 推送令牌"
                 aria-invalid={Boolean(tokenError) || undefined}
                 value={token}
                 onChange={(event) => {

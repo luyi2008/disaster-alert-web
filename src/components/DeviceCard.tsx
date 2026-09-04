@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 import { Pencil, Unlink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardFooter, CardHeader } from "@/components/ui/card";
+import { Empty, EmptyContent, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
+import { Skeleton } from "@/components/ui/skeleton";
 import { deviceRouteKey, type DeviceRecord } from "../api";
 
 export function DeviceCard({
@@ -43,11 +45,11 @@ export function DeviceCard({
           </div>
           <dl className="device-card-kv">
             <div>
-              <dt>deviceKey</dt>
+              <dt>设备密钥</dt>
               <dd>{device.deviceKey}</dd>
             </div>
             <div>
-              <dt>deviceTokenMasked</dt>
+              <dt>推送令牌</dt>
               <dd>{device.deviceTokenMasked}</dd>
             </div>
           </dl>
@@ -75,22 +77,24 @@ export function EmptyState({
   action?: { href: string; label: string };
 }) {
   return (
-    <div className="grid justify-items-start gap-2 py-8">
-      <h2 className="m-0 text-lg font-semibold">{title}</h2>
-      <p className="m-0 text-sm leading-6 text-muted-foreground">{body}</p>
+    <Empty>
+      <EmptyTitle>{title}</EmptyTitle>
+      <EmptyDescription>{body}</EmptyDescription>
       {action ? (
-        <Button asChild>
-          <Link to={action.href}>{action.label}</Link>
-        </Button>
+        <EmptyContent>
+          <Button asChild>
+            <Link to={action.href}>{action.label}</Link>
+          </Button>
+        </EmptyContent>
       ) : null}
-    </div>
+    </Empty>
   );
 }
 
 export function LoadingState({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-2.5 py-8 text-sm text-muted-foreground" role="status">
-      <span className="size-4 animate-spin rounded-full border-2 border-border border-t-primary" aria-hidden="true" />
+      <Skeleton className="size-4 rounded-full" aria-hidden="true" />
       {label}
     </div>
   );

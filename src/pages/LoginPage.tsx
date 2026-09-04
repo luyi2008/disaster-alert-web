@@ -4,9 +4,12 @@ import { normalizeMainlandPhone } from "../auth/phone";
 import { bffFetch } from "../auth/session";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { BrandMark } from "../components/AppShell";
 import { Field, StatusMessage } from "../components/Field";
+import { LegalFooter } from "../components/LegalFooter";
 import { OtpInput, PhoneInput } from "../components/PhoneInput";
 import { SocialLogin } from "../components/SocialLogin";
+import { ThemeToggle } from "../components/ThemeToggle";
 import "../styles/base.css";
 import "../styles/ds.css";
 
@@ -170,23 +173,18 @@ export function LoginPage() {
     <div className="login-page">
       <section className="login-form-col">
         <div className="login-panel">
-          <div className="login-brand">
-            <span className="login-mark" aria-hidden="true">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M3 12h3.2l2.4 7 4.8-14 2.4 7H21"
-                  stroke="currentColor"
-                  strokeWidth="1.75"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </span>
-            <h1>灾害预警</h1>
-            <p>及时知情，及时避险</p>
-            <span>用手机号或微信登录后，再绑定设备的 device_token。</span>
+          <div className="login-toolbar">
+            <div className="login-brand">
+              <BrandMark className="login-mark" />
+              <h1>灾害预警</h1>
+            </div>
+            <ThemeToggle compact />
           </div>
+          <p className="login-headline">及时知情，及时避险</p>
+          <p className="login-lead">用手机号或微信登录后，再绑定设备的推送令牌。</p>
           {formError ? <StatusMessage kind={statusKind === "ok" ? "success" : "error"}>{formError}</StatusMessage> : null}
+          <Card className="shadow-none">
+            <CardContent className="grid gap-4 pt-1">
           <form className="login-stack" onSubmit={(event) => void loginWithOtp(event)}>
             <Field label="手机号" htmlFor="login-phone" error={phoneError} reserveMessage>
               <PhoneInput
@@ -219,6 +217,8 @@ export function LoginPage() {
               {submitting ? "登录中…" : "登录"}
             </Button>
           </form>
+            </CardContent>
+          </Card>
           <SocialLogin
             onSelect={(method) => {
               if (method === "wechat") {
@@ -247,9 +247,7 @@ export function LoginPage() {
               ) : null}
             </Card>
           ) : null}
-          <p className="login-legal">
-            本服务仅用于灾害信息转发与个人提醒，不构成官方预警。请以所在地权威机构发布的信息为准。
-          </p>
+          <LegalFooter />
         </div>
       </section>
       <aside className="login-visual" aria-hidden="true">

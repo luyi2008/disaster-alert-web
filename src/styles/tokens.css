@@ -1,5 +1,5 @@
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
   --bg: #f4f4f5;
   --panel: #ffffff;
   --text: #18181b;
@@ -35,21 +35,20 @@
   --shadow-float: 0 4px 16px rgba(24, 24, 27, 0.08);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #09090b;
-    --panel: #18181b;
-    --text: #fafafa;
-    --muted: #a1a1aa;
-    --line: #3f3f46;
-    --primary-foreground: #18181b;
-    --primary-strong: #e4e4e7;
-    --soft: #27272a;
-    --ok-bg: rgba(22, 163, 74, 0.16);
-    --err-bg: rgba(220, 38, 38, 0.16);
-    --info-bg: var(--hover);
-    --warn-bg: rgba(234, 88, 12, 0.18);
-    --yellow-bg: rgba(202, 138, 4, 0.18);
-    --shadow-float: 0 8px 24px rgba(0, 0, 0, 0.35);
-  }
+.dark {
+  color-scheme: dark;
+  --bg: #09090b;
+  --panel: #18181b;
+  --text: #fafafa;
+  --muted: #a1a1aa;
+  --line: #3f3f46;
+  --primary-foreground: #18181b;
+  --primary-strong: #e4e4e7;
+  --soft: #27272a;
+  --ok-bg: rgba(22, 163, 74, 0.16);
+  --err-bg: rgba(220, 38, 38, 0.16);
+  --info-bg: var(--hover);
+  --warn-bg: rgba(234, 88, 12, 0.18);
+  --yellow-bg: rgba(202, 138, 4, 0.18);
+  --shadow-float: 0 8px 24px rgba(0, 0, 0, 0.35);
 }

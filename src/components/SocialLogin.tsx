@@ -63,7 +63,6 @@ export function SocialLogin({
             key={provider.id}
             type="button"
             variant="outline"
-            className={provider.id === "wechat" && provider.enabled ? "text-[#07c160]" : undefined}
             disabled={!provider.enabled}
             title={provider.enabled ? undefined : provider.unavailable}
             aria-label={provider.enabled ? provider.label : provider.unavailable}

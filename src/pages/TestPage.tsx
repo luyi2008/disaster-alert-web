@@ -5,6 +5,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Activity, BarChart3, Cloud, CloudRain, MapPin, Server, Tornado, Waves } from "lucide-react";
 import { fetchDeviceSubscription, fetchDevices, matchDevice, type DeviceRecord } from "../api";
 import { AppShell } from "../components/AppShell";
 import { LegalFooter } from "../components/LegalFooter";
@@ -43,67 +44,29 @@ type ActionStatus = {
 
 function StatusIcon({ name }: { name: "cloud" | "server" | "pin" }) {
   if (name === "cloud") {
-    return (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M7 18h10a4 4 0 0 0 .4-8 6 6 0 0 0-11.6 1.5A3.5 3.5 0 0 0 7 18Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
-      </svg>
-    );
+    return <Cloud className="size-4 text-muted-foreground" aria-hidden="true" />;
   }
   if (name === "server") {
-    return (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <rect x="4" y="4" width="16" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.7" />
-        <rect x="4" y="14" width="16" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.7" />
-        <circle cx="8" cy="7" r="1" fill="currentColor" />
-        <circle cx="8" cy="17" r="1" fill="currentColor" />
-      </svg>
-    );
+    return <Server className="size-4 text-muted-foreground" aria-hidden="true" />;
   }
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M12 21s7-6.2 7-11.2A7 7 0 0 0 5 9.8C5 14.8 12 21 12 21Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
-      <circle cx="12" cy="10" r="2.2" stroke="currentColor" strokeWidth="1.7" />
-    </svg>
-  );
+  return <MapPin className="size-3.5 text-muted-foreground" aria-hidden="true" />;
 }
 
 function RuleGlyph({ category }: { category: string }) {
-  const common = { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none" as const };
+  const common = { className: "size-4 text-muted-foreground", "aria-hidden": true as const };
   if (category === "earthquake_warning") {
-    return (
-      <svg {...common} aria-hidden="true">
-        <path d="M3 12h3.2l2.4 7 4.8-14 2.4 7H21" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    );
+    return <Activity {...common} />;
   }
   if (category === "earthquake_report") {
-    return (
-      <svg {...common} aria-hidden="true">
-        <path d="M5 19V10M10 19V5M15 19v-7M20 19V8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-      </svg>
-    );
+    return <BarChart3 {...common} />;
   }
   if (category === "weather_warning") {
-    return (
-      <svg {...common} aria-hidden="true">
-        <circle cx="10" cy="10" r="3.2" stroke="currentColor" strokeWidth="1.7" />
-        <path d="M8 16h8.5a3 3 0 0 0 .2-6 5 5 0 0 0-9.4 1.2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-      </svg>
-    );
+    return <CloudRain {...common} />;
   }
   if (category === "tsunami") {
-    return (
-      <svg {...common} aria-hidden="true">
-        <path d="M4 16c2.2-2 4.2-3 6-3s3.8 1 6 3 4.2 3 6 3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-        <path d="M4 10c2.2-2 4.2-3 6-3s3.8 1 6 3 4.2 3 6 3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-      </svg>
-    );
+    return <Waves {...common} />;
   }
-  return (
-    <svg {...common} aria-hidden="true">
-      <path d="M12 5c2.8 2.4 4.5 5.2 4.5 7.6A4.5 4.5 0 0 1 7.5 12.6C7.5 10.2 9.2 7.4 12 5Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
-    </svg>
-  );
+  return <Tornado {...common} />;
 }
 
 function RuleCard({ card }: { card: AlertRuleCard }) {
@@ -325,8 +288,10 @@ export function TestPage() {
             <ul className="test-location-chips">
               {draft.targets.map((target) => (
                 <li key={target.id}>
-                  <StatusIcon name="pin" />
-                  {formatTargetChip(target)}
+                  <Badge variant="secondary" className="gap-1 px-2.5 py-1">
+                    <StatusIcon name="pin" />
+                    {formatTargetChip(target)}
+                  </Badge>
                 </li>
               ))}
             </ul>
@@ -358,7 +323,7 @@ export function TestPage() {
         ) : null}
 
         <section className="test-block" aria-labelledby="test-priority-heading">
-          <h2 id="test-priority-heading">Push Priority</h2>
+          <h2 id="test-priority-heading">通知级别</h2>
           <Tabs
             value={tab}
             onValueChange={(value) => {

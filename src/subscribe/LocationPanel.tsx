@@ -351,7 +351,8 @@ export function LocationPanel({
           手动输入坐标
         </Button>
       </div>
-      <Card id="location-editor" className="location-editor gap-4 py-4 shadow-none" hidden={!editorOpen}>
+      {editorOpen ? (
+      <Card id="location-editor" className="location-editor gap-4 py-4 shadow-none">
         <CardHeader className="location-editor-heading px-4">
           <CardTitle id="location-editor-title" className="location-editor-title text-base">
             {adding ? "添加监测地点" : "编辑监测地点"}
@@ -542,6 +543,7 @@ export function LocationPanel({
         </div>
         </CardContent>
       </Card>
+      ) : null}
       <div className="locations-section">
         <div className="locations-section-heading">
           <span>已添加地点</span>
@@ -558,9 +560,9 @@ export function LocationPanel({
               <Card
                 key={item.id}
                 className={cn(
-                  "location-item flex-row items-center gap-3 py-3 shadow-none",
+                  "location-item flex-row items-center gap-3 px-3 py-3 shadow-none",
                   active && "is-active ring-2 ring-ring/40",
-                  !point && "is-incomplete",
+                  !point && "is-incomplete border-dashed",
                 )}
                 data-target-id={item.id}
               >

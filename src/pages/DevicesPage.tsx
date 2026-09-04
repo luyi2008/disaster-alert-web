@@ -82,7 +82,7 @@ export function DevicesPage() {
         ) : devices.length === 0 ? (
           <EmptyState
             title="还没有设备"
-            body="输入 APNs device_token 添加后才能配置订阅。最长 128 位，不能为 deleted。"
+            body="输入推送令牌添加后才能配置订阅。最长 128 位，不能为 deleted。"
             action={{ href: "/devices/add", label: "添加设备" }}
           />
         ) : (

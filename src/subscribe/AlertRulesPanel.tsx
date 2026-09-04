@@ -5,8 +5,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
+import { X } from "lucide-react";
+import { Field } from "../components/Field";
 import { cn } from "@/lib/utils";
 import {
   alertEntry,
@@ -196,9 +199,12 @@ export function AlertRulesPanel({
                             ) : null}
                           </div>
                           <div className="source-list">
-                            {group.sources.map((source) => (
-                              <label key={source.id} className="source-row">
+                            {group.sources.map((source) => {
+                              const sourceInputId = `${category.id}-${source.id}`;
+                              return (
+                              <div key={source.id} className="source-row">
                                 <Checkbox
+                                  id={sourceInputId}
                                   className="source-toggle"
                                   data-source={source.id}
                                   checked={sourceEnabled(draft, category.id, source.id)}
@@ -210,9 +216,10 @@ export function AlertRulesPanel({
                                     });
                                   }}
                                 />
-                                <span>{source.label}</span>
-                              </label>
-                            ))}
+                                <Label htmlFor={sourceInputId} className="font-medium">{source.label}</Label>
+                              </div>
+                              );
+                            })}
                           </div>
                         </div>
                       ))}
@@ -274,8 +281,7 @@ export function AlertRulesPanel({
                                   <span className="intensity-rule-name">规则 {index + 1}</span>
                                 </div>
                                 <div className="intensity-rule-fields">
-                                  <label className="rule-field">
-                                    <span className="rule-field-title">预估烈度范围</span>
+                                  <Field label="预估烈度范围">
                                     <span className="intensity-range">
                                       <Input className="band-min text-center" type="number" min={0} max={7} step={1} value={String(band.min ?? "")} aria-label="起始烈度" disabled={disabled} onChange={(event) => {
                                         mutate((current) => {
@@ -293,9 +299,8 @@ export function AlertRulesPanel({
                                         setNotifyWarning(validateBands(collectBands(draft)));
                                       }} />
                                     </span>
-                                  </label>
-                                  <label className="rule-field">
-                                    <span className="rule-field-title">通知级别</span>
+                                  </Field>
+                                  <Field label="通知级别">
                                     <NativeSelect className={`band-select level-${level}`} disabled={disabled} value={level} onChange={(event) => {
                                       mutate((current) => {
                                         const row = current.alerts_by_category.earthquake_warning?.rule.estimated_intensity_bands?.[index];
@@ -306,7 +311,7 @@ export function AlertRulesPanel({
                                         <option key={item} value={item}>{levelLabel(item)}</option>
                                       ))}
                                     </NativeSelect>
-                                  </label>
+                                  </Field>
                                 </div>
                                 <Button className="remove-intensity-rule" type="button" variant="ghost" size="icon" data-action="remove-rule" aria-label={`删除规则 ${index + 1}`} title="删除规则" disabled={disabled} onClick={() => {
                                   mutate((current) => {
@@ -317,7 +322,9 @@ export function AlertRulesPanel({
                                     const nextBands = bands.length ? bands : defaultNotifyBands();
                                     rule.estimated_intensity_bands = nextBands.map((item) => ({ min: item.min, max: item.max, interruption_level: item.level }));
                                   });
-                                }}>×</Button>
+                                }}>
+                                  <X />
+                                </Button>
                               </div>
                             );
                           })}
@@ -371,11 +378,9 @@ function ThresholdFields({
       <div className="rule-section">
         <div className="rule-section-header"><span className="rule-section-title">匹配规则</span></div>
         <div className="rule-grid">
-          <label className="rule-field">
-            <span className="rule-field-title">最低震级</span>
-            <Input data-rule="min_magnitude" type="number" min={0} max={10} step="0.1" value={String(alert.min_magnitude ?? "")} disabled={disabled} onChange={(event) => onChange("min_magnitude", event.target.value)} />
-            <small>仅筛选地震信息，不影响地震预警。</small>
-          </label>
+          <Field label="最低震级" htmlFor={`${categoryId}-min-magnitude`} hint="仅筛选地震信息，不影响地震预警。">
+            <Input id={`${categoryId}-min-magnitude`} data-rule="min_magnitude" type="number" min={0} max={10} step="0.1" value={String(alert.min_magnitude ?? "")} disabled={disabled} onChange={(event) => onChange("min_magnitude", event.target.value)} />
+          </Field>
         </div>
       </div>
     );
@@ -385,20 +390,16 @@ function ThresholdFields({
       <div className="rule-section">
         <div className="rule-section-header"><span className="rule-section-title">匹配规则</span></div>
         <div className="rule-grid">
-          <label className="rule-field">
-            <span className="rule-field-title">最低严重度</span>
-            <NativeSelect data-rule="min_severity" disabled={disabled} value={String(alert.min_severity ?? "")} onChange={(event) => onChange("min_severity", event.target.value)}>
+          <Field label="最低严重度" htmlFor={`${categoryId}-min-severity`} hint="低于此级别的气象预警不推送。">
+            <NativeSelect id={`${categoryId}-min-severity`} data-rule="min_severity" disabled={disabled} value={String(alert.min_severity ?? "")} onChange={(event) => onChange("min_severity", event.target.value)}>
               {LEVEL_OPTIONS.map(([value, label]) => (
                 <option key={value} value={value}>{label}</option>
               ))}
             </NativeSelect>
-            <small>低于此级别的气象预警不推送。</small>
-          </label>
-          <label className="rule-field">
-            <span className="rule-field-title">坐标回退半径</span>
-            <Input data-rule="fallback_radius_km" type="number" min={1} max={2000} step={1} value={String(alert.fallback_radius_km ?? "")} disabled={disabled} onChange={(event) => onChange("fallback_radius_km", event.target.value)} />
-            <small>行政区未命中时，按地点周边公里数匹配。</small>
-          </label>
+          </Field>
+          <Field label="坐标回退半径" htmlFor={`${categoryId}-fallback-radius`} hint="行政区未命中时，按地点周边公里数匹配。">
+            <Input id={`${categoryId}-fallback-radius`} data-rule="fallback_radius_km" type="number" min={1} max={2000} step={1} value={String(alert.fallback_radius_km ?? "")} disabled={disabled} onChange={(event) => onChange("fallback_radius_km", event.target.value)} />
+          </Field>
         </div>
       </div>
     );
@@ -408,15 +409,13 @@ function ThresholdFields({
       <div className="rule-section">
         <div className="rule-section-header"><span className="rule-section-title">匹配规则</span></div>
         <div className="rule-grid">
-          <label className="rule-field">
-            <span className="rule-field-title">最低严重度</span>
-            <NativeSelect data-rule="min_severity" disabled={disabled} value={String(alert.min_severity ?? "")} onChange={(event) => onChange("min_severity", event.target.value)}>
+          <Field label="最低严重度" htmlFor={`${categoryId}-min-severity`} hint="结合监测地点的行政区进行匹配。">
+            <NativeSelect id={`${categoryId}-min-severity`} data-rule="min_severity" disabled={disabled} value={String(alert.min_severity ?? "")} onChange={(event) => onChange("min_severity", event.target.value)}>
               {LEVEL_OPTIONS.map(([value, label]) => (
                 <option key={value} value={value}>{label}</option>
               ))}
             </NativeSelect>
-            <small>结合监测地点的行政区进行匹配。</small>
-          </label>
+          </Field>
         </div>
       </div>
     );
@@ -426,11 +425,9 @@ function ThresholdFields({
       <div className="rule-section">
         <div className="rule-section-header"><span className="rule-section-title">匹配规则</span></div>
         <div className="rule-grid">
-          <label className="rule-field">
-            <span className="rule-field-title">中心最大距离</span>
-            <Input data-rule="max_center_distance_km" type="number" min={1} max={3000} step={1} value={String(alert.max_center_distance_km ?? "")} disabled={disabled} onChange={(event) => onChange("max_center_distance_km", event.target.value)} />
-            <small>台风中心距离任一监测地点不超过此公里数。</small>
-          </label>
+          <Field label="中心最大距离" htmlFor={`${categoryId}-max-center`} hint="台风中心距离任一监测地点不超过此公里数。">
+            <Input id={`${categoryId}-max-center`} data-rule="max_center_distance_km" type="number" min={1} max={3000} step={1} value={String(alert.max_center_distance_km ?? "")} disabled={disabled} onChange={(event) => onChange("max_center_distance_km", event.target.value)} />
+          </Field>
         </div>
       </div>
     );

@@ -4,6 +4,7 @@ import { bffFetch } from "../auth/session";
 import { normalizeMainlandPhone } from "../auth/phone";
 import { AppShell } from "../components/AppShell";
 import { Field, StatusMessage } from "../components/Field";
+import { OtpInput, PhoneInput } from "../components/PhoneInput";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -89,13 +90,19 @@ export function SettingsPage() {
           <CardContent>
             <form className="grid gap-4" onSubmit={(event) => void verifyPhone(event)}>
               <Field label="手机号" htmlFor="settings-phone">
-                <Input id="settings-phone" value={phone} onChange={(event) => setPhone(event.target.value)} />
+                <PhoneInput
+                  id="settings-phone"
+                  value={phone}
+                  onChange={setPhone}
+                />
               </Field>
-              <Button type="button" variant="outline" onClick={() => void sendOtp()}>
-                发送验证码
-              </Button>
               <Field label="验证码" htmlFor="settings-code">
-                <Input id="settings-code" value={code} onChange={(event) => setCode(event.target.value)} />
+                <div className="otp-row">
+                  <OtpInput id="settings-code" value={code} onChange={setCode} />
+                  <Button type="button" variant="outline" onClick={() => void sendOtp()}>
+                    发送验证码
+                  </Button>
+                </div>
               </Field>
               <Button type="submit">绑定手机号</Button>
             </form>
