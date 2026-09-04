@@ -42,8 +42,11 @@ describe("AppShell", () => {
     const account = await screen.findByRole("button", { name: /微信用户/ });
     expect(account).toHaveClass("hover:bg-accent");
     expect(account).toHaveClass("cursor-pointer");
-    fireEvent.pointerDown(account, { pointerType: "mouse" });
-    fireEvent.pointerUp(account, { pointerType: "mouse" });
-    expect(await screen.findByRole("menuitem", { name: "账号设置" })).toHaveAttribute("href", "/settings");
+    fireEvent.click(account);
+    const settings = await screen.findByRole("link", { name: "账号设置" });
+    expect(settings).toHaveAttribute("href", "/settings");
+    expect(settings.querySelector("svg")).not.toBeNull();
+    expect(screen.getByRole("button", { name: "登出" }).querySelector("svg")).not.toBeNull();
+    expect(screen.queryByRole("menuitem", { name: "账号设置" })).toBeNull();
   });
 });

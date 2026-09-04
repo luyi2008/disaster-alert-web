@@ -131,8 +131,8 @@ describe("SubscribePage", () => {
     expect(screen.getByRole("link", { name: "设备管理" })).toHaveAttribute("href", "/devices");
     expect(screen.queryByRole("navigation", { name: "主导航" })).toBeNull();
     const account = screen.getByRole("button", { name: /微信用户|账号/ });
-    fireEvent.pointerDown(account, { pointerType: "mouse" });
-    expect(await screen.findByRole("menuitem", { name: "账号设置" })).toHaveAttribute("href", "/settings");
+    fireEvent.click(account);
+    expect(await screen.findByRole("link", { name: "账号设置" })).toHaveAttribute("href", "/settings");
     expect(container.querySelector("#bark-id")).toBeNull();
     expect(screen.queryByRole("heading", { name: "灾害预警" })).toBeNull();
     await vi.waitFor(() => {

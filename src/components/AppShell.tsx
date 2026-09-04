@@ -1,21 +1,15 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { ChevronDown } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { CircleUser, LogOut, Settings } from "lucide-react";
 import {
   NavigationMenu,
+  NavigationMenuContent,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
+  NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
-import { cn } from "@/lib/utils";
 import { getSession, sessionLabel, signOut } from "../auth/session";
 
 export function AppShell({
@@ -76,31 +70,34 @@ export function AppShell({
                 </NavigationMenuLink>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      className={cn(navigationMenuTriggerStyle(), "gap-1")}
-                      aria-haspopup="menu"
-                    >
-                      {label}
-                      <ChevronDown className="relative top-px size-3.5" aria-hidden="true" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>账号</DropdownMenuLabel>
-                    <DropdownMenuItem asChild>
-                      <Link to="/settings">账号设置</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        void signOut().then(() => navigate("/login", { replace: true }));
-                      }}
-                    >
-                      登出
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <NavigationMenuTrigger>
+                  <CircleUser className="size-4" data-icon="account" />
+                  {label}
+                </NavigationMenuTrigger>
+                <NavigationMenuContent className="left-auto right-0">
+                  <ul className="grid w-[200px] gap-1">
+                    <li>
+                      <NavigationMenuLink asChild>
+                        <Link to="/settings" className="flex flex-row items-center gap-2">
+                          <Settings />
+                          账号设置
+                        </Link>
+                      </NavigationMenuLink>
+                      <NavigationMenuLink asChild>
+                        <button
+                          type="button"
+                          className="flex w-full flex-row items-center gap-2"
+                          onClick={() => {
+                            void signOut().then(() => navigate("/login", { replace: true }));
+                          }}
+                        >
+                          <LogOut />
+                          登出
+                        </button>
+                      </NavigationMenuLink>
+                    </li>
+                  </ul>
+                </NavigationMenuContent>
               </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
