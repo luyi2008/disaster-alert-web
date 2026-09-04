@@ -2,7 +2,6 @@ import { bindAlertRules } from "./alerts";
 import { targetCoordinates, validateLocations } from "./geo";
 import {
   draftFromSavedSubscription,
-  draftSignature,
   selectSavedSubscription,
 } from "./draft";
 import { bindLocations } from "./locations";
@@ -18,32 +17,12 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
   const toast = bindToast(ctx);
   const { el } = ctx;
 
-  function currentDestinationIdentity(): string {
-    return ctx.deviceId;
-  }
+  el.draftStatus.textContent = ctx.instanceTermsAccepted
+    ? ""
+    : "当前实例未确认部署责任，不能新增或保存订阅；仍可取消已有订阅。";
 
-  function updateDraftStatus(): void {
-    if (!ctx.instanceTermsAccepted) {
-      el.draftStatus.textContent = "当前实例未确认部署责任，不能新增或保存订阅；仍可取消已有订阅。";
-    } else if (
-      ctx.lastSubmittedSignature
-      && (
-        draftSignature(ctx.subscriptionDraft) !== ctx.lastSubmittedSignature
-        || currentDestinationIdentity() !== ctx.lastSubmittedIdentity
-      )
-    ) {
-      el.draftStatus.textContent = "有尚未提交的配置更改。";
-    } else {
-      el.draftStatus.textContent = "";
-    }
-  }
-
-  function persistDraft(): void {
-    updateDraftStatus();
-  }
-
-  const locations = bindLocations(ctx, { persistDraft, show: toast.show });
-  const alerts = bindAlertRules(ctx, { persistDraft, show: toast.show });
+  const locations = bindLocations(ctx, { show: toast.show });
+  const alerts = bindAlertRules(ctx, { show: toast.show });
   const status = bindStatus(ctx);
 
   function setSubscriptionRequestInFlight(inFlight: boolean): void {
@@ -120,11 +99,6 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
         setSubscriptionRequestInFlight(false);
         locations.renderLocations();
         locations.fitTargetMarkers();
-        if (savedRowApplied && ctx.lastSubmittedSignature === "") {
-          ctx.lastSubmittedSignature = draftSignature(ctx.subscriptionDraft);
-          ctx.lastSubmittedIdentity = currentDestinationIdentity();
-        }
-        updateDraftStatus();
         toast.dismissPersistentToasts();
       })
       .catch((error: { message?: string }) => {
@@ -163,7 +137,6 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
       toast.show(locationError, "error");
       return;
     }
-    const submittedSignature = draftSignature(ctx.subscriptionDraft);
     const payload = {
       targets: ctx.subscriptionDraft.targets.map((target) => ({
         label: target.label.trim(),
@@ -189,9 +162,6 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
       if (httpStatus >= 400 || !body.success) {
         throw new Error(body.message || "保存失败");
       }
-      ctx.lastSubmittedSignature = submittedSignature;
-      ctx.lastSubmittedIdentity = currentDestinationIdentity();
-      updateDraftStatus();
       if (body.data?.saved === true) {
         toast.show("订阅已保存，Bark 确认通知已发送", "success");
         void status.refreshStatus();
@@ -221,9 +191,6 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
         return;
       }
       if (httpStatus >= 400 || !body.success) throw new Error(body.message || "取消失败");
-      ctx.lastSubmittedSignature = "";
-      ctx.lastSubmittedIdentity = "";
-      updateDraftStatus();
       toast.show("已删除服务端订阅", "success");
       void status.refreshStatus();
     } catch (error) {

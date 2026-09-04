@@ -190,6 +190,7 @@ describe("mountSubscribeApp", () => {
     const submit = host.querySelector("#submit") as HTMLButtonElement;
     await vi.waitFor(() => expect(submit.disabled).toBe(false));
     expect(host.querySelector("#draft-status")?.textContent).not.toContain("本浏览器中的配置已提交");
+    expect(host.querySelector("#draft-status")?.textContent).not.toContain("有尚未提交的配置更改");
     expect(host.querySelector("a[href='/devices']")?.textContent).toBe("返回设备");
     (host.querySelector("#subscribe-form") as HTMLFormElement).requestSubmit();
 
@@ -415,6 +416,7 @@ describe("mountSubscribeApp", () => {
     expect(host.textContent).not.toContain("未连接");
     expect(host.textContent).not.toContain("配置草稿保存在当前浏览器");
     expect(host.textContent).not.toContain("本浏览器中的配置已提交");
+    expect(host.textContent).not.toContain("有尚未提交的配置更改");
     expect(host.textContent).not.toContain("Bark ID 不会保存");
     const footer = host.querySelector("footer");
     expect(footer?.textContent).not.toContain("数据来源");
