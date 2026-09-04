@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import L from "leaflet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,9 +52,11 @@ export function LocationPanel({
   const uiRef = useRef(ui);
   const draftRef = useRef(draft);
   const readyRef = useRef(configurationReady);
-  readyRef.current = configurationReady;
-  uiRef.current = ui;
-  draftRef.current = draft;
+  useLayoutEffect(() => {
+    readyRef.current = configurationReady;
+    uiRef.current = ui;
+    draftRef.current = draft;
+  });
 
   function bumpRev(map: Map<string, number>, id: string): number {
     const revision = (map.get(id) || 0) + 1;
@@ -308,7 +310,9 @@ export function LocationPanel({
     if (configurationReady) fitTargetMarkers();
   }, [configurationReady]);
 
-  const target = activeTarget();
+  const target = ui.locationMode === "overview"
+    ? draft.targets.find((item) => item.id === ui.activeTargetId) || null
+    : ui.editingTarget;
   const coordinates = targetCoordinates(target);
   const count = draft.targets.length;
   const editorOpen = Boolean(target && ui.locationMode !== "overview");
