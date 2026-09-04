@@ -21,7 +21,7 @@ export function Field({
   const message = error || hint || "";
   const showMessage = Boolean(error || hint || reserveMessage);
   return (
-    <div className="grid gap-2" data-slot="field">
+    <div className="flex flex-col gap-2" data-slot="field">
       <Label htmlFor={htmlFor}>{label}</Label>
       {children}
       {showMessage ? (

@@ -9,9 +9,9 @@ type PhoneInputProps = {
 
 export function PhoneInput({ id, value, invalid = false, onChange }: PhoneInputProps) {
   return (
-    <div className="grid grid-cols-[72px_minmax(0,1fr)] gap-2">
+    <div className="phone-input">
       <span
-        className="grid h-12 place-items-center rounded-md border border-input bg-muted text-sm font-semibold text-muted-foreground"
+        className="phone-input-prefix"
         aria-hidden="true"
       >
         +86

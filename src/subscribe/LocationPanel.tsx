@@ -364,7 +364,7 @@ export function LocationPanel({
           <span className="location-picker-heading">
             {coordinates ? "当前位置，可在地图点击以调整" : "在地图点击位置，或输入坐标"}
           </span>
-          <div className="grid coordinate-grid">
+          <div className="coordinate-grid">
             <Label className="input-label" htmlFor="latitude">
               纬度
               <Input
@@ -452,7 +452,7 @@ export function LocationPanel({
           </div>
           <div id="region-editor" className="region-editor" hidden={!regionOpen}>
             <div className="region-editor-inner">
-              <div className="grid admin-grid">
+              <div className="admin-grid">
                 <Label className="input-label" htmlFor="province">
                   省/州
                   <Input id="province" maxLength={80} placeholder="可选" value={target?.region.province || ""} onChange={(event) => {

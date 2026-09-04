@@ -50,13 +50,13 @@ export function SocialLogin({
   onSelect: (id: SocialProvider) => void;
 }) {
   return (
-    <div className="grid gap-4">
-      <p className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-[13px] text-muted-foreground">
-        <span className="h-px bg-border" aria-hidden="true" />
+    <div className="social-login">
+      <p className="social-login-rule">
+        <span aria-hidden="true" />
         <span>或者</span>
-        <span className="h-px bg-border" aria-hidden="true" />
+        <span aria-hidden="true" />
       </p>
-      <div className="grid grid-cols-3 gap-2 max-[880px]:grid-cols-1">
+      <div className="social-login-row">
         {PROVIDERS.map((provider) => (
           <Button
             key={provider.id}

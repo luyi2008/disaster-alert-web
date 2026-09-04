@@ -199,7 +199,7 @@ export function LoginPage() {
               />
             </Field>
             <Field label="验证码" htmlFor="login-code" error={otpError}>
-              <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+              <div className="otp-row">
                 <OtpInput
                   id="login-code"
                   value={code}
