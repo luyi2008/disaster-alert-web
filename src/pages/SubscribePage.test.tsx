@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -61,6 +64,17 @@ function jsonResponse(data: unknown): Response {
 describe("SubscribePage", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it("keeps subscribe workspace side padding at 0", () => {
+    const css = readFileSync(
+      join(dirname(fileURLToPath(import.meta.url)), "../styles/subscribe.css"),
+      "utf8",
+    );
+    const block = css.match(/^\s*\.workspace \{([\s\S]*?)^\s*\}/m)?.[1] ?? "";
+    expect(block).toMatch(/padding:\s*20px 0 32px;/);
+    expect(block).not.toMatch(/padding-left\s*:/);
+    expect(block).not.toMatch(/padding-right\s*:/);
   });
 
   it("goes back to devices when the device is missing", async () => {
