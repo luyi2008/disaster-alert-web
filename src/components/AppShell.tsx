@@ -8,6 +8,14 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  NavigationMenu,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  navigationMenuTriggerStyle,
+} from "@/components/ui/navigation-menu";
+import { cn } from "@/lib/utils";
 import { getSession, sessionLabel, signOut } from "../auth/session";
 
 export function AppShell({
@@ -60,18 +68,24 @@ export function AppShell({
           灾害预警
         </Link>
         <div className="shell-top-end">
-          <NavLink
-            to="/devices"
-            className={({ isActive }) => `shell-top-link${isActive ? " is-active" : ""}`}
-          >
-            设备管理
-          </NavLink>
-          <span className="shell-top-rule" aria-hidden="true" />
+          <NavigationMenu viewport={false}>
+            <NavigationMenuList>
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                  <NavLink to="/devices">设备管理</NavLink>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+            </NavigationMenuList>
+          </NavigationMenu>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button type="button" className="shell-account-btn" aria-haspopup="menu">
+              <button
+                type="button"
+                className={cn(navigationMenuTriggerStyle(), "gap-1")}
+                aria-haspopup="menu"
+              >
                 {label}
-                <ChevronDown className="shell-account-caret size-[18px]" aria-hidden="true" />
+                <ChevronDown className="relative top-px size-3.5" aria-hidden="true" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">

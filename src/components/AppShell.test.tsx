@@ -32,9 +32,14 @@ describe("AppShell", () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByRole("link", { name: "设备管理" })).toHaveAttribute("href", "/devices");
+    const devicesLink = await screen.findByRole("link", { name: "设备管理" });
+    expect(devicesLink).toHaveAttribute("href", "/devices");
+    expect(devicesLink).toHaveClass("hover:bg-accent");
+    expect(devicesLink).toHaveClass("cursor-pointer");
     expect(screen.queryByRole("navigation", { name: "主导航" })).toBeNull();
     const account = await screen.findByRole("button", { name: /微信用户/ });
+    expect(account).toHaveClass("hover:bg-accent");
+    expect(account).toHaveClass("cursor-pointer");
     fireEvent.pointerDown(account, { pointerType: "mouse" });
     fireEvent.pointerUp(account, { pointerType: "mouse" });
     expect(await screen.findByRole("menuitem", { name: "账号设置" })).toHaveAttribute("href", "/settings");
