@@ -81,8 +81,16 @@
   gap: 16px;
 }
 
+.phone-input {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
 .phone-input-prefix {
   display: grid;
+  flex: 0 0 72px;
+  width: 72px;
   height: 48px;
   place-items: center;
   border: 1px solid var(--line);
@@ -102,6 +110,7 @@
 
 .phone-input input,
 .otp-row input {
+  flex: 1 1 auto;
   width: 100%;
   min-width: 0;
 }
