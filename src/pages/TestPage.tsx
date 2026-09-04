@@ -481,6 +481,7 @@ export function TestPage() {
         {actionStatus ? (
           <p className={`test-status is-${actionStatus.kind}`} role="status">{actionStatus.text}</p>
         ) : null}
+        </section>
       </div>
       <div className="form-actions">
         <Link className="btn-ghost" to="/devices">
