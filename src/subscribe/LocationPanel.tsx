@@ -3,7 +3,7 @@ import L from "leaflet";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Field } from "../components/Field";
 import { cn } from "@/lib/utils";
 import {
   cloneTarget,
@@ -368,8 +368,7 @@ export function LocationPanel({
             {coordinates ? "当前位置，可在地图点击以调整" : "在地图点击位置，或输入坐标"}
           </span>
           <div className="coordinate-grid">
-            <Label className="input-label" htmlFor="latitude">
-              纬度
+            <Field label="纬度" htmlFor="latitude">
               <Input
                 id="latitude"
                 type="number"
@@ -395,9 +394,8 @@ export function LocationPanel({
                   }
                 }}
               />
-            </Label>
-            <Label className="input-label" htmlFor="longitude">
-              经度
+            </Field>
+            <Field label="经度" htmlFor="longitude">
               <Input
                 id="longitude"
                 type="number"
@@ -423,12 +421,11 @@ export function LocationPanel({
                   }
                 }}
               />
-            </Label>
+            </Field>
           </div>
         </div>
         <div id="location-details" className="location-details" hidden={adding && !coordinates}>
-          <Label className="input-label" htmlFor="location-name">
-            地点名称（可选）
+          <Field label="地点名称（可选）" htmlFor="location-name">
             <Input
               id="location-name"
               maxLength={80}
@@ -441,7 +438,7 @@ export function LocationPanel({
                 setUi((value) => ({ ...value, editingTarget: { ...current } }));
               }}
             />
-          </Label>
+          </Field>
           <div className="region-match">
             <div className="region-match-copy">
               <span className="region-match-label">区域匹配</span>
@@ -456,8 +453,7 @@ export function LocationPanel({
           <div id="region-editor" className="region-editor" hidden={!regionOpen}>
             <div className="region-editor-inner">
               <div className="admin-grid">
-                <Label className="input-label" htmlFor="province">
-                  省/州
+                <Field label="省/州" htmlFor="province">
                   <Input id="province" maxLength={80} placeholder="可选" value={target?.region.province || ""} onChange={(event) => {
                     const current = activeTarget();
                     if (!current) return;
@@ -468,9 +464,8 @@ export function LocationPanel({
                     setRegionStatus({ message: region ? "已手动修改" : "可手动填写行政区", state: region ? "ready" : "" });
                     setUi((value) => ({ ...value, editingTarget: { ...current } }));
                   }} />
-                </Label>
-                <Label className="input-label" htmlFor="city">
-                  城市
+                </Field>
+                <Field label="城市" htmlFor="city">
                   <Input id="city" maxLength={80} placeholder="可选" value={target?.region.city || ""} onChange={(event) => {
                     const current = activeTarget();
                     if (!current) return;
@@ -481,9 +476,8 @@ export function LocationPanel({
                     setRegionStatus({ message: region ? "已手动修改" : "可手动填写行政区", state: region ? "ready" : "" });
                     setUi((value) => ({ ...value, editingTarget: { ...current } }));
                   }} />
-                </Label>
-                <Label className="input-label" htmlFor="district">
-                  区/县
+                </Field>
+                <Field label="区/县" htmlFor="district">
                   <Input id="district" maxLength={80} placeholder="可选" value={target?.region.district || ""} onChange={(event) => {
                     const current = activeTarget();
                     if (!current) return;
@@ -494,7 +488,7 @@ export function LocationPanel({
                     setRegionStatus({ message: region ? "已手动修改" : "可手动填写行政区", state: region ? "ready" : "" });
                     setUi((value) => ({ ...value, editingTarget: { ...current } }));
                   }} />
-                </Label>
+                </Field>
               </div>
               <small className="region-editor-note">填写行政区可提高气象预警覆盖，并用于海啸区域匹配。</small>
             </div>

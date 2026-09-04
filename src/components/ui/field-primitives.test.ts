@@ -29,4 +29,16 @@ describe("field primitives", () => {
     }
     expect(offenders).toEqual([]);
   });
+
+  it("does not restyle subscribe labels with a page-scoped element selector", () => {
+    const css = readFileSync(join(srcDir, "styles/subscribe.css"), "utf8");
+    expect(css).not.toMatch(/\.subscribe-workspace\s+label\b/);
+    expect(css).not.toMatch(/\.input-label\b/);
+  });
+
+  it("uses Field for subscribe location inputs instead of wrapping Label around Input", () => {
+    const source = readFileSync(join(srcDir, "subscribe/LocationPanel.tsx"), "utf8");
+    expect(source).toContain('from "../components/Field"');
+    expect(source).not.toMatch(/<Label[\s\S]*?<Input/);
+  });
 });
