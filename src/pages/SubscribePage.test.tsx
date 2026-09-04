@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { SubscribePage } from "./SubscribePage";
@@ -128,7 +128,9 @@ describe("SubscribePage", () => {
     expect(await screen.findByText(/设备1/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "灾害预警" })).toHaveAttribute("href", "/devices");
     expect(screen.getByRole("link", { name: "返回设备" })).toHaveAttribute("href", "/devices");
-    expect(screen.getByRole("link", { name: /^设备$/ })).toHaveAttribute("href", "/devices");
+    expect(screen.getByRole("link", { name: "设备管理" })).toHaveAttribute("href", "/devices");
+    expect(screen.queryByRole("navigation", { name: "主导航" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /微信用户|账号/ }));
     expect(screen.getByRole("link", { name: "账号设置" })).toHaveAttribute("href", "/settings");
     expect(container.querySelector("#bark-id")).toBeNull();
     expect(screen.queryByRole("heading", { name: "灾害预警" })).toBeNull();

@@ -450,6 +450,48 @@
   color: var(--text);
 }
 
+.shell-top-end {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.shell-top-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.shell-top-link:hover,
+.shell-top-link.is-active {
+  color: var(--text);
+}
+
+.shell-top-link.is-active::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 6px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--primary);
+}
+
+.shell-top-rule {
+  width: 1px;
+  height: 16px;
+  margin: 0 8px 0 6px;
+  background: var(--line);
+}
+
 .shell-account {
   position: relative;
 }
@@ -465,10 +507,19 @@
 }
 
 .shell-account-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   min-height: 36px;
   padding: 0 8px;
   color: var(--muted);
   font-size: 13px;
+}
+
+.shell-account-caret {
+  display: block;
+  flex-shrink: 0;
+  color: currentColor;
 }
 
 .shell-menu {
@@ -501,37 +552,8 @@
   background: var(--soft);
 }
 
-.shell-body {
-  flex: 1;
-  display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
-}
-
-.shell-nav {
-  padding: 20px 16px;
-  border-right: 1px solid var(--line);
-  background: var(--panel);
-}
-
-.shell-nav-link {
-  display: flex;
-  align-items: center;
-  min-height: 40px;
-  padding: 0 12px;
-  border-radius: var(--radius-sm);
-  color: var(--muted);
-  font-size: 14px;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.shell-nav-link.is-active,
-.shell-nav-link:hover {
-  background: var(--soft);
-  color: var(--text);
-}
-
 .shell-main {
+  flex: 1;
   min-width: 0;
   padding: 32px 40px 64px;
 }
@@ -663,11 +685,19 @@
   letter-spacing: 0.02em;
 }
 
-.add-actions {
+.add-actions,
+.add-panel .form-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+}
+
+.add-panel .form-actions {
+  position: static;
+  padding: 4px 0 0;
+  border: 0;
+  background: transparent;
 }
 
 @keyframes ds-spin {
@@ -687,14 +717,6 @@
 
   .login-form-col {
     padding: 32px 20px 48px;
-  }
-
-  .shell-body {
-    grid-template-columns: 1fr;
-  }
-
-  .shell-nav {
-    display: none;
   }
 
   .shell-main {

@@ -11,11 +11,19 @@
 
 .test-sheet {
   flex: 1;
+  display: flex;
+  flex-direction: column;
   margin: 0;
-  padding: 20px 20px 16px;
+  padding: 0;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--panel);
+  overflow: hidden;
+}
+
+.test-sheet-body {
+  flex: 1;
+  padding: 20px 20px 16px;
 }
 
 .test-status-strip {
@@ -303,14 +311,8 @@
   background: var(--err-bg);
 }
 
-.test-updated {
-  margin: 16px 0 0;
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.test-page > .add-actions {
-  margin-top: 16px;
+.test-sheet > .form-actions {
+  margin-top: auto;
 }
 
 @media (max-width: 720px) {

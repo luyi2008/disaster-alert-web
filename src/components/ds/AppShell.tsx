@@ -2,6 +2,14 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { getSession, sessionLabel, signOut } from "../../auth/session";
 
+function AccountCaret() {
+  return (
+    <svg className="shell-account-caret" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function AppShell({
   title,
   description,
@@ -52,56 +60,56 @@ export function AppShell({
           </span>
           灾害预警
         </Link>
-        <div className="shell-account">
-          <button
-            type="button"
-            className="shell-account-btn"
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen((open) => !open)}
+        <div className="shell-top-end">
+          <NavLink
+            to="/devices"
+            className={({ isActive }) => `shell-top-link${isActive ? " is-active" : ""}`}
           >
-            {label}
-            <span aria-hidden="true"> ▾</span>
-          </button>
-          {menuOpen ? (
-            <div className="shell-menu" role="menu">
-              <p className="shell-menu-label">账号</p>
-              <Link className="shell-menu-item" to="/settings" role="menuitem">
-                账号设置
-              </Link>
-              <button
-                type="button"
-                className="shell-menu-item"
-                role="menuitem"
-                onClick={() => {
-                  void signOut().then(() => navigate("/login", { replace: true }));
-                }}
-              >
-                登出
-              </button>
-            </div>
-          ) : null}
+            设备管理
+          </NavLink>
+          <span className="shell-top-rule" aria-hidden="true" />
+          <div className="shell-account">
+            <button
+              type="button"
+              className="shell-account-btn"
+              aria-expanded={menuOpen}
+              aria-haspopup="menu"
+              onClick={() => setMenuOpen((open) => !open)}
+            >
+              {label}
+              <AccountCaret />
+            </button>
+            {menuOpen ? (
+              <div className="shell-menu" role="menu">
+                <p className="shell-menu-label">账号</p>
+                <Link className="shell-menu-item" to="/settings" role="menuitem">
+                  账号设置
+                </Link>
+                <button
+                  type="button"
+                  className="shell-menu-item"
+                  role="menuitem"
+                  onClick={() => {
+                    void signOut().then(() => navigate("/login", { replace: true }));
+                  }}
+                >
+                  登出
+                </button>
+              </div>
+            ) : null}
+          </div>
         </div>
       </header>
-      <div className="shell-body">
-        <nav className="shell-nav" aria-label="主导航">
-          <NavLink to="/devices" end className={({ isActive }) => `shell-nav-link${isActive ? " is-active" : ""}`}>
-            设备
-          </NavLink>
-          <NavLink to="/settings" className={({ isActive }) => `shell-nav-link${isActive ? " is-active" : ""}`}>
-            账号设置
-          </NavLink>
-        </nav>
-        <main className="shell-main">
-          <div className="shell-pagehead">
-            <div>
-              <h1>{title}</h1>
-              {description ? <p>{description}</p> : null}
-            </div>
-            {action}
+      <main className="shell-main">
+        <div className="shell-pagehead">
+          <div>
+            <h1>{title}</h1>
+            {description ? <p>{description}</p> : null}
           </div>
-          {children}
-        </main>
-      </div>
+          {action}
+        </div>
+        {children}
+      </main>
     </div>
   );
 }
