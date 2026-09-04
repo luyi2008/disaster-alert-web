@@ -72,7 +72,7 @@ graph TB
 | 运行时镜像 | nginx alpine | 1.27 |
 | 构建镜像 | node bookworm | 22 |
 
-没有引入状态管理库。交互控件走 `src/components/ui/`（Button、Input、NativeSelect、Switch、Checkbox、Dialog、AlertDialog、DropdownMenu 等），主题变量接到现有 `tokens.css`（`--primary` 跟 `--text` 的 zinc 黑/白，light/dark 跟 `prefers-color-scheme`，不引入 `class="dark"` 开关）。页面级布局仍用手写 CSS（`ds.css` 的登录/壳层、`subscribe.css` 双栏、`detail.css` 时间线、`test.css` 规则卡），地图继续 Leaflet。
+没有引入状态管理库。交互控件走 `src/components/ui/`（Button、Input、NativeSelect、Switch、Checkbox、Tabs、Accordion、Alert、Card、Badge、Dialog、AlertDialog、DropdownMenu、NavigationMenu 等），主题变量接到现有 `tokens.css`（`--primary` 跟 `--text` 的 zinc 黑/白，light/dark 跟 `prefers-color-scheme`，不引入 `class="dark"` 开关）。页面级布局仍用手写 CSS（`ds.css` 的登录/壳层、`subscribe.css` 双栏、`detail.css` 地图叠层、`test.css` 状态条），地图继续 Leaflet。
 
 ---
 

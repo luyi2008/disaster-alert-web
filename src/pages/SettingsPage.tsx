@@ -5,6 +5,7 @@ import { normalizeMainlandPhone } from "../auth/phone";
 import { AppShell } from "../components/AppShell";
 import { Field, StatusMessage } from "../components/Field";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import "../styles/base.css";
 import "../styles/ds.css";
@@ -83,24 +84,34 @@ export function SettingsPage() {
   return (
     <AppShell title="账号设置" description="给当前账号补绑手机号或微信。已被其他账号使用的身份不会合并。">
       {status ? <StatusMessage kind={ok ? "success" : "error"}>{status}</StatusMessage> : null}
-      <form className="settings-panel" onSubmit={(event) => void verifyPhone(event)}>
-        <Field label="手机号" htmlFor="settings-phone">
-          <Input id="settings-phone" value={phone} onChange={(event) => setPhone(event.target.value)} />
-        </Field>
-        <Button type="button" variant="outline" onClick={() => void sendOtp()}>
-          发送验证码
-        </Button>
-        <Field label="验证码" htmlFor="settings-code">
-          <Input id="settings-code" value={code} onChange={(event) => setCode(event.target.value)} />
-        </Field>
-        <Button type="submit">绑定手机号</Button>
-      </form>
-      <form className="settings-panel" onSubmit={(event) => void linkWechat(event)}>
-        <Field label="微信 openid（开发）" htmlFor="settings-openid">
-          <Input id="settings-openid" value={openid} onChange={(event) => setOpenid(event.target.value)} />
-        </Field>
-        <Button type="submit">模拟绑定微信</Button>
-      </form>
+      <div className="grid max-w-md gap-4">
+        <Card>
+          <CardContent>
+            <form className="grid gap-4" onSubmit={(event) => void verifyPhone(event)}>
+              <Field label="手机号" htmlFor="settings-phone">
+                <Input id="settings-phone" value={phone} onChange={(event) => setPhone(event.target.value)} />
+              </Field>
+              <Button type="button" variant="outline" onClick={() => void sendOtp()}>
+                发送验证码
+              </Button>
+              <Field label="验证码" htmlFor="settings-code">
+                <Input id="settings-code" value={code} onChange={(event) => setCode(event.target.value)} />
+              </Field>
+              <Button type="submit">绑定手机号</Button>
+            </form>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent>
+            <form className="grid gap-4" onSubmit={(event) => void linkWechat(event)}>
+              <Field label="微信 openid（开发）" htmlFor="settings-openid">
+                <Input id="settings-openid" value={openid} onChange={(event) => setOpenid(event.target.value)} />
+              </Field>
+              <Button type="submit">模拟绑定微信</Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </AppShell>
   );
 }

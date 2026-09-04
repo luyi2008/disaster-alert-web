@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
@@ -48,16 +49,12 @@ export function StatusMessage({
   children: ReactNode;
 }) {
   return (
-    <div
-      className={cn(
-        "mb-4 rounded-md px-3 py-2.5 text-[13px] leading-[1.45]",
-        kind === "error" && "bg-destructive/10 text-destructive",
-        kind === "success" && "bg-[var(--ok-bg)] text-[var(--ok)]",
-        kind === "info" && "bg-[var(--info-bg)] text-[var(--info)]",
-      )}
+    <Alert
+      className="mb-4"
+      variant={kind === "error" ? "destructive" : kind === "success" ? "success" : "default"}
       role={kind === "error" ? "alert" : "status"}
     >
-      {children}
-    </div>
+      <AlertDescription>{children}</AlertDescription>
+    </Alert>
   );
 }

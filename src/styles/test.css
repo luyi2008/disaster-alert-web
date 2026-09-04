@@ -201,24 +201,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.test-tabs {
-  display: flex;
-  gap: 16px;
-  margin: 0 0 12px;
-  border-bottom: 1px solid var(--line);
-}
-
-.test-tabs [role="tab"] {
-  border-radius: 0;
-  border-bottom: 2px solid transparent;
-}
-
-.test-tabs [role="tab"].is-active,
-.test-tabs [role="tab"][aria-selected="true"] {
-  border-bottom-color: var(--text);
-  color: var(--text);
-}
-
 .test-level-list,
 .test-history-list {
   display: grid;

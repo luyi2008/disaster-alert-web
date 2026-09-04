@@ -19,7 +19,7 @@ export function DeviceCard({
       <CardHeader className="device-card-head px-5">
         <div>
           <div className="device-card-title">
-            <h2>{device.name}</h2>
+            <h2 className="m-0 text-lg font-semibold">{device.name}</h2>
             <Button
               type="button"
               variant="ghost"

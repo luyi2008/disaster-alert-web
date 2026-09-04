@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
 export type SocialProvider = "wechat" | "alipay" | "google";
 
@@ -51,11 +52,11 @@ export function SocialLogin({
 }) {
   return (
     <div className="social-login">
-      <p className="social-login-rule">
-        <span aria-hidden="true" />
-        <span>或者</span>
-        <span aria-hidden="true" />
-      </p>
+      <div className="flex items-center gap-3">
+        <Separator className="flex-1" />
+        <span className="text-muted-foreground text-xs">或者</span>
+        <Separator className="flex-1" />
+      </div>
       <div className="social-login-row">
         {PROVIDERS.map((provider) => (
           <Button

@@ -740,18 +740,6 @@
     .level-passive { color: var(--muted); background: var(--soft); }
     .level-active { color: var(--text); background: var(--hover); }
     .level-critical { color: var(--err); background: var(--err-bg); }
-    .notify-warning {
-      display: none;
-      padding: 9px 10px;
-      border: 1px solid color-mix(in srgb, var(--err) 28%, var(--line));
-      border-radius: 6px;
-      color: var(--err);
-      background: var(--err-bg);
-      font-size: 12px;
-      font-weight: 760;
-      line-height: 1.4;
-    }
-    .notify-warning.show { display: block; }
     @media (max-width: 640px) {
       .intensity-rule { grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; }
       .intensity-rule-fields { grid-template-columns: 1fr; }

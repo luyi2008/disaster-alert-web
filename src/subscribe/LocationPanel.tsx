@@ -1,8 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import L from "leaflet";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import {
   cloneTarget,
   createTarget,
@@ -349,17 +351,18 @@ export function LocationPanel({
           手动输入坐标
         </Button>
       </div>
-      <div id="location-editor" className="location-editor" hidden={!editorOpen}>
-        <div className="location-editor-heading">
-          <div>
-            <h3 id="location-editor-title" className="location-editor-title">{adding ? "添加监测地点" : "编辑监测地点"}</h3>
-            <span id="location-editor-subtitle" className="location-editor-subtitle">
-              {adding
-                ? coordinates ? "位置已选择，可补充名称后保存" : "先选择需要监测的位置"
-                : targetLabel(target)}
-            </span>
-          </div>
-        </div>
+      <Card id="location-editor" className="location-editor gap-4 py-4 shadow-none" hidden={!editorOpen}>
+        <CardHeader className="location-editor-heading px-4">
+          <CardTitle id="location-editor-title" className="location-editor-title text-base">
+            {adding ? "添加监测地点" : "编辑监测地点"}
+          </CardTitle>
+          <CardDescription id="location-editor-subtitle" className="location-editor-subtitle">
+            {adding
+              ? coordinates ? "位置已选择，可补充名称后保存" : "先选择需要监测的位置"
+              : targetLabel(target)}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 px-4">
         <div className="location-picker">
           <span className="location-picker-heading">
             {coordinates ? "当前位置，可在地图点击以调整" : "在地图点击位置，或输入坐标"}
@@ -543,7 +546,8 @@ export function LocationPanel({
             {adding ? "保存地点" : "保存修改"}
           </Button>
         </div>
-      </div>
+        </CardContent>
+      </Card>
       <div className="locations-section">
         <div className="locations-section-heading">
           <span>已添加地点</span>
@@ -557,7 +561,15 @@ export function LocationPanel({
             const region = targetRegion(item);
             const active = item.id === ui.activeTargetId;
             return (
-              <div key={item.id} className={`location-item${active ? " is-active" : ""}${point ? "" : " is-incomplete"}`} data-target-id={item.id}>
+              <Card
+                key={item.id}
+                className={cn(
+                  "location-item flex-row items-center gap-3 py-3 shadow-none",
+                  active && "is-active ring-2 ring-ring/40",
+                  !point && "is-incomplete",
+                )}
+                data-target-id={item.id}
+              >
                 <span className="location-index">{index + 1}</span>
                 <Button
                   className="location-focus h-auto min-h-0 w-full flex-col items-start justify-start gap-0 p-0 font-normal"
@@ -600,7 +612,7 @@ export function LocationPanel({
                     notify("已从订阅草稿移除地点", "success");
                   }}>删除</Button>
                 </span>
-              </div>
+              </Card>
             );
           })}
         </div>

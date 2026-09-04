@@ -1,4 +1,5 @@
-import { Input } from "@/components/ui/input";
+import { fieldControlClassName, Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 type PhoneInputProps = {
   id: string;
@@ -11,7 +12,7 @@ export function PhoneInput({ id, value, invalid = false, onChange }: PhoneInputP
   return (
     <div className="phone-input">
       <span
-        className="phone-input-prefix"
+        className={cn(fieldControlClassName, "flex w-[72px] shrink-0 items-center justify-center px-0 text-muted-foreground")}
         aria-hidden="true"
       >
         +86

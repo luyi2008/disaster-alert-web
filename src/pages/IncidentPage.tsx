@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Link, useParams } from "react-router-dom";
 import L from "leaflet";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useIncidentDetail } from "./useIncidentDetail";
 import type {
   AlertRule,
@@ -51,6 +54,21 @@ function formatEpochMs(value: number): string {
   }
   const pad = (part: number) => String(part).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+function StatusBadge({ className, text }: { className: string; text: string }) {
+  const variant = className.includes("cancel") || className.includes("mixed")
+    ? "destructive"
+    : className.includes("final")
+      ? "secondary"
+      : "outline";
+  return <Badge variant={variant}>{text}</Badge>;
+}
+
+function interruptionBadgeVariant(value: string) {
+  if (value === "critical") return "destructive" as const;
+  if (value === "active") return "default" as const;
+  return "secondary" as const;
 }
 
 function statusLabel(cancel: boolean, finalReport: boolean): { className: string; text: string } {
@@ -371,14 +389,14 @@ function IncidentLoaded({
           </div>
         </div>
         <div className="hero-layout">
-          <section className="floating-panel event-panel" aria-labelledby="overview-heading">
-            <div className="panel-topline">
-              <div className="trust-row">
-                <span className="category">{categoryLabel(snapshot.event.category)}</span>
-                {snapshot.event.training ? <span className="training">演练 / 测试</span> : null}
+          <Card className="floating-panel event-panel gap-0 py-5 shadow-none" aria-labelledby="overview-heading">
+            <CardHeader className="panel-topline px-0">
+              <div className="trust-row flex flex-wrap gap-2">
+                <Badge variant="secondary">{categoryLabel(snapshot.event.category)}</Badge>
+                {snapshot.event.training ? <Badge variant="outline">演练 / 测试</Badge> : null}
               </div>
-              <span className={badge.className}>{badge.text}</span>
-            </div>
+              <StatusBadge className={badge.className} text={badge.text} />
+            </CardHeader>
             <span className="section-kicker">事件态势</span>
             <h1 id="overview-heading">{snapshot.event.title}</h1>
             <p className="headline-meta">
@@ -411,17 +429,17 @@ function IncidentLoaded({
             {snapshot.event.description.trim() ? (
               <p className="hero-description">{snapshot.event.description}</p>
             ) : null}
-          </section>
-          <section className="floating-panel impact-panel" aria-labelledby="impact-heading">
-            <div className="panel-topline">
+          </Card>
+          <Card className="floating-panel impact-panel gap-0 py-5 shadow-none" aria-labelledby="impact-heading">
+            <CardHeader className="panel-topline px-0">
               <div>
                 <span className="section-kicker">影响提示</span>
                 <h2 id="impact-heading">关注地点</h2>
               </div>
-              <span className={`notification-level ${snapshot.interruption_level}`}>
+              <Badge variant={interruptionBadgeVariant(snapshot.interruption_level)}>
                 {interruptionLabel(snapshot.interruption_level)}
-              </span>
-            </div>
+              </Badge>
+            </CardHeader>
             <div className="target-summary">
               <span className="target-pin" aria-hidden="true" />
               <div>
@@ -444,7 +462,7 @@ function IncidentLoaded({
             ) : (
               <p className="empty-note">暂未提供影响估算</p>
             )}
-          </section>
+          </Card>
         </div>
         <div className="map-footer">
           <div className="map-legend">
@@ -512,130 +530,142 @@ function IncidentLoaded({
             ))}
           </div>
         </section>
-        <details className="detail-disclosure">
-          <summary>
-            <span>事件详情</span>
-            <small>通知时数据</small>
-          </summary>
-          <div className="disclosure-content">
-            <div className="section-heading">
-              <div>
-                <span className="section-kicker">事件记录</span>
-                <h2>通知时完整信息</h2>
-              </div>
-              <span className="issued">签发于 {formatEpochMs(snapshot.issued_at_ms)}</span>
-            </div>
-            <dl className="fact-grid">
-              <div>
-                <dt>灾害类别</dt>
-                <dd>{categoryLabel(snapshot.event.category)}</dd>
-              </div>
-              <div>
-                <dt>来源与报告</dt>
-                <dd>
-                  {snapshot.event.source} · 第 {snapshot.event.report_num} 报
-                </dd>
-              </div>
-              <div>
-                <dt>事件等级</dt>
-                <dd>{snapshot.event.level}</dd>
-              </div>
-              {snapshot.event.magnitude != null ? (
-                <div>
-                  <dt>震级</dt>
-                  <dd>M{snapshot.event.magnitude.toFixed(1)}</dd>
-                </div>
-              ) : null}
-              {snapshot.event.depth_km != null ? (
-                <div>
-                  <dt>深度</dt>
-                  <dd>{snapshot.event.depth_km.toFixed(1)} km</dd>
-                </div>
-              ) : null}
-              {snapshot.event.radius_km != null ? (
-                <div>
-                  <dt>影响半径</dt>
-                  <dd>{snapshot.event.radius_km.toFixed(0)} km</dd>
-                </div>
-              ) : null}
-            </dl>
-          </div>
-        </details>
-        <details className="detail-disclosure">
-          <summary>
-            <span>预警条件</span>
-            <small>地点与订阅规则</small>
-          </summary>
-          <div className="disclosure-content">
-            <div className="section-heading">
-              <div>
-                <span className="section-kicker">预警条件</span>
-                <h2>关注地点与命中规则</h2>
-              </div>
-              <span className={`notification-level ${snapshot.interruption_level}`}>
-                {interruptionLabel(snapshot.interruption_level)}
+        <Accordion type="multiple" className="detail-disclosure-list" defaultValue={["event", "rules", "timeline"]}>
+          <AccordionItem value="event" className="detail-disclosure">
+            <AccordionTrigger>
+              <span className="flex flex-col items-start gap-0.5">
+                <span>事件详情</span>
+                <small className="text-muted-foreground font-normal">通知时数据</small>
               </span>
-            </div>
-            <div className="detail-columns">
-              <div>
-                <h3>关注地点</h3>
-                <dl className="data-list">
-                  <dt>名称</dt>
-                  <dd>{snapshot.target.label}</dd>
-                  <dt>坐标</dt>
+            </AccordionTrigger>
+            <AccordionContent>
+            <div className="disclosure-content">
+              <div className="section-heading">
+                <div>
+                  <span className="section-kicker">事件记录</span>
+                  <h2>通知时完整信息</h2>
+                </div>
+                <span className="issued">签发于 {formatEpochMs(snapshot.issued_at_ms)}</span>
+              </div>
+              <dl className="fact-grid">
+                <div>
+                  <dt>灾害类别</dt>
+                  <dd>{categoryLabel(snapshot.event.category)}</dd>
+                </div>
+                <div>
+                  <dt>来源与报告</dt>
                   <dd>
-                    {snapshot.target.latitude.toFixed(6)}, {snapshot.target.longitude.toFixed(6)}
+                    {snapshot.event.source} · 第 {snapshot.event.report_num} 报
                   </dd>
-                </dl>
-              </div>
-              <div>
-                <h3>影响估算</h3>
-                {snapshot.timing ? (
-                  <dl className="data-list">
-                    <dt>预计烈度</dt>
-                    <dd>{snapshot.timing.estimated_intensity.toFixed(2)}</dd>
-                    <dt>震中距离</dt>
-                    <dd>{snapshot.timing.epicentral_distance_km.toFixed(2)} km</dd>
-                    <dt>震源距离</dt>
-                    <dd>{snapshot.timing.hypocentral_distance_km.toFixed(2)} km</dd>
-                    <dt>P 波预计到达</dt>
-                    <dd>{formatEpochMs(snapshot.timing.p_arrival_at_ms)}</dd>
-                    <dt>S 波预计到达</dt>
-                    <dd>{formatEpochMs(snapshot.timing.s_arrival_at_ms)}</dd>
-                  </dl>
-                ) : (
-                  <p className="empty-note">暂未提供影响估算</p>
-                )}
-              </div>
-            </div>
-            <div className="rule-block">
-              <h3>命中规则</h3>
-              <dl className="data-list rule-list">
-                {ruleRows(snapshot.matched_rule).map(([label, value]) => (
-                  <div key={label}>
-                    <dt>{label}</dt>
-                    <dd>{value}</dd>
+                </div>
+                <div>
+                  <dt>事件等级</dt>
+                  <dd>{snapshot.event.level}</dd>
+                </div>
+                {snapshot.event.magnitude != null ? (
+                  <div>
+                    <dt>震级</dt>
+                    <dd>M{snapshot.event.magnitude.toFixed(1)}</dd>
                   </div>
-                ))}
+                ) : null}
+                {snapshot.event.depth_km != null ? (
+                  <div>
+                    <dt>深度</dt>
+                    <dd>{snapshot.event.depth_km.toFixed(1)} km</dd>
+                  </div>
+                ) : null}
+                {snapshot.event.radius_km != null ? (
+                  <div>
+                    <dt>影响半径</dt>
+                    <dd>{snapshot.event.radius_km.toFixed(0)} km</dd>
+                  </div>
+                ) : null}
               </dl>
             </div>
-          </div>
-        </details>
-        {incident ? (
-          <details className="detail-disclosure timeline-disclosure">
-            <summary>
-              <span>报告变更</span>
-              <small>最近 {incident.timeline.length} 条</small>
-            </summary>
+            </AccordionContent>
+          </AccordionItem>
+          <AccordionItem value="rules" className="detail-disclosure">
+            <AccordionTrigger>
+              <span className="flex flex-col items-start gap-0.5">
+                <span>预警条件</span>
+                <small className="text-muted-foreground font-normal">地点与订阅规则</small>
+              </span>
+            </AccordionTrigger>
+            <AccordionContent>
             <div className="disclosure-content">
-              <ol className="timeline">
-                {[...incident.timeline].reverse().map((report) => (
-                  <TimelineItem key={`${report.source}-${report.revision}-${report.observed_at_ms}`} report={report} />
-                ))}
-              </ol>
+              <div className="section-heading">
+                <div>
+                  <span className="section-kicker">预警条件</span>
+                  <h2>关注地点与命中规则</h2>
+                </div>
+                <Badge variant={interruptionBadgeVariant(snapshot.interruption_level)}>
+                  {interruptionLabel(snapshot.interruption_level)}
+                </Badge>
+              </div>
+              <div className="detail-columns">
+                <div>
+                  <h3>关注地点</h3>
+                  <dl className="data-list">
+                    <dt>名称</dt>
+                    <dd>{snapshot.target.label}</dd>
+                    <dt>坐标</dt>
+                    <dd>
+                      {snapshot.target.latitude.toFixed(6)}, {snapshot.target.longitude.toFixed(6)}
+                    </dd>
+                  </dl>
+                </div>
+                <div>
+                  <h3>影响估算</h3>
+                  {snapshot.timing ? (
+                    <dl className="data-list">
+                      <dt>预计烈度</dt>
+                      <dd>{snapshot.timing.estimated_intensity.toFixed(2)}</dd>
+                      <dt>震中距离</dt>
+                      <dd>{snapshot.timing.epicentral_distance_km.toFixed(2)} km</dd>
+                      <dt>震源距离</dt>
+                      <dd>{snapshot.timing.hypocentral_distance_km.toFixed(2)} km</dd>
+                      <dt>P 波预计到达</dt>
+                      <dd>{formatEpochMs(snapshot.timing.p_arrival_at_ms)}</dd>
+                      <dt>S 波预计到达</dt>
+                      <dd>{formatEpochMs(snapshot.timing.s_arrival_at_ms)}</dd>
+                    </dl>
+                  ) : (
+                    <p className="empty-note">暂未提供影响估算</p>
+                  )}
+                </div>
+              </div>
+              <div className="rule-block">
+                <h3>命中规则</h3>
+                <dl className="data-list rule-list">
+                  {ruleRows(snapshot.matched_rule).map(([label, value]) => (
+                    <div key={label}>
+                      <dt>{label}</dt>
+                      <dd>{value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
             </div>
-          </details>
-        ) : null}
+            </AccordionContent>
+          </AccordionItem>
+          {incident ? (
+            <AccordionItem value="timeline" className="detail-disclosure timeline-disclosure">
+              <AccordionTrigger>
+                <span className="flex flex-col items-start gap-0.5">
+                  <span>报告变更</span>
+                  <small className="text-muted-foreground font-normal">最近 {incident.timeline.length} 条</small>
+                </span>
+              </AccordionTrigger>
+              <AccordionContent>
+                <ol className="timeline">
+                  {[...incident.timeline].reverse().map((report) => (
+                    <TimelineItem key={`${report.source}-${report.revision}-${report.observed_at_ms}`} report={report} />
+                  ))}
+                </ol>
+              </AccordionContent>
+            </AccordionItem>
+          ) : null}
+        </Accordion>
       </main>
     </div>
   );
@@ -644,18 +674,18 @@ function IncidentLoaded({
 function SourceCard({ event }: { event: PublicEvent }) {
   const badge = statusLabel(event.cancel, event.final_report);
   return (
-    <article className="source-report">
-      <div className="article-head">
+    <Card className="source-report gap-3 py-4 shadow-none">
+      <CardHeader className="article-head px-5">
         <div>
           <span className="source-label">{event.source}</span>
-          <h3>{event.title}</h3>
-          <p className="source-time">{event.occurred_at}</p>
+          <CardTitle className="text-base">{event.title}</CardTitle>
+          <CardDescription>{event.occurred_at}</CardDescription>
         </div>
         <div className="report-state">
-          <span className={badge.className}>{badge.text}</span>
+          <StatusBadge className={badge.className} text={badge.text} />
         </div>
-      </div>
-      <div className="source-vitals">
+      </CardHeader>
+      <CardContent className="source-vitals px-5">
         {event.magnitude != null ? (
           <div className="source-metric primary">
             <span>震级</span>
@@ -672,8 +702,8 @@ function SourceCard({ event }: { event: PublicEvent }) {
             <strong>{event.depth_km.toFixed(1)} km</strong>
           </div>
         ) : null}
-      </div>
-    </article>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -687,7 +717,7 @@ function TimelineItem({ report }: { report: IncidentReportSummary }) {
           <strong>
             {report.source} · 第 {report.report_num} 报
           </strong>
-          <span className={badge.className}>{badge.text}</span>
+          <StatusBadge className={badge.className} text={badge.text} />
         </div>
       </div>
     </li>

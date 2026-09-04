@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { normalizeMainlandPhone } from "../auth/phone";
 import { bffFetch } from "../auth/session";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, StatusMessage } from "../components/Field";
 import { OtpInput, PhoneInput } from "../components/PhoneInput";
 import { SocialLogin } from "../components/SocialLogin";
@@ -229,20 +230,22 @@ export function LoginPage() {
             }}
           />
           {wechatOpen ? (
-            <section className="wechat-panel" aria-label="模拟微信登录">
-              <h2>微信扫一扫（开发）</h2>
+            <Card aria-label="模拟微信登录">
+              <CardHeader>
+                <CardTitle>微信扫一扫（开发）</CardTitle>
+                <CardDescription>
+                  {ticketId
+                    ? "开发 mock 票据。生产环境将替换为微信开放平台二维码。"
+                    : "未拿到微信登录票据。确认 BFF 已开启 AUTH_MOCK，或改用手机号登录。"}
+                </CardDescription>
+              </CardHeader>
               {ticketId ? (
-                <>
-                  <p>开发 mock 票据。生产环境将替换为微信开放平台二维码。</p>
+                <CardContent className="grid gap-3">
                   <p className="wechat-ticket">{ticketId}</p>
-                  <Button onClick={() => void confirmWechat()}>
-                    模拟确认
-                  </Button>
-                </>
-              ) : (
-                <p>未拿到微信登录票据。确认 BFF 已开启 AUTH_MOCK，或改用手机号登录。</p>
-              )}
-            </section>
+                  <Button onClick={() => void confirmWechat()}>模拟确认</Button>
+                </CardContent>
+              ) : null}
+            </Card>
           ) : null}
           <p className="login-legal">
             本服务仅用于灾害信息转发与个人提醒，不构成官方预警。请以所在地权威机构发布的信息为准。

@@ -1,7 +1,8 @@
 import { useState } from "react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
@@ -78,7 +79,13 @@ export function AlertRulesPanel({
           重置规则
         </Button>
       </div>
-      <div id="disaster-groups" className="disaster-groups">
+      <Accordion
+        type="multiple"
+        id="disaster-groups"
+        className="disaster-groups"
+        value={Array.from(expanded)}
+        onValueChange={(value) => setExpanded(new Set(value))}
+      >
         {categories.map((category) => {
           const entry = alertEntry(draft, category.id);
           const disabled = !entry?.enabled;
@@ -87,62 +94,49 @@ export function AlertRulesPanel({
             (total, group) => total + group.sources.filter((source) => sourceEnabled(draft, category.id, source.id)).length,
             0,
           );
-          const isExpanded = expanded.has(category.id);
           const sourceMode = entry?.rule.sources?.mode;
           const sourceSummary = sourceMode === "all" ? `全部 ${sourceCount} 个来源` : `已选 ${enabledCount}/${sourceCount} 个来源`;
           const ruleSummary = categoryRuleSummary(draft, category.id);
           return (
-            <Collapsible
+            <AccordionItem
               key={category.id}
-              open={isExpanded}
-              onOpenChange={(open) => {
-                setExpanded((current) => {
-                  const next = new Set(current);
-                  if (open) next.add(category.id);
-                  else next.delete(category.id);
-                  return next;
-                });
-              }}
+              value={category.id}
+              className={`disaster-category ${disabled ? "is-disabled" : ""}`}
+              data-category-card={category.id}
             >
-              <section className={`disaster-category ${disabled ? "is-disabled" : ""}`} data-category-card={category.id}>
-                <div className="disaster-category-header">
-                  <CollapsibleTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="category-expand h-auto min-h-14 w-full justify-start rounded-none px-3 py-2.5 font-normal"
-                      data-expand-category={category.id}
-                    >
-                      <span className="category-chevron">›</span>
-                      <span className="category-copy">
-                        <span className="category-title">{category.label}</span>
-                        <span className="category-meta">{disabled ? "已关闭" : `${sourceSummary}${ruleSummary ? ` · ${ruleSummary}` : ""}`}</span>
-                      </span>
-                    </Button>
-                  </CollapsibleTrigger>
-                  <Switch
-                    className="category-toggle mx-3"
-                    data-category={category.id}
-                    aria-label={disabled ? `启用${category.label}` : `停用${category.label}`}
-                    checked={!disabled}
-                    onCheckedChange={(checked) => {
-                      if (category.id === "earthquake_warning" && checked) {
-                        const error = commitBands(draft);
-                        if (error) {
-                          setNotifyWarning(error);
-                          return;
-                        }
+              <div className="disaster-category-header">
+                <AccordionTrigger
+                  className="category-expand h-auto min-h-14 w-full justify-start rounded-none px-3 py-2.5 font-normal hover:no-underline"
+                  data-expand-category={category.id}
+                >
+                  <span className="category-copy">
+                    <span className="category-title">{category.label}</span>
+                    <span className="category-meta">{disabled ? "已关闭" : `${sourceSummary}${ruleSummary ? ` · ${ruleSummary}` : ""}`}</span>
+                  </span>
+                </AccordionTrigger>
+                <Switch
+                  className="category-toggle mx-3"
+                  data-category={category.id}
+                  aria-label={disabled ? `启用${category.label}` : `停用${category.label}`}
+                  checked={!disabled}
+                  onCheckedChange={(checked) => {
+                    if (category.id === "earthquake_warning" && checked) {
+                      const error = commitBands(draft);
+                      if (error) {
+                        setNotifyWarning(error);
+                        return;
                       }
-                      mutate((current) => {
-                        const row = current.alerts_by_category[category.id];
-                        if (row) row.enabled = checked;
-                      });
-                      setNotifyWarning("");
-                    }}
-                  />
-                </div>
-                <CollapsibleContent>
-                  <div className="disaster-detail">
+                    }
+                    mutate((current) => {
+                      const row = current.alerts_by_category[category.id];
+                      if (row) row.enabled = checked;
+                    });
+                    setNotifyWarning("");
+                  }}
+                />
+              </div>
+              <AccordionContent>
+                <div className="disaster-detail">
                     <div className="source-overview">
                       {category.source_groups.map((group) => (
                         <div key={group.id} className="source-section" data-source-group={group.id}>
@@ -294,7 +288,13 @@ export function AlertRulesPanel({
                             );
                           })}
                         </div>
-                        <div id="notify-warning" className={`notify-warning${notifyWarning ? " show" : ""}`}>{notifyWarning}</div>
+                        {notifyWarning ? (
+                          <Alert id="notify-warning" variant="destructive">
+                            <AlertDescription>{notifyWarning}</AlertDescription>
+                          </Alert>
+                        ) : (
+                          <div id="notify-warning" hidden />
+                        )}
                       </div>
                     ) : (
                       <ThresholdFields
@@ -310,12 +310,11 @@ export function AlertRulesPanel({
                       />
                     )}
                   </div>
-                </CollapsibleContent>
-              </section>
-            </Collapsible>
+              </AccordionContent>
+            </AccordionItem>
           );
         })}
-      </div>
+      </Accordion>
     </section>
   );
 }
