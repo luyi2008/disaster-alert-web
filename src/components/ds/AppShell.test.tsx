@@ -35,6 +35,6 @@ describe("AppShell", () => {
     expect(await screen.findByRole("link", { name: "设备管理" })).toHaveAttribute("href", "/devices");
     expect(screen.queryByRole("navigation", { name: "主导航" })).toBeNull();
     fireEvent.click(await screen.findByRole("button", { name: /微信用户/ }));
-    expect(screen.getByRole("link", { name: "账号设置" })).toHaveAttribute("href", "/settings");
+    expect(screen.getByRole("menuitem", { name: "账号设置" })).toHaveAttribute("href", "/settings");
   });
 });
