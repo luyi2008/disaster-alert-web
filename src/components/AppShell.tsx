@@ -75,18 +75,17 @@ export function AppShell({
                   {label}
                 </NavigationMenuTrigger>
                 <NavigationMenuContent className="left-auto right-0">
-                  <ul className="grid w-[200px] gap-1">
+                  <ul className="grid w-[200px]">
                     <li>
-                      <NavigationMenuLink asChild>
-                        <Link to="/settings" className="flex flex-row items-center gap-2">
+                      <NavigationMenuLink asChild className="flex flex-row items-center gap-2 p-2">
+                        <Link to="/settings">
                           <Settings />
                           账号设置
                         </Link>
                       </NavigationMenuLink>
-                      <NavigationMenuLink asChild>
+                      <NavigationMenuLink asChild className="flex w-full flex-row items-center gap-2 p-2">
                         <button
                           type="button"
-                          className="flex w-full flex-row items-center gap-2"
                           onClick={() => {
                             void signOut().then(() => navigate("/login", { replace: true }));
                           }}

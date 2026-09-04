@@ -45,8 +45,15 @@ describe("AppShell", () => {
     fireEvent.click(account);
     const settings = await screen.findByRole("link", { name: "账号设置" });
     expect(settings).toHaveAttribute("href", "/settings");
+    expect(settings).toHaveClass("flex-row");
+    expect(settings).toHaveClass("items-center");
+    expect(settings).toHaveClass("gap-2");
+    expect(settings).toHaveClass("p-2");
+    expect(settings).not.toHaveClass("flex-col");
     expect(settings.querySelector("svg")).not.toBeNull();
-    expect(screen.getByRole("button", { name: "登出" }).querySelector("svg")).not.toBeNull();
+    const signOutButton = screen.getByRole("button", { name: "登出" });
+    expect(signOutButton).toHaveClass("flex-row");
+    expect(signOutButton.querySelector("svg")).not.toBeNull();
     expect(screen.queryByRole("menuitem", { name: "账号设置" })).toBeNull();
   });
 });
