@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/button";
+
 export type SocialProvider = "wechat" | "alipay" | "google";
 
 const PROVIDERS: Array<{
@@ -48,16 +50,19 @@ export function SocialLogin({
   onSelect: (id: SocialProvider) => void;
 }) {
   return (
-    <div className="ds-social">
-      <p className="ds-social-rule">
+    <div className="grid gap-4">
+      <p className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-[13px] text-muted-foreground">
+        <span className="h-px bg-border" aria-hidden="true" />
         <span>或者</span>
+        <span className="h-px bg-border" aria-hidden="true" />
       </p>
-      <div className="ds-social-row">
+      <div className="grid grid-cols-3 gap-2 max-[880px]:grid-cols-1">
         {PROVIDERS.map((provider) => (
-          <button
+          <Button
             key={provider.id}
             type="button"
-            className={`ds-social-btn ds-social-${provider.id}${provider.enabled ? "" : " is-disabled"}`}
+            variant="outline"
+            className={provider.id === "wechat" && provider.enabled ? "text-[#07c160]" : undefined}
             disabled={!provider.enabled}
             title={provider.enabled ? undefined : provider.unavailable}
             aria-label={provider.enabled ? provider.label : provider.unavailable}
@@ -69,7 +74,7 @@ export function SocialLogin({
           >
             <SocialIcon id={provider.id} />
             {provider.label}
-          </button>
+          </Button>
         ))}
       </div>
     </div>

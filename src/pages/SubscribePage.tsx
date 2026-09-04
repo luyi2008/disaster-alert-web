@@ -1,11 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { apiUrl, fetchDevices, fetchStatus, matchDevice, type DeviceRecord } from "../api";
-import { AppShell } from "../components/ds/AppShell";
+import { AppShell } from "../components/AppShell";
 import { LegalFooter } from "../components/LegalFooter";
 import { TermsDialog } from "../components/TermsDialog";
-import bodyHtml from "../subscribe/body.html?raw";
-import { mountSubscribeApp } from "../subscribe/subscribeApp";
+import { SubscribeWorkspace } from "../subscribe/SubscribeWorkspace";
 import "../styles/base.css";
 import "../styles/ds.css";
 import "../styles/subscribe.css";
@@ -14,8 +13,6 @@ import "leaflet/dist/leaflet.css";
 export function SubscribePage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const rootRef = useRef<HTMLDivElement>(null);
-  const bodyRef = useRef<HTMLDivElement>(null);
   const [termsAccepted, setTermsAccepted] = useState<boolean | null>(null);
   const [device, setDevice] = useState<DeviceRecord | null>(null);
   const [missing, setMissing] = useState(false);
@@ -69,27 +66,6 @@ export function SubscribePage() {
     };
   }, [id, navigate]);
 
-  useEffect(() => {
-    const root = rootRef.current;
-    const body = bodyRef.current;
-    if (!root || !body || termsAccepted === null || !id || !device) {
-      return;
-    }
-    body.innerHTML = bodyHtml;
-    const app = mountSubscribeApp(root, {
-      api: apiUrl(""),
-      instanceTermsAccepted: termsAccepted,
-      deviceId: device.id,
-      deviceKey: device.deviceKey,
-      onUnauthorized: () => navigate("/login", { replace: true }),
-      onMissingDevice: () => navigate("/devices", { replace: true }),
-    });
-    return () => {
-      app.teardown();
-      body.innerHTML = "";
-    };
-  }, [termsAccepted, id, device, navigate]);
-
   if (!id || missing) {
     return <Navigate to="/devices" replace />;
   }
@@ -101,9 +77,17 @@ export function SubscribePage() {
         title="配置订阅"
         description={device ? `为「${device.name}」选择监测地点和预警规则。` : "选择监测地点和预警规则。"}
       >
-        <div ref={rootRef} className="subscribe-workspace">
+        <div className="subscribe-workspace">
           <section className="panel">
-            <div className="shell-slot" ref={bodyRef} />
+            {device && termsAccepted !== null ? (
+              <SubscribeWorkspace
+                api={apiUrl("")}
+                instanceTermsAccepted={termsAccepted}
+                deviceKey={device.deviceKey}
+                onUnauthorized={() => navigate("/login", { replace: true })}
+                onMissingDevice={() => navigate("/devices", { replace: true })}
+              />
+            ) : null}
           </section>
           <LegalFooter />
         </div>

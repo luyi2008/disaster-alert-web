@@ -1,8 +1,8 @@
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import bodyHtml from "./body.html?raw";
-import footerHtml from "./footer.html?raw";
-import headerHtml from "./header.html?raw";
-import { mountSubscribeApp } from "./subscribeApp";
+import { Toaster } from "@/components/ui/sonner";
+import { SubscribeWorkspace } from "./SubscribeWorkspace";
 
 const { mapRemove } = vi.hoisted(() => ({ mapRemove: vi.fn() }));
 const DEVICE_ID = "11111111-1111-1111-1111-111111111111";
@@ -58,10 +58,6 @@ vi.mock("leaflet", () => {
 
 function jsonResponse(data: unknown, status = 200): Response {
   return new Response(JSON.stringify({ success: true, message: "ok", data }), { status });
-}
-
-function fillHost(host: HTMLElement): void {
-  host.innerHTML = `${headerHtml}<section class="panel">${bodyHtml}</section>${footerHtml}`;
 }
 
 const simpleCategory = {
@@ -140,7 +136,26 @@ function stubSubscribeFetches() {
   });
 }
 
-describe("mountSubscribeApp", () => {
+function renderWorkspace(options: {
+  instanceTermsAccepted?: boolean;
+  onUnauthorized?: () => void;
+  onMissingDevice?: () => void;
+} = {}) {
+  return render(
+    <MemoryRouter>
+      <Toaster />
+      <SubscribeWorkspace
+        api=""
+        instanceTermsAccepted={options.instanceTermsAccepted ?? true}
+        deviceKey={KEY}
+        onUnauthorized={options.onUnauthorized}
+        onMissingDevice={options.onMissingDevice}
+      />
+    </MemoryRouter>,
+  );
+}
+
+describe("SubscribeWorkspace", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     document.body.replaceChildren();
@@ -148,53 +163,24 @@ describe("mountSubscribeApp", () => {
     mapRemove.mockClear();
   });
 
-  it("scopes queries to the host and removes the map on teardown", async () => {
+  it("removes the map on unmount", async () => {
     vi.stubGlobal("fetch", stubSubscribeFetches());
-
-    const decoy = document.createElement("form");
-    decoy.id = "subscribe-form";
-    document.body.append(decoy);
-
-    const host = document.createElement("div");
-    fillHost(host);
-    document.body.append(host);
-
-    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceId: DEVICE_ID, deviceKey: KEY });
-    const form = host.querySelector("#subscribe-form");
-    expect(form).not.toBe(decoy);
-    expect((form as HTMLFormElement | null)?.id).toBe("subscribe-form");
-    expect(host.querySelector("#bark-id")).toBeNull();
-    expect(host.querySelector("#bark-url")).toBeNull();
-    expect(host.querySelector("#retry-config")).toBeNull();
-
-    app.teardown();
+    const { unmount } = renderWorkspace();
+    expect(document.querySelector("#subscribe-form")).not.toBeNull();
+    expect(document.querySelector("#bark-id")).toBeNull();
+    unmount();
     expect(mapRemove).toHaveBeenCalled();
-    document.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
   });
 
   it("hydrates and submits the device subscription through the BFF", async () => {
     const fetchMock = stubSubscribeFetches();
     vi.stubGlobal("fetch", fetchMock);
-
-    const host = document.createElement("div");
-    fillHost(host);
-    document.body.append(host);
-
-    const app = mountSubscribeApp(host, {
-      api: "",
-      instanceTermsAccepted: true,
-      deviceId: DEVICE_ID,
-      deviceKey: KEY,
-    });
-
-    const submit = host.querySelector("#submit") as HTMLButtonElement;
-    await vi.waitFor(() => expect(submit.disabled).toBe(false));
-    expect(host.querySelector("#draft-status")?.textContent).not.toContain("本浏览器中的配置已提交");
-    expect(host.querySelector("#draft-status")?.textContent).not.toContain("有尚未提交的配置更改");
-    expect(host.querySelector("a[href='/devices']")?.textContent).toBe("返回设备");
-    (host.querySelector("#subscribe-form") as HTMLFormElement).requestSubmit();
-
-    await vi.waitFor(() => {
+    renderWorkspace();
+    const submit = await screen.findByRole("button", { name: "保存订阅" });
+    await waitFor(() => expect(submit).toBeEnabled());
+    expect(screen.getByRole("link", { name: "返回设备" })).toHaveAttribute("href", "/devices");
+    fireEvent.submit(document.querySelector("#subscribe-form") as HTMLFormElement);
+    await waitFor(() => {
       const subscribeCall = fetchMock.mock.calls.find(([input, init]) => (
         String(input).includes(`/api/devices/${KEY}/subscribe`) && (init as RequestInit | undefined)?.method === "POST"
       ));
@@ -207,14 +193,11 @@ describe("mountSubscribeApp", () => {
       expect(String(subscribeCall[0])).not.toContain(`/api/devices/${DEVICE_ID}/`);
       expect(subscribeCall[1]?.credentials).toBe("include");
     });
-
     const hydrateCall = fetchMock.mock.calls.find(([input]) => (
       String(input).includes(`/api/devices/${KEY}/subscription`)
     ));
     expect(hydrateCall).toBeDefined();
     expect(new Headers((hydrateCall?.[1] as RequestInit | undefined)?.headers).get("Authorization")).toBeNull();
-
-    app.teardown();
   });
 
   it("disables adding locations until the server subscription is hydrated", async () => {
@@ -233,15 +216,9 @@ describe("mountSubscribeApp", () => {
       }
       return Promise.resolve(jsonResponse({}));
     }));
-
-    const host = document.createElement("div");
-    fillHost(host);
-    document.body.append(host);
-    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceId: DEVICE_ID, deviceKey: KEY });
-    const startAddLocation = host.querySelector("#start-add-location") as HTMLButtonElement;
-
+    renderWorkspace();
+    const startAddLocation = document.querySelector("#start-add-location") as HTMLButtonElement;
     expect(startAddLocation.disabled).toBe(true);
-
     resolveSubscriptions(jsonResponse({
       subscriptions: [{
         ...savedRow(),
@@ -252,11 +229,9 @@ describe("mountSubscribeApp", () => {
         }],
       }],
     }));
-
-    await vi.waitFor(() => expect(startAddLocation.disabled).toBe(false));
-    expect(host.querySelector("#locations-list")?.textContent).toContain("server home");
-    expect(host.querySelector("#locations-list")?.textContent).toContain("35.0000, 139.0000");
-    app.teardown();
+    await waitFor(() => expect(startAddLocation.disabled).toBe(false));
+    expect(document.querySelector("#locations-list")?.textContent).toContain("server home");
+    expect(document.querySelector("#locations-list")?.textContent).toContain("35.0000, 139.0000");
   });
 
   it("does not treat 200 success:false as a load error", async () => {
@@ -265,21 +240,16 @@ describe("mountSubscribeApp", () => {
       if (url.includes("/devices/") && url.endsWith("/subscription")) {
         return new Response(JSON.stringify({ success: false, message: "没有订阅" }), { status: 200 });
       }
-      if (url.includes("/api/bark-urls")) return jsonResponse({ bark_urls: [FIRST_URL] });
       if (url.includes("/api/subscription-options")) return jsonResponse({ categories: [simpleCategory] });
       if (url.includes("/api/status")) return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
       return jsonResponse({});
     }));
-    const host = document.createElement("div");
-    fillHost(host);
-    document.body.append(host);
-    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceId: DEVICE_ID, deviceKey: KEY });
-    const submit = host.querySelector("#submit") as HTMLButtonElement;
-    await vi.waitFor(() => expect(submit.disabled).toBe(false));
-    expect(host.textContent).not.toContain("无法加载已保存的订阅");
-    const toggle = host.querySelector(".category-toggle[data-category='earthquake_report']") as HTMLInputElement;
+    renderWorkspace();
+    const submit = await screen.findByRole("button", { name: "保存订阅" });
+    await waitFor(() => expect(submit).toBeEnabled());
+    expect(screen.queryByText("无法加载已保存的订阅")).not.toBeInTheDocument();
+    const toggle = document.querySelector(".category-toggle[data-category='earthquake_report']") as HTMLInputElement;
     expect(toggle.checked).toBe(true);
-    app.teardown();
   });
 
   it("enables only the categories present in the saved subscription alerts", async () => {
@@ -294,27 +264,21 @@ describe("mountSubscribeApp", () => {
           }])],
         });
       }
-      if (url.includes("/api/bark-urls")) return jsonResponse({ bark_urls: [FIRST_URL] });
       if (url.includes("/api/subscription-options")) {
         return jsonResponse({ categories: [simpleCategory, weatherCategory, typhoonCategory] });
       }
       if (url.includes("/api/status")) return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
       return jsonResponse({});
     }));
-    const host = document.createElement("div");
-    fillHost(host);
-    document.body.append(host);
-    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceId: DEVICE_ID, deviceKey: KEY });
-    const submit = host.querySelector("#submit") as HTMLButtonElement;
-    await vi.waitFor(() => expect(submit.disabled).toBe(false));
+    renderWorkspace();
+    await waitFor(() => expect(screen.getByRole("button", { name: "保存订阅" })).toBeEnabled());
     const checked = (category: string) => (
-      host.querySelector(`.category-toggle[data-category='${category}']`) as HTMLInputElement
+      document.querySelector(`.category-toggle[data-category='${category}']`) as HTMLInputElement
     ).checked;
     expect(checked("typhoon")).toBe(true);
     expect(checked("earthquake_report")).toBe(false);
     expect(checked("weather_warning")).toBe(false);
-    expect(host.textContent).toContain("中心 300 km 内");
-    app.teardown();
+    expect(screen.getByText(/中心 300 km 内/)).toBeInTheDocument();
   });
 
   it("calls onUnauthorized when the subscription GET returns 401", async () => {
@@ -327,18 +291,8 @@ describe("mountSubscribeApp", () => {
       if (url.includes("/api/status")) return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
       return jsonResponse({});
     }));
-    const host = document.createElement("div");
-    fillHost(host);
-    document.body.append(host);
-    const app = mountSubscribeApp(host, {
-      api: "",
-      instanceTermsAccepted: true,
-      deviceId: DEVICE_ID,
-      deviceKey: KEY,
-      onUnauthorized,
-    });
-    await vi.waitFor(() => expect(onUnauthorized).toHaveBeenCalledOnce());
-    app.teardown();
+    renderWorkspace({ onUnauthorized });
+    await waitFor(() => expect(onUnauthorized).toHaveBeenCalledOnce());
   });
 
   it("lists connected /api/status sources after the alert-type heading", async () => {
@@ -353,12 +307,8 @@ describe("mountSubscribeApp", () => {
         notifications_failed: 0,
       };
     }
-
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
-      if (url.includes("/api/bark-urls")) {
-        return jsonResponse({ bark_urls: [FIRST_URL] });
-      }
       if (url.includes("/api/subscription-options")) {
         return jsonResponse({
           categories: [{
@@ -386,46 +336,14 @@ describe("mountSubscribeApp", () => {
       }
       return jsonResponse({});
     }));
-
-    const host = document.createElement("div");
-    fillHost(host);
-    document.body.append(host);
-
-    const app = mountSubscribeApp(host, { api: "", instanceTermsAccepted: true, deviceId: DEVICE_ID, deviceKey: KEY });
-    const sources = host.querySelector("#alert-type-sources") as HTMLElement;
-    await vi.waitFor(() => {
-      expect(sources.hidden).toBe(false);
-      expect(sources.textContent).toBe("Wolfx ｜ FAN Studio");
-    });
-
+    renderWorkspace();
+    const sources = await screen.findByText("Wolfx ｜ FAN Studio");
+    expect(sources).toHaveAttribute("id", "alert-type-sources");
+    expect(sources).not.toHaveAttribute("hidden");
     expect(sources.textContent).not.toContain("Huania");
-    expect(host.querySelector("#status-shell")).toBeNull();
-    expect(host.querySelector("#status-chip-wolfx")).toBeNull();
-    expect(host.querySelector(".subhead")).toBeNull();
-    expect(host.textContent).not.toContain("将所选地点的提醒推送到当前设备");
-    expect((host.querySelector("#unsubscribe") as HTMLButtonElement).className).toBe("secondary");
-    expect((host.querySelector("#submit") as HTMLButtonElement).textContent).toBe("保存订阅");
-    expect(host.querySelector("#status-label")).toBeNull();
-    expect(host.querySelector("#status-details")).toBeNull();
-    expect(host.querySelector("#service-status")).toBeNull();
-    expect(host.textContent).not.toContain("个订阅");
-    expect(host.textContent).not.toContain("状态未知");
-    expect(host.textContent).not.toContain("服务运行状态");
-    expect(host.textContent).not.toContain("数据源 2/3");
-    expect(host.textContent).not.toContain("已连接");
-    expect(host.textContent).not.toContain("未连接");
-    expect(host.textContent).not.toContain("配置草稿保存在当前浏览器");
-    expect(host.textContent).not.toContain("本浏览器中的配置已提交");
-    expect(host.textContent).not.toContain("有尚未提交的配置更改");
-    expect(host.textContent).not.toContain("Bark ID 不会保存");
-    const footer = host.querySelector("footer");
-    expect(footer?.textContent).not.toContain("数据来源");
-    expect(footer?.textContent).not.toContain("开源项目");
-    expect(footer?.innerHTML).not.toContain("ws-api.wolfx.jp");
-    expect(footer?.innerHTML).not.toContain("github.com/luyi2008/disaster-alert");
-    expect(footer?.textContent).toContain("本服务仅用于灾害信息转发与个人提醒");
-
-    app.teardown();
+    expect(document.querySelector("#status-shell")).toBeNull();
+    expect(screen.getByRole("button", { name: "取消订阅" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "保存订阅" })).toBeInTheDocument();
   });
 
   it("shows a 502 from the BFF without treating it as a logout", async () => {
@@ -446,22 +364,45 @@ describe("mountSubscribeApp", () => {
       }
       return jsonResponse({});
     }));
-
-    const host = document.createElement("div");
-    fillHost(host);
-    document.body.append(host);
-    const app = mountSubscribeApp(host, {
-      api: "",
-      instanceTermsAccepted: true,
-      deviceId: DEVICE_ID,
-      deviceKey: KEY,
-      onUnauthorized,
-    });
-    const submit = host.querySelector("#submit") as HTMLButtonElement;
-    await vi.waitFor(() => expect(submit.disabled).toBe(false));
-    (host.querySelector("#subscribe-form") as HTMLFormElement).requestSubmit();
-    await vi.waitFor(() => expect(host.textContent).toContain("Bark 拒绝"));
+    renderWorkspace({ onUnauthorized });
+    const submit = await screen.findByRole("button", { name: "保存订阅" });
+    await waitFor(() => expect(submit).toBeEnabled());
+    fireEvent.submit(document.querySelector("#subscribe-form") as HTMLFormElement);
+    expect(await screen.findByText("Bark 拒绝")).toBeInTheDocument();
     expect(onUnauthorized).not.toHaveBeenCalled();
-    app.teardown();
+  });
+
+  it("asks for confirmation before deleting the server subscription", async () => {
+    const fetchMock = stubSubscribeFetches();
+    vi.stubGlobal("fetch", fetchMock);
+    renderWorkspace();
+    await waitFor(() => expect(screen.getByRole("button", { name: "保存订阅" })).toBeEnabled());
+    fireEvent.click(screen.getByRole("button", { name: "取消订阅" }));
+    expect(await screen.findByText("确定删除该设备对应的服务端订阅？")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "取消" }));
+    await waitFor(() => expect(screen.queryByText("确定删除该设备对应的服务端订阅？")).not.toBeInTheDocument());
+    expect(fetchMock.mock.calls.every(([, init]) => init?.method !== "DELETE")).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "取消订阅" }));
+    fireEvent.click(await screen.findByRole("button", { name: "确认取消" }));
+    await waitFor(() => {
+      expect(fetchMock.mock.calls.some(([input, init]) => (
+        String(input).includes(`/api/devices/${KEY}/subscribe`) && init?.method === "DELETE"
+      ))).toBe(true);
+    });
+  });
+
+  it("asks for confirmation before resetting alert rules", async () => {
+    vi.stubGlobal("fetch", stubSubscribeFetches());
+    renderWorkspace();
+    await waitFor(() => expect(screen.getByRole("button", { name: "保存订阅" })).toBeEnabled());
+    fireEvent.click(screen.getByRole("button", { name: "重置规则" }));
+    expect(await screen.findByText("恢复所有预警类型和规则为默认设置？监测地点和接收设备不会改变。")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "取消" }));
+    await waitFor(() => {
+      expect(screen.queryByText("恢复所有预警类型和规则为默认设置？监测地点和接收设备不会改变。")).not.toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole("button", { name: "重置规则" }));
+    fireEvent.click(await screen.findByRole("button", { name: "恢复默认" }));
+    expect(await screen.findByText("预警规则已恢复默认设置")).toBeInTheDocument();
   });
 });

@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { bindDevice } from "../api";
-import { AppShell, Toast } from "../components/ds/AppShell";
-import { Button, Field } from "../components/ds/Button";
+import { AppShell } from "../components/AppShell";
+import { Field, StatusMessage } from "../components/Field";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { deviceTokenMessage, validateDeviceToken } from "../devices/deviceToken";
 import "../styles/base.css";
 import "../styles/ds.css";
@@ -40,8 +42,8 @@ export function AddDevicePage() {
 
   return (
     <AppShell title="添加设备" description="输入 APNs device_token。名称可选。">
-      {formError ? <Toast kind="error">{formError}</Toast> : null}
-      {ok ? <Toast kind="success">设备已添加。</Toast> : null}
+      {formError ? <StatusMessage kind="error">{formError}</StatusMessage> : null}
+      {ok ? <StatusMessage kind="success">设备已添加。</StatusMessage> : null}
       <form className="add-panel" onSubmit={(event) => void onSubmit(event)}>
         <Field
           label="device_token"
@@ -49,12 +51,13 @@ export function AddDevicePage() {
           error={tokenError}
           hint={tokenError ? undefined : "必填，最长 128 位，不能为 deleted"}
         >
-          <input
+          <Input
             id="device-token"
-            className={`ds-input ds-input-token${tokenError ? " is-invalid" : ""}`}
+            className="font-mono tracking-wide"
             autoComplete="off"
             spellCheck={false}
             placeholder="APNs device_token"
+            aria-invalid={Boolean(tokenError) || undefined}
             value={token}
             onChange={(event) => {
               setToken(event.target.value);
@@ -63,21 +66,18 @@ export function AddDevicePage() {
           />
         </Field>
         <Field label="名称" htmlFor="device-name" hint="可选，省略时自动生成">
-          <input
+          <Input
             id="device-name"
-            className="ds-input"
             placeholder="例如：厨房 iPhone"
             value={name}
             onChange={(event) => setName(event.target.value)}
           />
         </Field>
         <div className="form-actions">
-          <Link className="ds-btn ds-btn-quiet" to="/devices">
-            返回设备
-          </Link>
-          <Button type="submit" variant="primary">
-            添加设备
+          <Button asChild variant="link">
+            <Link to="/devices">返回设备</Link>
           </Button>
+          <Button type="submit">添加设备</Button>
         </div>
       </form>
     </AppShell>

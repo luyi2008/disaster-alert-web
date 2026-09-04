@@ -1,4 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import { signOut } from "../auth/session";
 
 type DeviceIdentityProps = {
@@ -21,26 +22,27 @@ export function DeviceIdentity({
         </p>
         <div className="identity-actions">
           {currentPage === "test" ? (
-            <Link className="btn-ghost" to={`/devices/${deviceId}/subscribe`}>
-              返回订阅
-            </Link>
+            <Button asChild variant="ghost" size="sm">
+              <Link to={`/devices/${deviceId}/subscribe`}>返回订阅</Link>
+            </Button>
           ) : (
-            <Link className="btn-ghost" to={`/devices/${deviceId}/subscribe/test`}>
-              测试
-            </Link>
+            <Button asChild variant="ghost" size="sm">
+              <Link to={`/devices/${deviceId}/subscribe/test`}>测试</Link>
+            </Button>
           )}
-          <Link className="btn-ghost" to="/devices">
-            换设备
-          </Link>
-          <button
-            className="btn-ghost"
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/devices">换设备</Link>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             type="button"
             onClick={() => {
               void signOut().then(() => navigate("/login"));
             }}
           >
             登出
-          </button>
+          </Button>
         </div>
       </div>
     </div>

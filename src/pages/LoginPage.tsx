@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { normalizeMainlandPhone } from "../auth/phone";
 import { bffFetch } from "../auth/session";
-import { Button, Field } from "../components/ds/Button";
-import { OtpInput, PhoneInput } from "../components/ds/PhoneInput";
-import { SocialLogin } from "../components/ds/SocialLogin";
-import { Toast } from "../components/ds/AppShell";
+import { Button } from "@/components/ui/button";
+import { Field, StatusMessage } from "../components/Field";
+import { OtpInput, PhoneInput } from "../components/PhoneInput";
+import { SocialLogin } from "../components/SocialLogin";
 import "../styles/base.css";
 import "../styles/ds.css";
 
@@ -185,7 +185,7 @@ export function LoginPage() {
             <p>及时知情，及时避险</p>
             <span>用手机号或微信登录后，再绑定设备的 device_token。</span>
           </div>
-          {formError ? <Toast kind={statusKind === "ok" ? "success" : "error"}>{formError}</Toast> : null}
+          {formError ? <StatusMessage kind={statusKind === "ok" ? "success" : "error"}>{formError}</StatusMessage> : null}
           <form className="login-stack" onSubmit={(event) => void loginWithOtp(event)}>
             <Field label="手机号" htmlFor="login-phone" error={phoneError} reserveMessage>
               <PhoneInput
@@ -199,7 +199,7 @@ export function LoginPage() {
               />
             </Field>
             <Field label="验证码" htmlFor="login-code" error={otpError}>
-              <div className="ds-otp-row">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
                 <OtpInput
                   id="login-code"
                   value={code}
@@ -209,12 +209,12 @@ export function LoginPage() {
                     setOtpError(null);
                   }}
                 />
-                <Button variant="ghost" disabled={countdown > 0 || sending} onClick={() => void sendOtp()}>
+                <Button type="button" variant="outline" disabled={countdown > 0 || sending} onClick={() => void sendOtp()}>
                   {sending ? "发送中" : countdown > 0 ? `${countdown}s` : "发送验证码"}
                 </Button>
               </div>
             </Field>
-            <Button type="submit" variant="primary" block disabled={submitting}>
+            <Button type="submit" className="w-full" disabled={submitting}>
               {submitting ? "登录中…" : "登录"}
             </Button>
           </form>
@@ -235,7 +235,7 @@ export function LoginPage() {
                 <>
                   <p>开发 mock 票据。生产环境将替换为微信开放平台二维码。</p>
                   <p className="wechat-ticket">{ticketId}</p>
-                  <Button variant="primary" onClick={() => void confirmWechat()}>
+                  <Button onClick={() => void confirmWechat()}>
                     模拟确认
                   </Button>
                 </>

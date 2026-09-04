@@ -1,4 +1,5 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { Toaster } from "@/components/ui/sonner";
 import { RequireSession } from "./auth/RequireSession";
 import { AddDevicePage } from "./pages/AddDevicePage";
 import { DevicesPage } from "./pages/DevicesPage";
@@ -12,6 +13,7 @@ import { TestPage } from "./pages/TestPage";
 export default function App() {
   return (
     <BrowserRouter>
+      <Toaster />
       <Routes>
         <Route path="/" element={<HomeRedirect />} />
         <Route path="/login" element={<LoginPage />} />

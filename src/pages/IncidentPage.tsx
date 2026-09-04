@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Link, useParams } from "react-router-dom";
 import L from "leaflet";
+import { Button } from "@/components/ui/button";
 import { useIncidentDetail } from "./useIncidentDetail";
 import type {
   AlertRule,
@@ -231,13 +232,17 @@ function MessagePage({
           <h1 id="message-title">{title}</h1>
           <p className="message-lead">{message}</p>
           <nav className="message-actions" aria-label="详情页操作">
-            <Link className="message-home" to="/">
-              返回灾害态势<span aria-hidden="true">→</span>
-            </Link>
+            <Button asChild variant="outline">
+              <Link className="message-home" to="/">
+                返回灾害态势<span aria-hidden="true">→</span>
+              </Link>
+            </Button>
             {canRetry ? (
-              <a className="message-retry" href="">
-                重新尝试
-              </a>
+              <Button asChild variant="ghost">
+                <a className="message-retry" href="">
+                  重新尝试
+                </a>
+              </Button>
             ) : null}
           </nav>
         </section>

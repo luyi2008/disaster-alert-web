@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import { fetchDeviceSubscription, fetchDevices, matchDevice, type DeviceRecord } from "../api";
-import { AppShell } from "../components/ds/AppShell";
+import { AppShell } from "../components/AppShell";
 import { LegalFooter } from "../components/LegalFooter";
 import {
   fetchHistoryCatalog,
@@ -408,9 +409,9 @@ export function TestPage() {
                     <strong>{notifyLevelLabel(level.id)}</strong>
                     <p>{formatIntensityRange(level.min, level.max)}</p>
                   </div>
-                  <button
+                  <Button
                     type="button"
-                    className="btn-ghost"
+                    variant="outline"
                     disabled={pendingAction !== null || !device}
                     onClick={() => {
                       if (!device) {
@@ -420,7 +421,7 @@ export function TestPage() {
                     }}
                   >
                     {pendingAction === `level:${level.id}` ? "发送中…" : "发送测试"}
-                  </button>
+                  </Button>
                 </li>
               ))}
             </ul>
@@ -455,9 +456,9 @@ export function TestPage() {
                         <p>{[distance && `距监测点 ${distance}`, intensity].filter(Boolean).join(" · ")}</p>
                       ) : null}
                     </div>
-                    <button
+                    <Button
                       type="button"
-                      className="btn-ghost"
+                      variant="outline"
                       disabled={pendingAction !== null || !device}
                       onClick={() => {
                         if (!device) {
@@ -470,7 +471,7 @@ export function TestPage() {
                       }}
                     >
                       {pendingAction === `history:${record.key}` ? "发送中…" : "测试"}
-                    </button>
+                    </Button>
                   </li>
                 );
               })}
@@ -484,9 +485,9 @@ export function TestPage() {
         </section>
       </div>
       <div className="form-actions">
-        <Link className="btn-ghost" to="/devices">
-          返回设备
-        </Link>
+        <Button asChild variant="outline">
+          <Link to="/devices">返回设备</Link>
+        </Button>
       </div>
       </section>
       <LegalFooter />

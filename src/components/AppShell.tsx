@@ -1,14 +1,14 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { getSession, sessionLabel, signOut } from "../../auth/session";
-
-function AccountCaret() {
-  return (
-    <svg className="shell-account-caret" width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-      <path d="M3.2 5.2a1 1 0 0 1 1.4 0L8 8.6l3.4-3.4a1 1 0 1 1 1.4 1.4L8.7 10.7a1 1 0 0 1-1.4 0L3.2 6.6a1 1 0 0 1 0-1.4Z" />
-    </svg>
-  );
-}
+import { ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { getSession, sessionLabel, signOut } from "../auth/session";
 
 export function AppShell({
   title,
@@ -22,7 +22,6 @@ export function AppShell({
   children: ReactNode;
 }) {
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [label, setLabel] = useState("账号");
 
   useEffect(() => {
@@ -68,36 +67,27 @@ export function AppShell({
             设备管理
           </NavLink>
           <span className="shell-top-rule" aria-hidden="true" />
-          <div className="shell-account">
-            <button
-              type="button"
-              className="shell-account-btn"
-              aria-expanded={menuOpen}
-              aria-haspopup="menu"
-              onClick={() => setMenuOpen((open) => !open)}
-            >
-              {label}
-              <AccountCaret />
-            </button>
-            {menuOpen ? (
-              <div className="shell-menu" role="menu">
-                <p className="shell-menu-label">账号</p>
-                <Link className="shell-menu-item" to="/settings" role="menuitem">
-                  账号设置
-                </Link>
-                <button
-                  type="button"
-                  className="shell-menu-item"
-                  role="menuitem"
-                  onClick={() => {
-                    void signOut().then(() => navigate("/login", { replace: true }));
-                  }}
-                >
-                  登出
-                </button>
-              </div>
-            ) : null}
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button type="button" className="shell-account-btn" aria-haspopup="menu">
+                {label}
+                <ChevronDown className="shell-account-caret size-[18px]" aria-hidden="true" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>账号</DropdownMenuLabel>
+              <DropdownMenuItem asChild>
+                <Link to="/settings">账号设置</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  void signOut().then(() => navigate("/login", { replace: true }));
+                }}
+              >
+                登出
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
       <main className="shell-main">
@@ -110,20 +100,6 @@ export function AppShell({
         </div>
         {children}
       </main>
-    </div>
-  );
-}
-
-export function Toast({
-  kind,
-  children,
-}: {
-  kind: "success" | "error" | "info";
-  children: ReactNode;
-}) {
-  return (
-    <div className={`ds-toast is-${kind}`} role={kind === "error" ? "alert" : "status"}>
-      {children}
     </div>
   );
 }

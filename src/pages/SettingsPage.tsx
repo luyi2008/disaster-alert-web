@@ -2,8 +2,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { bffFetch } from "../auth/session";
 import { normalizeMainlandPhone } from "../auth/phone";
-import { AppShell, Toast } from "../components/ds/AppShell";
-import { Button, Field } from "../components/ds/Button";
+import { AppShell } from "../components/AppShell";
+import { Field, StatusMessage } from "../components/Field";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import "../styles/base.css";
 import "../styles/ds.css";
 
@@ -80,28 +82,24 @@ export function SettingsPage() {
 
   return (
     <AppShell title="账号设置" description="给当前账号补绑手机号或微信。已被其他账号使用的身份不会合并。">
-      {status ? <Toast kind={ok ? "success" : "error"}>{status}</Toast> : null}
+      {status ? <StatusMessage kind={ok ? "success" : "error"}>{status}</StatusMessage> : null}
       <form className="settings-panel" onSubmit={(event) => void verifyPhone(event)}>
         <Field label="手机号" htmlFor="settings-phone">
-          <input id="settings-phone" className="ds-input" value={phone} onChange={(event) => setPhone(event.target.value)} />
+          <Input id="settings-phone" value={phone} onChange={(event) => setPhone(event.target.value)} />
         </Field>
-        <Button type="button" variant="ghost" onClick={() => void sendOtp()}>
+        <Button type="button" variant="outline" onClick={() => void sendOtp()}>
           发送验证码
         </Button>
         <Field label="验证码" htmlFor="settings-code">
-          <input id="settings-code" className="ds-input" value={code} onChange={(event) => setCode(event.target.value)} />
+          <Input id="settings-code" value={code} onChange={(event) => setCode(event.target.value)} />
         </Field>
-        <Button type="submit" variant="primary">
-          绑定手机号
-        </Button>
+        <Button type="submit">绑定手机号</Button>
       </form>
       <form className="settings-panel" onSubmit={(event) => void linkWechat(event)}>
         <Field label="微信 openid（开发）" htmlFor="settings-openid">
-          <input id="settings-openid" className="ds-input" value={openid} onChange={(event) => setOpenid(event.target.value)} />
+          <Input id="settings-openid" value={openid} onChange={(event) => setOpenid(event.target.value)} />
         </Field>
-        <Button type="submit" variant="primary">
-          模拟绑定微信
-        </Button>
+        <Button type="submit">模拟绑定微信</Button>
       </form>
     </AppShell>
   );
