@@ -137,7 +137,7 @@ export function severityLabel(value: unknown): string {
 
 export function categoryRuleSummary(draft: SubscriptionDraft, category: string): string {
   const alert = alertEntry(draft, category)?.rule;
-  if (!alert || !alertEntry(draft, category)?.enabled) return "";
+  if (!alert) return "";
   if (category === "earthquake_warning") return `${(alert.estimated_intensity_bands || []).length} 段烈度规则`;
   if (category === "earthquake_report") return `M ≥ ${Number(alert.min_magnitude).toFixed(1)}`;
   if (category === "weather_warning") return `≥ ${severityLabel(alert.min_severity)} · 回退 ${Number(alert.fallback_radius_km)} km`;
