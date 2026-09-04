@@ -4,8 +4,8 @@ import { getSession, sessionLabel, signOut } from "../../auth/session";
 
 function AccountCaret() {
   return (
-    <svg className="shell-account-caret" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M5 9l7 8 7-8" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+    <svg className="shell-account-caret" width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+      <path d="M3.2 5.2a1 1 0 0 1 1.4 0L8 8.6l3.4-3.4a1 1 0 1 1 1.4 1.4L8.7 10.7a1 1 0 0 1-1.4 0L3.2 6.6a1 1 0 0 1 0-1.4Z" />
     </svg>
   );
 }

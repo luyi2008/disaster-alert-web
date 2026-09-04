@@ -519,8 +519,8 @@
 .shell-account-caret {
   display: block;
   flex-shrink: 0;
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   color: var(--text);
 }
 
