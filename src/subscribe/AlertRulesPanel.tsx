@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Activity, CloudRain, Tornado, WavesHorizontal } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 import {
   alertEntry,
   categoryRuleSummary,
@@ -31,6 +33,32 @@ const LEVEL_OPTIONS = [
   [4, "红色"],
 ] as const;
 
+const CATEGORY_ICONS = {
+  earthquake_warning: Activity,
+  earthquake_report: Activity,
+  weather_warning: CloudRain,
+  tsunami: WavesHorizontal,
+  typhoon: Tornado,
+} as const;
+
+function CategoryIcon({ categoryId, active }: { categoryId: string; active: boolean }) {
+  const Icon = CATEGORY_ICONS[categoryId as keyof typeof CATEGORY_ICONS] ?? Activity;
+  return (
+    <span
+      data-category-icon={categoryId}
+      data-active={active ? "true" : "false"}
+      className={cn(
+        "flex size-10 shrink-0 items-center justify-center rounded-full border",
+        active
+          ? "border-primary bg-primary text-primary-foreground"
+          : "border-border bg-background text-muted-foreground",
+      )}
+    >
+      <Icon className="size-5" strokeWidth={1.75} aria-hidden />
+    </span>
+  );
+}
+
 export function AlertRulesPanel({
   draft,
   setDraft,
@@ -48,8 +76,9 @@ export function AlertRulesPanel({
   onResetRequest: () => void;
   connectedSources: string;
 }) {
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [expanded, setExpanded] = useState<string | null>(null);
   const [notifyWarning, setNotifyWarning] = useState("");
+  const openCategory = expanded === null ? categories[0]?.id ?? "" : expanded;
 
   function mutate(updater: (current: SubscriptionDraft) => void): void {
     setDraft((current) => {
@@ -71,8 +100,9 @@ export function AlertRulesPanel({
         <Button
           id="reset-alert-rules"
           type="button"
-          variant="ghost"
+          variant="link"
           size="sm"
+          className="h-auto px-0 text-muted-foreground"
           disabled={inFlight || !configurationReady}
           onClick={onResetRequest}
         >
@@ -80,11 +110,12 @@ export function AlertRulesPanel({
         </Button>
       </div>
       <Accordion
-        type="multiple"
+        type="single"
+        collapsible
         id="disaster-groups"
         className="disaster-groups"
-        value={Array.from(expanded)}
-        onValueChange={(value) => setExpanded(new Set(value))}
+        value={openCategory}
+        onValueChange={setExpanded}
       >
         {categories.map((category) => {
           const entry = alertEntry(draft, category.id);
@@ -97,21 +128,24 @@ export function AlertRulesPanel({
           const sourceMode = entry?.rule.sources?.mode;
           const sourceSummary = sourceMode === "all" ? `全部 ${sourceCount} 个来源` : `已选 ${enabledCount}/${sourceCount} 个来源`;
           const ruleSummary = categoryRuleSummary(draft, category.id);
+          const selected = openCategory === category.id;
           return (
             <AccordionItem
               key={category.id}
               value={category.id}
-              className={`disaster-category ${disabled ? "is-disabled" : ""}`}
+              className={cn("disaster-category border-0", disabled && "is-disabled")}
               data-category-card={category.id}
             >
               <div className="disaster-category-header">
                 <AccordionTrigger
-                  className="category-expand h-auto min-h-14 w-full justify-start rounded-none px-3 py-2.5 font-normal hover:no-underline"
+                  hideChevron
+                  className="category-expand h-auto min-h-16 w-full justify-start gap-3 rounded-none px-2 py-3 font-normal hover:bg-transparent hover:no-underline"
                   data-expand-category={category.id}
                 >
+                  <CategoryIcon categoryId={category.id} active={selected} />
                   <span className="category-copy">
                     <span className="category-title">{category.label}</span>
-                    <span className="category-meta">{disabled ? "已关闭" : `${sourceSummary}${ruleSummary ? ` · ${ruleSummary}` : ""}`}</span>
+                    <span className="category-meta">{`${sourceSummary}${ruleSummary ? ` · ${ruleSummary}` : ""}`}</span>
                   </span>
                 </AccordionTrigger>
                 <Switch
