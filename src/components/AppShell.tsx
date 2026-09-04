@@ -75,33 +75,35 @@ export function AppShell({
                   <NavLink to="/devices">设备管理</NavLink>
                 </NavigationMenuLink>
               </NavigationMenuItem>
+              <NavigationMenuItem>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className={cn(navigationMenuTriggerStyle(), "gap-1")}
+                      aria-haspopup="menu"
+                    >
+                      {label}
+                      <ChevronDown className="relative top-px size-3.5" aria-hidden="true" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>账号</DropdownMenuLabel>
+                    <DropdownMenuItem asChild>
+                      <Link to="/settings">账号设置</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        void signOut().then(() => navigate("/login", { replace: true }));
+                      }}
+                    >
+                      登出
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                className={cn(navigationMenuTriggerStyle(), "gap-1")}
-                aria-haspopup="menu"
-              >
-                {label}
-                <ChevronDown className="relative top-px size-3.5" aria-hidden="true" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>账号</DropdownMenuLabel>
-              <DropdownMenuItem asChild>
-                <Link to="/settings">账号设置</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  void signOut().then(() => navigate("/login", { replace: true }));
-                }}
-              >
-                登出
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </header>
       <main className="shell-main">

@@ -36,6 +36,8 @@ describe("AppShell", () => {
     expect(devicesLink).toHaveAttribute("href", "/devices");
     expect(devicesLink).toHaveClass("hover:bg-accent");
     expect(devicesLink).toHaveClass("cursor-pointer");
+    expect(devicesLink).not.toHaveClass("flex-col");
+    expect(devicesLink).not.toHaveClass("p-2");
     expect(screen.queryByRole("navigation", { name: "主导航" })).toBeNull();
     const account = await screen.findByRole("button", { name: /微信用户/ });
     expect(account).toHaveClass("hover:bg-accent");
