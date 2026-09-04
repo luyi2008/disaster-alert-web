@@ -188,7 +188,7 @@
       background: var(--soft);
     }
     .field { margin-bottom: 18px; }
-    label {
+    .subscribe-workspace label {
       display: block;
       margin-bottom: 8px;
       font-size: 13px;
@@ -201,7 +201,7 @@
       font-weight: 700;
     }
     .input-label input { margin-top: 5px; }
-    input, select {
+    .subscribe-workspace input, .subscribe-workspace select {
       width: 100%;
       height: 40px;
       border: 1px solid var(--line);
@@ -213,7 +213,7 @@
       font-size: 14px;
       outline: none;
     }
-    input:focus, select:focus {
+    .subscribe-workspace input:focus, .subscribe-workspace select:focus {
       border-color: var(--primary);
       box-shadow: var(--focus);
     }
@@ -536,37 +536,11 @@
       border-top: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
     }
     .config-disclosure-body .admin-grid { margin-top: 13px; }
-    button {
-      height: 40px;
-      border: 0;
-      border-radius: var(--radius);
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      color: var(--text);
-      background: var(--soft);
-      font-family: inherit;
-      transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
-    }
-    button.primary { background: var(--primary); color: #fff; }
-    button.primary:hover { background: var(--primary-strong); }
-    button.secondary {
-      color: var(--text);
-      background: var(--panel);
-      border: 1px solid var(--line);
-      font-weight: 500;
-    }
-    button.secondary:hover {
-      color: var(--text);
-      border-color: color-mix(in srgb, var(--text) 18%, var(--line));
-      background: var(--soft);
-    }
-    #unsubscribe.secondary:hover {
+    #unsubscribe:hover {
       color: var(--err);
       border-color: color-mix(in srgb, var(--err) 35%, var(--line));
       background: var(--err-bg);
     }
-    button:disabled { opacity: .55; cursor: wait; }
     .instance-terms-dialog {
       position: fixed;
       inset: 0;
@@ -708,7 +682,7 @@
     }
     .form-actions #submit { min-width: 128px; }
     .form-actions-note { color: var(--muted); font-size: 13px; line-height: 1.45; }
-    footer {
+    .subscribe-workspace footer {
       display: grid;
       gap: 5px;
       width: 100%;
@@ -722,9 +696,9 @@
       text-align: center;
       background: none;
     }
-    footer p { margin: 0; }
-    footer a { display: inline-block; padding: 2px 1px; color: inherit; text-underline-offset: 3px; }
-    footer a:hover { color: var(--muted); }
+    .subscribe-workspace footer p { margin: 0; }
+    .subscribe-workspace footer a { display: inline-block; padding: 2px 1px; color: inherit; text-underline-offset: 3px; }
+    .subscribe-workspace footer a:hover { color: var(--muted); }
     @media (max-width: 980px) {
       .subscribe-workspace { --page-gutter: 0; }
       .workspace { grid-template-columns: 1fr; }
