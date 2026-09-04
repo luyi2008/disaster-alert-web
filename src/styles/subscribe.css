@@ -131,7 +131,7 @@
     .change-device:focus-visible {
       outline: none;
       border-color: color-mix(in srgb, var(--text) 22%, var(--line));
-      background: var(--soft);
+      background: var(--hover);
       text-decoration: none;
     }
     .workspace {
@@ -185,7 +185,7 @@
     }
     .workspace-heading .heading-action:hover:not(:disabled) {
       color: var(--text);
-      background: var(--soft);
+      background: var(--hover);
     }
     .field { margin-bottom: 18px; }
     .subscribe-workspace label {
@@ -407,8 +407,9 @@
       background: transparent;
       font-size: 13px;
       font-weight: 500;
+      cursor: pointer;
     }
-    .location-actions button:hover { color: var(--text); background: var(--soft); }
+    .location-actions button:hover:not(:disabled) { color: var(--text); background: var(--hover); }
     .locations-empty {
       border-style: dashed;
       padding: 12px;
@@ -661,8 +662,8 @@
     .toast.is-leaving { opacity: 0; transform: translateY(8px) scale(.98); }
     .toast-indicator { width: 8px; height: 8px; border-radius: 50%; background: var(--info); }
     .toast-message { min-width: 0; color: var(--text); font-weight: 700; word-break: break-word; }
-    .toast-close { width: 32px; height: 32px; padding: 0; border-radius: 6px; color: var(--muted); background: transparent; font-size: 20px; font-weight: 500; line-height: 1; }
-    .toast-close:hover { background: var(--soft); }
+    .toast-close { width: 32px; height: 32px; padding: 0; border-radius: 6px; color: var(--muted); background: transparent; font-size: 20px; font-weight: 500; line-height: 1; cursor: pointer; }
+    .toast-close:hover { background: var(--hover); }
     .toast.success .toast-indicator { background: var(--ok); }
     .toast.error .toast-indicator { background: var(--err); }
     .toast.info .toast-indicator { background: var(--info); }
@@ -811,7 +812,8 @@
     .source-section-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
     .source-section-title { font-size: 12px; font-weight: 850; color: var(--muted); }
     .source-bulk-actions { display: flex; gap: 4px; }
-    .source-bulk-actions button { width: auto; height: 28px; padding: 0 8px; border-radius: 6px; color: var(--muted); font-size: 12px; background: var(--soft); }
+    .source-bulk-actions button { width: auto; height: 28px; padding: 0 8px; border-radius: 6px; color: var(--muted); font-size: 12px; background: var(--soft); cursor: pointer; }
+    .source-bulk-actions button:hover:not(:disabled) { color: var(--text); background: var(--hover); }
     .source-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 7px; }
     .source-row { display: flex; align-items: center; gap: 8px; min-width: 0; margin: 0; padding: 8px 9px; border-radius: 6px; background: var(--soft); font-size: 13px; font-weight: 650; }
     .source-row input { width: 18px; height: 18px; margin: 0; flex: 0 0 18px; }
@@ -821,7 +823,8 @@
     .rule-field input, .rule-field select { margin: 0; }
     .rule-field small { margin: 0; }
     .intensity-actions { display: flex; gap: 4px; }
-    .intensity-actions button { width: auto; height: 28px; padding: 0 8px; border-radius: 6px; color: var(--muted); font-size: 12px; background: var(--soft); }
+    .intensity-actions button { width: auto; height: 28px; padding: 0 8px; border-radius: 6px; color: var(--muted); font-size: 12px; background: var(--soft); cursor: pointer; }
+    .intensity-actions button:hover:not(:disabled) { color: var(--text); background: var(--hover); }
     .intensity-rules { display: grid; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
     .intensity-rule {
       display: grid;

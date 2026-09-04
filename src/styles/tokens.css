@@ -8,6 +8,7 @@
   --primary: #2563eb;
   --primary-strong: #1d4ed8;
   --soft: #f4f4f5;
+  --hover: color-mix(in srgb, var(--text) 8%, var(--bg));
   --ok: #16a34a;
   --ok-bg: #f0fdf4;
   --err: #dc2626;
