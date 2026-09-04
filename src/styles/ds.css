@@ -91,7 +91,7 @@
   display: grid;
   flex: 0 0 72px;
   width: 72px;
-  height: 48px;
+  height: 36px;
   place-items: center;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
@@ -186,8 +186,8 @@
 .login-visual {
   position: relative;
   overflow: hidden;
-  background: #eef2f6;
-  color: #1e3a4c;
+  background: var(--soft);
+  color: var(--text);
 }
 
 .login-visual svg {
@@ -211,7 +211,7 @@
 
 .login-visual-copy p {
   margin: 8px 0 0;
-  color: #4b6270;
+  color: var(--muted);
   font-size: 14px;
   line-height: 1.5;
 }

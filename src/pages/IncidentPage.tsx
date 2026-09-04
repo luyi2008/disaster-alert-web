@@ -461,9 +461,9 @@ function IncidentLoaded({
               关注地点
             </span>
           </div>
-          <button id="map-fit-button" className="map-fit-button" type="button" title="显示全部位置" aria-label="显示全部位置">
+          <Button id="map-fit-button" className="map-fit-button" type="button" variant="outline" size="icon" title="显示全部位置" aria-label="显示全部位置">
             <span className="fit-icon" aria-hidden="true" />
-          </button>
+          </Button>
         </div>
         <div className="map-attribution">
           <a href="https://www.openstreetmap.org/copyright" rel="noreferrer">

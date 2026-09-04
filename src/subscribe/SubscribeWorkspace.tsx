@@ -241,8 +241,8 @@ export function SubscribeWorkspace({
           </div>
         </div>
         <div className="form-actions">
-          <Button asChild variant="outline">
-            <Link className="btn-ghost" to="/devices">返回设备</Link>
+        <Button asChild variant="outline">
+            <Link to="/devices">返回设备</Link>
           </Button>
           <div id="draft-status" className="form-actions-note">
             {instanceTermsAccepted ? "" : "当前实例未确认部署责任，不能新增或保存订阅；仍可取消已有订阅。"}

@@ -12,7 +12,7 @@
   --color-popover: var(--panel);
   --color-popover-foreground: var(--text);
   --color-primary: var(--primary);
-  --color-primary-foreground: #ffffff;
+  --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--soft);
   --color-secondary-foreground: var(--text);
   --color-muted: var(--soft);

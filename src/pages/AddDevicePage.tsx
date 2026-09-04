@@ -74,7 +74,7 @@ export function AddDevicePage() {
           />
         </Field>
         <div className="form-actions">
-          <Button asChild variant="link">
+          <Button asChild variant="outline">
             <Link to="/devices">返回设备</Link>
           </Button>
           <Button type="submit">添加设备</Button>

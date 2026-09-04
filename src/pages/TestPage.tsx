@@ -366,24 +366,28 @@ export function TestPage() {
         <section className="test-block" aria-labelledby="test-priority-heading">
           <h2 id="test-priority-heading">Push Priority</h2>
           <div className="test-tabs" role="tablist" aria-label="测试方式">
-            <button
+            <Button
               type="button"
               role="tab"
               id="tab-levels"
+              variant="ghost"
+              size="sm"
               aria-controls="panel-levels"
               aria-selected={tab === "levels"}
-              className={tab === "levels" ? "is-active" : undefined}
+              className={tab === "levels" ? "is-active rounded-none" : "rounded-none"}
               onClick={() => setTab("levels")}
             >
               烈度试推
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               role="tab"
               id="tab-history"
+              variant="ghost"
+              size="sm"
               aria-controls="panel-history"
               aria-selected={tab === "history"}
-              className={tab === "history" ? "is-active" : undefined}
+              className={tab === "history" ? "is-active rounded-none" : "rounded-none"}
               onClick={() => {
                 setTab("history");
                 setHistoryLoading(true);
@@ -391,7 +395,7 @@ export function TestPage() {
               }}
             >
               历史回放
-            </button>
+            </Button>
           </div>
 
         {tab === "levels" ? (

@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Switch } from "@/components/ui/switch";
 import {
   alertEntry,
   categoryRuleSummary,
@@ -65,10 +68,10 @@ export function AlertRulesPanel({
           </span>
         </div>
         <Button
-          className="heading-action"
           id="reset-alert-rules"
           type="button"
           variant="ghost"
+          size="sm"
           disabled={inFlight || !configurationReady}
           onClick={onResetRequest}
         >
@@ -104,37 +107,39 @@ export function AlertRulesPanel({
               <section className={`disaster-category ${disabled ? "is-disabled" : ""}`} data-category-card={category.id}>
                 <div className="disaster-category-header">
                   <CollapsibleTrigger asChild>
-                    <button className="category-expand" type="button" data-expand-category={category.id} aria-expanded={isExpanded}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="category-expand h-auto min-h-14 w-full justify-start rounded-none px-3 py-2.5 font-normal"
+                      data-expand-category={category.id}
+                    >
                       <span className="category-chevron">›</span>
                       <span className="category-copy">
                         <span className="category-title">{category.label}</span>
                         <span className="category-meta">{disabled ? "已关闭" : `${sourceSummary}${ruleSummary ? ` · ${ruleSummary}` : ""}`}</span>
                       </span>
-                    </button>
+                    </Button>
                   </CollapsibleTrigger>
-                  <label className="switch" aria-label={disabled ? `启用${category.label}` : `停用${category.label}`}>
-                    <input
-                      className="category-toggle"
-                      data-category={category.id}
-                      type="checkbox"
-                      checked={!disabled}
-                      onChange={(event) => {
-                        if (category.id === "earthquake_warning" && event.target.checked) {
-                          const error = commitBands(draft);
-                          if (error) {
-                            setNotifyWarning(error);
-                            return;
-                          }
+                  <Switch
+                    className="category-toggle mx-3"
+                    data-category={category.id}
+                    aria-label={disabled ? `启用${category.label}` : `停用${category.label}`}
+                    checked={!disabled}
+                    onCheckedChange={(checked) => {
+                      if (category.id === "earthquake_warning" && checked) {
+                        const error = commitBands(draft);
+                        if (error) {
+                          setNotifyWarning(error);
+                          return;
                         }
-                        mutate((current) => {
-                          const row = current.alerts_by_category[category.id];
-                          if (row) row.enabled = event.target.checked;
-                        });
-                        setNotifyWarning("");
-                      }}
-                    />
-                    <span className="switch-track" />
-                  </label>
+                      }
+                      mutate((current) => {
+                        const row = current.alerts_by_category[category.id];
+                        if (row) row.enabled = checked;
+                      });
+                      setNotifyWarning("");
+                    }}
+                  />
                 </div>
                 <CollapsibleContent>
                   <div className="disaster-detail">
@@ -145,35 +150,34 @@ export function AlertRulesPanel({
                             <span className="source-section-title">{category.source_groups.length === 1 ? "数据来源" : group.label}</span>
                             {group.sources.length > 1 ? (
                               <span className="source-bulk-actions">
-                                <button type="button" data-source-action="enable" disabled={disabled} onClick={() => {
+                                <Button type="button" variant="ghost" size="sm" data-source-action="enable" disabled={disabled} onClick={() => {
                                   mutate((current) => {
                                     const groupIds = group.sources.map((source) => source.id);
                                     const selected = sourceIdsFor(categories, category.id).filter((id) => sourceEnabled(current, category.id, id));
                                     setSelectedSources(current, categories, category.id, [...new Set([...selected, ...groupIds])]);
                                   });
-                                }}>全选</button>
-                                <button type="button" data-source-action="disable" disabled={disabled} onClick={() => {
+                                }}>全选</Button>
+                                <Button type="button" variant="ghost" size="sm" data-source-action="disable" disabled={disabled} onClick={() => {
                                   mutate((current) => {
                                     const groupIds = new Set(group.sources.map((source) => source.id));
                                     const selected = sourceIdsFor(categories, category.id).filter((id) => sourceEnabled(current, category.id, id));
                                     setSelectedSources(current, categories, category.id, selected.filter((id) => !groupIds.has(id)));
                                   });
-                                }}>清空</button>
+                                }}>清空</Button>
                               </span>
                             ) : null}
                           </div>
                           <div className="source-list">
                             {group.sources.map((source) => (
                               <label key={source.id} className="source-row">
-                                <input
+                                <Checkbox
                                   className="source-toggle"
                                   data-source={source.id}
-                                  type="checkbox"
                                   checked={sourceEnabled(draft, category.id, source.id)}
                                   disabled={disabled}
-                                  onChange={(event) => {
+                                  onCheckedChange={(checked) => {
                                     mutate((current) => {
-                                      const ids = sourceIds(category).filter((id) => id === source.id ? event.target.checked : sourceEnabled(current, category.id, id));
+                                      const ids = sourceIds(category).filter((id) => id === source.id ? checked === true : sourceEnabled(current, category.id, id));
                                       setSelectedSources(current, categories, category.id, ids);
                                     });
                                   }}
@@ -190,7 +194,7 @@ export function AlertRulesPanel({
                         <div className="rule-section-header">
                           <span className="rule-section-title">通知规则</span>
                           <span className="intensity-actions">
-                            <button type="button" data-intensity-action="add" disabled={disabled} onClick={() => {
+                            <Button type="button" variant="ghost" size="sm" data-intensity-action="add" disabled={disabled} onClick={() => {
                               const error = commitBands(draft);
                               if (error) {
                                 setNotifyWarning(error);
@@ -214,8 +218,8 @@ export function AlertRulesPanel({
                                 });
                                 rule.estimated_intensity_bands = bands.map((band) => ({ min: band.min, max: band.max, interruption_level: band.level }));
                               });
-                            }}>添加规则</button>
-                            <button type="button" data-intensity-action="reset" disabled={disabled} onClick={() => {
+                            }}>添加规则</Button>
+                            <Button type="button" variant="ghost" size="sm" data-intensity-action="reset" disabled={disabled} onClick={() => {
                               const error = commitBands(draft);
                               if (error) {
                                 setNotifyWarning(error);
@@ -229,7 +233,7 @@ export function AlertRulesPanel({
                                 }));
                               });
                               setNotifyWarning("");
-                            }}>恢复默认</button>
+                            }}>恢复默认</Button>
                           </span>
                         </div>
                         <small>按预估烈度决定通知级别，未包含在规则中的烈度不会推送。</small>
@@ -245,7 +249,7 @@ export function AlertRulesPanel({
                                   <label className="rule-field">
                                     <span className="rule-field-title">预估烈度范围</span>
                                     <span className="intensity-range">
-                                      <input className="band-min" type="number" min={0} max={7} step={1} value={String(band.min ?? "")} aria-label="起始烈度" disabled={disabled} onChange={(event) => {
+                                      <Input className="band-min text-center" type="number" min={0} max={7} step={1} value={String(band.min ?? "")} aria-label="起始烈度" disabled={disabled} onChange={(event) => {
                                         mutate((current) => {
                                           const row = current.alerts_by_category.earthquake_warning?.rule.estimated_intensity_bands?.[index];
                                           if (row) row.min = event.target.value;
@@ -253,7 +257,7 @@ export function AlertRulesPanel({
                                         setNotifyWarning(validateBands(collectBands(draft)));
                                       }} />
                                       <span>至</span>
-                                      <input className="band-max" type="number" min={0} max={7} step={1} value={String(band.max ?? "")} aria-label="最高烈度" disabled={disabled} onChange={(event) => {
+                                      <Input className="band-max text-center" type="number" min={0} max={7} step={1} value={String(band.max ?? "")} aria-label="最高烈度" disabled={disabled} onChange={(event) => {
                                         mutate((current) => {
                                           const row = current.alerts_by_category.earthquake_warning?.rule.estimated_intensity_bands?.[index];
                                           if (row) row.max = event.target.value;
@@ -264,7 +268,7 @@ export function AlertRulesPanel({
                                   </label>
                                   <label className="rule-field">
                                     <span className="rule-field-title">通知级别</span>
-                                    <select className={`band-select level-${level}`} disabled={disabled} value={level} onChange={(event) => {
+                                    <NativeSelect className={`band-select level-${level}`} disabled={disabled} value={level} onChange={(event) => {
                                       mutate((current) => {
                                         const row = current.alerts_by_category.earthquake_warning?.rule.estimated_intensity_bands?.[index];
                                         if (row) row.interruption_level = event.target.value;
@@ -273,10 +277,10 @@ export function AlertRulesPanel({
                                       {notifyLevelOrder.map((item) => (
                                         <option key={item} value={item}>{levelLabel(item)}</option>
                                       ))}
-                                    </select>
+                                    </NativeSelect>
                                   </label>
                                 </div>
-                                <button className="remove-intensity-rule" type="button" data-action="remove-rule" aria-label={`删除规则 ${index + 1}`} title="删除规则" disabled={disabled} onClick={() => {
+                                <Button className="remove-intensity-rule" type="button" variant="ghost" size="icon" data-action="remove-rule" aria-label={`删除规则 ${index + 1}`} title="删除规则" disabled={disabled} onClick={() => {
                                   mutate((current) => {
                                     const rule = current.alerts_by_category.earthquake_warning?.rule;
                                     if (!rule) return;
@@ -285,7 +289,7 @@ export function AlertRulesPanel({
                                     const nextBands = bands.length ? bands : defaultNotifyBands();
                                     rule.estimated_intensity_bands = nextBands.map((item) => ({ min: item.min, max: item.max, interruption_level: item.level }));
                                   });
-                                }}>×</button>
+                                }}>×</Button>
                               </div>
                             );
                           })}
@@ -350,11 +354,11 @@ function ThresholdFields({
         <div className="rule-grid">
           <label className="rule-field">
             <span className="rule-field-title">最低严重度</span>
-            <select data-rule="min_severity" disabled={disabled} value={String(alert.min_severity ?? "")} onChange={(event) => onChange("min_severity", event.target.value)}>
+            <NativeSelect data-rule="min_severity" disabled={disabled} value={String(alert.min_severity ?? "")} onChange={(event) => onChange("min_severity", event.target.value)}>
               {LEVEL_OPTIONS.map(([value, label]) => (
                 <option key={value} value={value}>{label}</option>
               ))}
-            </select>
+            </NativeSelect>
             <small>低于此级别的气象预警不推送。</small>
           </label>
           <label className="rule-field">
@@ -373,11 +377,11 @@ function ThresholdFields({
         <div className="rule-grid">
           <label className="rule-field">
             <span className="rule-field-title">最低严重度</span>
-            <select data-rule="min_severity" disabled={disabled} value={String(alert.min_severity ?? "")} onChange={(event) => onChange("min_severity", event.target.value)}>
+            <NativeSelect data-rule="min_severity" disabled={disabled} value={String(alert.min_severity ?? "")} onChange={(event) => onChange("min_severity", event.target.value)}>
               {LEVEL_OPTIONS.map(([value, label]) => (
                 <option key={value} value={value}>{label}</option>
               ))}
-            </select>
+            </NativeSelect>
             <small>结合监测地点的行政区进行匹配。</small>
           </label>
         </div>

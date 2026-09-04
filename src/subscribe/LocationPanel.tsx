@@ -446,7 +446,7 @@ export function LocationPanel({
                 {regionStatus.message}
               </span>
             </div>
-            <Button id="edit-region" className="region-edit-toggle" type="button" variant="ghost" onClick={() => setRegionOpen((open) => !open)}>
+            <Button id="edit-region" type="button" variant="ghost" size="sm" onClick={() => setRegionOpen((open) => !open)}>
               {regionOpen ? "完成" : regionStatus.state === "ready" ? "修改" : "手动填写"}
             </Button>
           </div>
@@ -559,7 +559,11 @@ export function LocationPanel({
             return (
               <div key={item.id} className={`location-item${active ? " is-active" : ""}${point ? "" : " is-incomplete"}`} data-target-id={item.id}>
                 <span className="location-index">{index + 1}</span>
-                <button className="location-focus" type="button" onClick={() => {
+                <Button
+                  className="location-focus h-auto min-h-0 w-full flex-col items-start justify-start gap-0 p-0 font-normal"
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
                   if (ui.locationMode !== "overview" && item.id !== ui.activeTargetId) {
                     notify("请先完成或取消当前编辑", "warning");
                     return;
@@ -570,9 +574,9 @@ export function LocationPanel({
                   <span className="location-name">{targetLabel(item)}</span>
                   <span className="location-coords">{point ? `${point.latitude.toFixed(4)}, ${point.longitude.toFixed(4)}` : "尚未选择位置"}</span>
                   <span className={`location-region ${region ? "" : "is-missing"}`}>{region || "区域待识别"}</span>
-                </button>
+                </Button>
                 <span className="location-actions">
-                  <button type="button" onClick={() => {
+                  <Button type="button" variant="ghost" size="sm" onClick={() => {
                     if (ui.locationMode !== "overview" && item.id !== ui.activeTargetId) {
                       notify("请先完成或取消当前编辑", "warning");
                       return;
@@ -581,8 +585,8 @@ export function LocationPanel({
                     if (pointToView) setMapView(pointToView.latitude, pointToView.longitude);
                     setRegionOpen(false);
                     setUi({ activeTargetId: item.id, locationMode: "editing", editingTarget: cloneTarget(item) });
-                  }}>编辑</button>
-                  <button className="remove-location" type="button" aria-label={`删除地点 ${index + 1}`} title="删除地点" onClick={() => {
+                  }}>编辑</Button>
+                  <Button className="remove-location" type="button" variant="ghost" size="sm" aria-label={`删除地点 ${index + 1}`} title="删除地点" onClick={() => {
                     if (ui.locationMode !== "overview" && item.id !== ui.activeTargetId) {
                       notify("请先完成或取消当前编辑", "warning");
                       return;
@@ -594,7 +598,7 @@ export function LocationPanel({
                       setUi({ activeTargetId: null, locationMode: "overview", editingTarget: null });
                     }
                     notify("已从订阅草稿移除地点", "success");
-                  }}>删除</button>
+                  }}>删除</Button>
                 </span>
               </div>
             );

@@ -209,22 +209,14 @@
 }
 
 .test-tabs [role="tab"] {
-  height: 36px;
-  padding: 0;
-  border: 0;
-  border-bottom: 2px solid transparent;
   border-radius: 0;
-  background: transparent;
-  color: var(--muted);
-  font-size: 14px;
-  font-weight: 550;
+  border-bottom: 2px solid transparent;
 }
 
 .test-tabs [role="tab"].is-active,
 .test-tabs [role="tab"][aria-selected="true"] {
-  border-bottom-color: var(--primary);
-  color: var(--primary);
-  background: transparent;
+  border-bottom-color: var(--text);
+  color: var(--text);
 }
 
 .test-level-list,
@@ -283,14 +275,10 @@
   font-weight: 600;
 }
 
-.test-card .btn-ghost,
-.test-card .primary {
+.test-card [data-slot="button"] {
   width: auto;
   min-width: 0;
-  height: 32px;
-  padding: 0 12px;
   flex-shrink: 0;
-  font-weight: 500;
 }
 
 .test-status {
@@ -331,8 +319,7 @@
     align-items: stretch;
   }
 
-  .test-card .btn-ghost,
-  .test-card .primary {
+  .test-card [data-slot="button"] {
     width: 100%;
   }
 }

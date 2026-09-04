@@ -248,8 +248,8 @@ describe("SubscribeWorkspace", () => {
     const submit = await screen.findByRole("button", { name: "保存订阅" });
     await waitFor(() => expect(submit).toBeEnabled());
     expect(screen.queryByText("无法加载已保存的订阅")).not.toBeInTheDocument();
-    const toggle = document.querySelector(".category-toggle[data-category='earthquake_report']") as HTMLInputElement;
-    expect(toggle.checked).toBe(true);
+    const toggle = document.querySelector(".category-toggle[data-category='earthquake_report']");
+    expect(toggle).toHaveAttribute("data-state", "checked");
   });
 
   it("enables only the categories present in the saved subscription alerts", async () => {
@@ -273,8 +273,8 @@ describe("SubscribeWorkspace", () => {
     renderWorkspace();
     await waitFor(() => expect(screen.getByRole("button", { name: "保存订阅" })).toBeEnabled());
     const checked = (category: string) => (
-      document.querySelector(`.category-toggle[data-category='${category}']`) as HTMLInputElement
-    ).checked;
+      document.querySelector(`.category-toggle[data-category='${category}']`)?.getAttribute("data-state") === "checked"
+    );
     expect(checked("typhoon")).toBe(true);
     expect(checked("earthquake_report")).toBe(false);
     expect(checked("weather_warning")).toBe(false);
