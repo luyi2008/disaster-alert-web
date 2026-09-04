@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { normalizeMainlandPhone } from "../auth/phone";
 import { bffFetch } from "../auth/session";
-import { Button, Field } from "../components/ds/Button";
-import { OtpInput, PhoneInput } from "../components/ds/PhoneInput";
-import { SocialLogin } from "../components/ds/SocialLogin";
-import { Toast } from "../components/ds/AppShell";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, StatusMessage } from "../components/Field";
+import { OtpInput, PhoneInput } from "../components/PhoneInput";
+import { SocialLogin } from "../components/SocialLogin";
 import "../styles/base.css";
 import "../styles/ds.css";
 
@@ -185,7 +186,7 @@ export function LoginPage() {
             <p>及时知情，及时避险</p>
             <span>用手机号或微信登录后，再绑定设备的 device_token。</span>
           </div>
-          {formError ? <Toast kind={statusKind === "ok" ? "success" : "error"}>{formError}</Toast> : null}
+          {formError ? <StatusMessage kind={statusKind === "ok" ? "success" : "error"}>{formError}</StatusMessage> : null}
           <form className="login-stack" onSubmit={(event) => void loginWithOtp(event)}>
             <Field label="手机号" htmlFor="login-phone" error={phoneError} reserveMessage>
               <PhoneInput
@@ -199,7 +200,7 @@ export function LoginPage() {
               />
             </Field>
             <Field label="验证码" htmlFor="login-code" error={otpError}>
-              <div className="ds-otp-row">
+              <div className="otp-row">
                 <OtpInput
                   id="login-code"
                   value={code}
@@ -209,12 +210,12 @@ export function LoginPage() {
                     setOtpError(null);
                   }}
                 />
-                <Button variant="ghost" disabled={countdown > 0 || sending} onClick={() => void sendOtp()}>
+                <Button type="button" variant="outline" disabled={countdown > 0 || sending} onClick={() => void sendOtp()}>
                   {sending ? "发送中" : countdown > 0 ? `${countdown}s` : "发送验证码"}
                 </Button>
               </div>
             </Field>
-            <Button type="submit" variant="primary" block disabled={submitting}>
+            <Button type="submit" className="w-full" disabled={submitting}>
               {submitting ? "登录中…" : "登录"}
             </Button>
           </form>
@@ -229,20 +230,22 @@ export function LoginPage() {
             }}
           />
           {wechatOpen ? (
-            <section className="wechat-panel" aria-label="模拟微信登录">
-              <h2>微信扫一扫（开发）</h2>
+            <Card aria-label="模拟微信登录">
+              <CardHeader>
+                <CardTitle>微信扫一扫（开发）</CardTitle>
+                <CardDescription>
+                  {ticketId
+                    ? "开发 mock 票据。生产环境将替换为微信开放平台二维码。"
+                    : "未拿到微信登录票据。确认 BFF 已开启 AUTH_MOCK，或改用手机号登录。"}
+                </CardDescription>
+              </CardHeader>
               {ticketId ? (
-                <>
-                  <p>开发 mock 票据。生产环境将替换为微信开放平台二维码。</p>
+                <CardContent className="grid gap-3">
                   <p className="wechat-ticket">{ticketId}</p>
-                  <Button variant="primary" onClick={() => void confirmWechat()}>
-                    模拟确认
-                  </Button>
-                </>
-              ) : (
-                <p>未拿到微信登录票据。确认 BFF 已开启 AUTH_MOCK，或改用手机号登录。</p>
-              )}
-            </section>
+                  <Button onClick={() => void confirmWechat()}>模拟确认</Button>
+                </CardContent>
+              ) : null}
+            </Card>
           ) : null}
           <p className="login-legal">
             本服务仅用于灾害信息转发与个人提醒，不构成官方预警。请以所在地权威机构发布的信息为准。
@@ -251,14 +254,14 @@ export function LoginPage() {
       </section>
       <aside className="login-visual" aria-hidden="true">
         <svg viewBox="0 0 640 720" fill="none">
-          <circle cx="320" cy="340" r="280" stroke="#c5d0d8" strokeWidth="1" />
-          <circle cx="320" cy="340" r="196" stroke="#c5d0d8" strokeWidth="1" />
-          <circle cx="320" cy="340" r="112" stroke="#9fb0bc" strokeWidth="1.25" />
-          <circle cx="320" cy="340" r="8" fill="#1e3a4c" />
-          <path d="M320 60v560M40 340h560" stroke="#c5d0d8" strokeWidth="1" />
-          <path d="M320 340 L 534 188" stroke="#1e3a4c" strokeWidth="1.25" opacity="0.45" />
-          <path d="M168 248c42-58 96-86 152-86s110 28 152 86" stroke="#1e3a4c" strokeWidth="1.4" opacity="0.55" />
-          <path d="M188 430c38 40 84 62 132 62s94-22 132-62" stroke="#1e3a4c" strokeWidth="1.4" opacity="0.4" />
+          <circle cx="320" cy="340" r="280" stroke="var(--line)" strokeWidth="1" />
+          <circle cx="320" cy="340" r="196" stroke="var(--line)" strokeWidth="1" />
+          <circle cx="320" cy="340" r="112" stroke="var(--muted)" strokeWidth="1.25" />
+          <circle cx="320" cy="340" r="8" fill="currentColor" />
+          <path d="M320 60v560M40 340h560" stroke="var(--line)" strokeWidth="1" />
+          <path d="M320 340 L 534 188" stroke="currentColor" strokeWidth="1.25" opacity="0.45" />
+          <path d="M168 248c42-58 96-86 152-86s110 28 152 86" stroke="currentColor" strokeWidth="1.4" opacity="0.55" />
+          <path d="M188 430c38 40 84 62 132 62s94-22 132-62" stroke="currentColor" strokeWidth="1.4" opacity="0.4" />
         </svg>
         <div className="login-visual-copy">
           <strong>值班台</strong>

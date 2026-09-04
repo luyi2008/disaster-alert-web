@@ -1,3 +1,6 @@
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+
 export type SocialProvider = "wechat" | "alipay" | "google";
 
 const PROVIDERS: Array<{
@@ -48,16 +51,19 @@ export function SocialLogin({
   onSelect: (id: SocialProvider) => void;
 }) {
   return (
-    <div className="ds-social">
-      <p className="ds-social-rule">
-        <span>或者</span>
-      </p>
-      <div className="ds-social-row">
+    <div className="social-login">
+      <div className="flex items-center gap-3">
+        <Separator className="flex-1" />
+        <span className="text-muted-foreground text-xs">或者</span>
+        <Separator className="flex-1" />
+      </div>
+      <div className="social-login-row">
         {PROVIDERS.map((provider) => (
-          <button
+          <Button
             key={provider.id}
             type="button"
-            className={`ds-social-btn ds-social-${provider.id}${provider.enabled ? "" : " is-disabled"}`}
+            variant="outline"
+            className={provider.id === "wechat" && provider.enabled ? "text-[#07c160]" : undefined}
             disabled={!provider.enabled}
             title={provider.enabled ? undefined : provider.unavailable}
             aria-label={provider.enabled ? provider.label : provider.unavailable}
@@ -69,7 +75,7 @@ export function SocialLogin({
           >
             <SocialIcon id={provider.id} />
             {provider.label}
-          </button>
+          </Button>
         ))}
       </div>
     </div>

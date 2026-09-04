@@ -31,7 +31,7 @@
   border: 0;
   border-radius: var(--radius);
   background: var(--primary);
-  color: #fff;
+  color: var(--primary-foreground);
   font-weight: 600;
   cursor: pointer;
 }
@@ -125,24 +125,13 @@
   font-weight: 600;
 }
 
-.token-form input,
-.settings-form input {
-  height: 44px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 0 12px;
-  background: var(--panel);
-  color: var(--text);
-  font: inherit;
-}
-
 .token-form button,
 .settings-form button {
   height: 40px;
   border: 0;
   border-radius: var(--radius);
   background: var(--primary);
-  color: #fff;
+  color: var(--primary-foreground);
   font-weight: 600;
   cursor: pointer;
 }

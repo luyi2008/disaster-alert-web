@@ -1,3 +1,6 @@
+import { fieldControlClassName, Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+
 type PhoneInputProps = {
   id: string;
   value: string;
@@ -7,17 +10,20 @@ type PhoneInputProps = {
 
 export function PhoneInput({ id, value, invalid = false, onChange }: PhoneInputProps) {
   return (
-    <div className={`ds-phone${invalid ? " is-invalid" : ""}`}>
-      <span className="ds-phone-dial" aria-hidden="true">
+    <div className="phone-input">
+      <span
+        className={cn(fieldControlClassName, "flex w-[72px] shrink-0 items-center justify-center px-0 text-muted-foreground")}
+        aria-hidden="true"
+      >
         +86
       </span>
-      <input
+      <Input
         id={id}
-        className="ds-phone-number"
         type="tel"
         inputMode="tel"
         autoComplete="tel-national"
         placeholder="11 位大陆手机号"
+        aria-invalid={invalid || undefined}
         value={value}
         onChange={(event) => onChange(event.target.value.replace(/\D/g, "").slice(0, 11))}
       />
@@ -34,14 +40,14 @@ type OtpInputProps = {
 
 export function OtpInput({ id, value, invalid, onChange }: OtpInputProps) {
   return (
-    <input
+    <Input
       id={id}
-      className={`ds-input ds-otp${invalid ? " is-invalid" : ""}`}
       type="text"
       inputMode="numeric"
       autoComplete="one-time-code"
       placeholder="6 位验证码"
       maxLength={6}
+      aria-invalid={invalid || undefined}
       value={value}
       onChange={(event) => onChange(event.target.value.replace(/\D/g, "").slice(0, 6))}
     />

@@ -37,8 +37,8 @@ describe("LoginPage", () => {
   it("keeps a reserved error slot under the phone field", () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response("null", { status: 200 })));
     renderLogin();
-    const phoneField = screen.getByLabelText("手机号").closest(".ds-field");
-    const message = phoneField?.querySelector(".ds-field-message");
+    const phoneField = screen.getByLabelText("手机号").closest("[data-slot=field]");
+    const message = phoneField?.querySelector("[data-slot=field-message]");
     expect(message).not.toBeNull();
     expect(message).toBeEmptyDOMElement();
   });
