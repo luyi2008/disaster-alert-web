@@ -19,10 +19,10 @@ export function validateDeviceToken(raw: string | null | undefined): DeviceToken
 export function deviceTokenMessage(failure: DeviceTokenFailure): string {
   switch (failure) {
     case "empty":
-      return "请输入 device_token";
+      return "请输入推送令牌";
     case "length":
-      return "device_token 长度不能超过 128";
+      return "推送令牌长度不能超过 128 位";
     case "deleted":
-      return "device_token 不能为 deleted";
+      return "推送令牌不能为 deleted";
   }
 }

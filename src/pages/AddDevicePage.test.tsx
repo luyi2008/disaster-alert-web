@@ -32,18 +32,18 @@ describe("AddDevicePage", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
     renderAdd();
-    const field = await screen.findByLabelText("device_token");
+    const field = await screen.findByLabelText("推送令牌");
 
     fireEvent.click(screen.getByRole("button", { name: "添加设备" }));
-    expect(screen.getByText("请输入 device_token")).toBeInTheDocument();
+    expect(screen.getByText("请输入推送令牌")).toBeInTheDocument();
 
     fireEvent.change(field, { target: { value: "deleted" } });
     fireEvent.click(screen.getByRole("button", { name: "添加设备" }));
-    expect(screen.getByText("device_token 不能为 deleted")).toBeInTheDocument();
+    expect(screen.getByText("推送令牌不能为 deleted")).toBeInTheDocument();
 
     fireEvent.change(field, { target: { value: "a".repeat(129) } });
     fireEvent.click(screen.getByRole("button", { name: "添加设备" }));
-    expect(screen.getByText("device_token 长度不能超过 128")).toBeInTheDocument();
+    expect(screen.getByText("推送令牌长度不能超过 128 位")).toBeInTheDocument();
 
     const posts = fetchMock.mock.calls.filter(([, init]) => (init as RequestInit | undefined)?.method === "POST");
     expect(posts).toHaveLength(0);
@@ -62,8 +62,8 @@ describe("AddDevicePage", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
     renderAdd();
-    await screen.findByLabelText("device_token");
-    fireEvent.change(screen.getByLabelText("device_token"), { target: { value: token } });
+    await screen.findByLabelText("推送令牌");
+    fireEvent.change(screen.getByLabelText("推送令牌"), { target: { value: token } });
     fireEvent.change(screen.getByLabelText("名称"), { target: { value: "厨房 iPhone" } });
     fireEvent.click(screen.getByRole("button", { name: "添加设备" }));
     await waitFor(() => expect(fetchMock.mock.calls.some(([, init]) => init?.method === "POST")).toBe(true));

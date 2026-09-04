@@ -105,16 +105,7 @@
 }
 
 .test-location-chips li {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 12px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--soft);
-  color: var(--text);
-  font-size: 13px;
+  list-style: none;
 }
 
 .test-location-chips svg {

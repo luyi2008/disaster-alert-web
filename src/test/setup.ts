@@ -14,6 +14,17 @@ Object.defineProperty(window, "matchMedia", {
   }),
 });
 
+if (!globalThis.PointerEvent) {
+  class PointerEventStub extends MouseEvent {
+    pointerId: number;
+    constructor(type: string, params: MouseEventInit & { pointerId?: number } = {}) {
+      super(type, params);
+      this.pointerId = params.pointerId ?? 1;
+    }
+  }
+  globalThis.PointerEvent = PointerEventStub as unknown as typeof PointerEvent;
+}
+
 if (!Element.prototype.hasPointerCapture) {
   Element.prototype.hasPointerCapture = () => false;
 }

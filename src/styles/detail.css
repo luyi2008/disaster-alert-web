@@ -46,3 +46,76 @@ h1,h2,h3{overflow-wrap:anywhere}h1{margin:0;font-size:30px;line-height:1.2}h2{ma
 @media(max-width:440px){.map-hero{min-height:1040px}.hero-brand>span:last-child{display:none}.floating-panel .panel-topline{gap:8px}.event-panel h1{font-size:23px}.hero-metric strong{font-size:14px}.hero-metric.primary strong{font-size:19px}.impact-metrics{gap:9px 12px}.map-legend span:nth-child(2){display:none}.detail-page .section-heading{display:block}.detail-page .issued,.detail-page .source-count{margin-top:7px;text-align:left}.detail-page .fact-grid{grid-template-columns:1fr 1fr;gap:9px}.detail-page .fact-grid>div{padding:11px}.detail-page .data-list,.detail-page .rule-list{grid-template-columns:1fr}.detail-page .data-list dd{margin-bottom:8px}.detail-page .article-head{display:block}.detail-page .report-state{align-items:flex-start;flex-direction:row;margin-top:10px}}
 .detail-page .regions-band{padding-top:10px}.impact-distance{color:#566a65;font-size:13px;font-weight:700}.region-focus ul{display:flex;flex-wrap:wrap;gap:9px;padding:0;margin:0;list-style:none}.region-focus li{padding:8px 11px;border-left:3px solid #e15b4e;background:#fff;color:#263d37;font-size:13px;font-weight:750}.source-time{margin:5px 0 0;color:#74827e;font-size:12px}.source-vitals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:18px;border-top:1px solid #dfe6e3}.source-metric{min-width:0;padding:13px 12px 0;border-left:1px solid #dfe6e3}.source-metric:first-child{padding-left:0;border-left:0}.source-metric span,.source-metric strong{display:block}.source-metric span{color:#7a8783;font-size:11px}.source-metric strong{margin-top:2px;color:#263832;font-size:16px;overflow-wrap:anywhere}.source-metric.primary strong{color:#cf4339;font-size:20px}.source-disclosure{margin-top:16px;border-top:1px solid #e1e7e5}.source-disclosure summary{display:flex;align-items:center;justify-content:space-between;padding:12px 0 0;color:#536761;font-size:12px;font-weight:750;cursor:pointer;list-style:none}.source-disclosure summary::-webkit-details-marker{display:none}.source-disclosure summary:after{content:"+";color:#547169;font-size:17px;font-weight:400}.source-disclosure[open] summary:after{content:"−"}.source-disclosure .event-data{margin-top:13px;padding-top:13px;border-top:1px solid #edf1ef}.detail-disclosure{border-bottom:1px solid #d5dfdc}.detail-disclosure:first-of-type{border-top:1px solid #d5dfdc}.detail-disclosure>summary{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto 20px;align-items:center;gap:20px;min-height:76px;padding:0 4px;color:#233a34;cursor:pointer;list-style:none}.detail-disclosure>summary::-webkit-details-marker{display:none}.detail-disclosure>summary>span{font-size:17px;font-weight:800}.detail-disclosure>summary>small{color:#7b8985;font-size:12px}.detail-disclosure>summary:after{content:"+";color:#496b62;font-size:21px;font-weight:350;line-height:1}.detail-disclosure[open]>summary:after{content:"−"}.detail-disclosure[open]>summary{border-bottom:1px solid #e1e7e4}.disclosure-content{padding:28px 4px 36px}.disclosure-content .section-heading{margin-bottom:22px}.timeline-disclosure{margin-bottom:20px}
 @media(max-width:700px){.region-focus li{padding:7px 9px}.source-vitals{grid-template-columns:repeat(3,minmax(0,1fr))}.detail-disclosure>summary{min-height:68px}.disclosure-content{padding:24px 0 30px}.message-scene{padding:max(20px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left))}.message-copy{align-self:end;padding:100px 0 64px}.message-copy h1{font-size:38px}.message-map svg{width:155%;margin-left:-42%}.message-shade{background:linear-gradient(180deg,rgba(7,28,25,.32),rgba(7,28,25,.3) 35%,rgba(6,27,24,.92) 76%)}}@media(max-width:440px){.source-report{padding:16px}.source-metric{padding-right:7px;padding-left:7px}.source-metric strong{font-size:14px}.source-metric.primary strong{font-size:18px}.detail-disclosure>summary{grid-template-columns:minmax(0,1fr) 18px;gap:10px}.detail-disclosure>summary>small{display:none}.message-brand strong{display:inline}.message-copy{padding-bottom:44px}.message-copy h1{font-size:34px}.message-actions{align-items:flex-start;flex-direction:column;gap:18px}.message-home{width:100%;justify-content:space-between}}@media(prefers-reduced-motion:reduce){.hazard-zone .hazard-core{animation:none}}
+
+.detail-disclosure-trigger {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 76px;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+}
+.detail-disclosure-trigger span {
+  font-size: 17px;
+  font-weight: 600;
+}
+.detail-disclosure-trigger svg {
+  transition: transform .2s ease;
+}
+.detail-disclosure[data-state="open"] .detail-disclosure-trigger svg {
+  transform: rotate(180deg);
+}
+.detail-disclosure[data-state="open"] .detail-disclosure-trigger {
+  border-bottom: 1px solid var(--line);
+}
+.hero-topbar .pointer-events-auto {
+  pointer-events: auto;
+}
+.dark .leaflet-tile-pane {
+  filter: invert(100%) hue-rotate(180deg) brightness(92%) contrast(90%);
+}
+.dark .event-panel h1,
+.dark .impact-panel h2,
+.dark .hero-metric strong,
+.dark .target-summary strong,
+.dark .source-metric strong {
+  color: var(--text);
+}
+.dark .headline-meta,
+.dark .hero-metric span,
+.dark .hero-description,
+.dark .source-metric span,
+.dark .impact-distance {
+  color: var(--muted);
+}
+.dark .hero-metrics,
+.dark .hero-metric,
+.dark .target-summary,
+.dark .source-vitals,
+.dark .source-metric,
+.dark .detail-page .fact-grid > div,
+.dark .detail-page .source-report {
+  border-color: var(--line);
+}
+.dark .detail-page .fact-grid > div,
+.dark .detail-page .source-report,
+.dark .region-focus li {
+  background: var(--panel);
+  color: var(--text);
+}
+.dark .hero-brand,
+.dark .map-legend {
+  background: color-mix(in srgb, var(--panel) 90%, transparent);
+  color: var(--text);
+  border-color: var(--line);
+}
+.dark .map-hero,
+.dark .incident-map {
+  background: var(--soft);
+}

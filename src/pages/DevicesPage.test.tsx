@@ -20,7 +20,7 @@ const DEVICE_KEY = "ynJ5Ft4atkMkWeo2PAvFhF";
 const DEVICE_TOKEN_MASKED = "toke****naaa";
 
 describe("DevicesPage", () => {
-  it("lists deviceKey and deviceTokenMasked and links subscribe/test with deviceKey", async () => {
+  it("lists device key and push token and links subscribe/test with deviceKey", async () => {
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       if (String(input).includes("/api/auth/get-session")) {
         return session();
@@ -52,9 +52,9 @@ describe("DevicesPage", () => {
     expect(screen.queryByRole("button", { name: "改名" })?.closest(".device-card-title")).toContainElement(
       screen.getByRole("heading", { name: "设备1" }),
     );
-    expect(screen.getByText("deviceKey")).toBeInTheDocument();
+    expect(screen.getByText("设备密钥")).toBeInTheDocument();
     expect(screen.getByText(DEVICE_KEY)).toBeInTheDocument();
-    expect(screen.getByText("deviceTokenMasked")).toBeInTheDocument();
+    expect(screen.getByText("推送令牌")).toBeInTheDocument();
     expect(screen.getByText(DEVICE_TOKEN_MASKED)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "配置订阅" })).toHaveAttribute("href", `/devices/${DEVICE_KEY}/subscribe`);
     expect(screen.getByRole("link", { name: "测试通知" })).toHaveAttribute("href", `/devices/${DEVICE_KEY}/subscribe/test`);

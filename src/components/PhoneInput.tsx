@@ -1,5 +1,5 @@
-import { fieldControlClassName, Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { InputGroup, InputGroupAddon } from "@/components/ui/input-group";
 
 type PhoneInputProps = {
   id: string;
@@ -10,13 +10,8 @@ type PhoneInputProps = {
 
 export function PhoneInput({ id, value, invalid = false, onChange }: PhoneInputProps) {
   return (
-    <div className="phone-input">
-      <span
-        className={cn(fieldControlClassName, "flex w-[72px] shrink-0 items-center justify-center px-0 text-muted-foreground")}
-        aria-hidden="true"
-      >
-        +86
-      </span>
+    <InputGroup className="phone-input">
+      <InputGroupAddon aria-hidden="true">+86</InputGroupAddon>
       <Input
         id={id}
         type="tel"
@@ -27,7 +22,7 @@ export function PhoneInput({ id, value, invalid = false, onChange }: PhoneInputP
         value={value}
         onChange={(event) => onChange(event.target.value.replace(/\D/g, "").slice(0, 11))}
       />
-    </div>
+    </InputGroup>
   );
 }
 
