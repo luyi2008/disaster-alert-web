@@ -59,6 +59,8 @@ describe("DevicesPage", () => {
     expect(screen.getByRole("link", { name: "配置订阅" })).toHaveAttribute("href", `/devices/${DEVICE_KEY}/subscribe`);
     expect(screen.getByRole("link", { name: "测试通知" })).toHaveAttribute("href", `/devices/${DEVICE_KEY}/subscribe/test`);
     expect(screen.getByRole("link", { name: "添加设备" })).toHaveAttribute("href", "/devices/add");
+    expect(screen.getByRole("link", { name: "设备管理" })).toHaveAttribute("href", "/devices");
+    expect(screen.queryByRole("navigation", { name: "主导航" })).toBeNull();
     expect(screen.queryByText(DEVICE_ID)).toBeNull();
   });
 

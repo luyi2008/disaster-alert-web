@@ -173,7 +173,9 @@ describe("TestPage", () => {
     expect(await screen.findByText("上海家中 · 上海市 · 浦东新区")).toBeInTheDocument();
     expect(screen.getByText("地震预警")).toBeInTheDocument();
     expect(screen.getByText("3–7")).toBeInTheDocument();
-    expect(screen.getByText(`上次更新 ${formatDraftUpdatedAt(UPDATED_AT)}`)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "上次更新" })).toBeInTheDocument();
+    expect(screen.getByText(formatDraftUpdatedAt(UPDATED_AT))).toBeInTheDocument();
+    expect(screen.queryByText(/\/api\/history/)).toBeNull();
     const hydrateCall = fetchMock.mock.calls.find(([input]) => String(input).endsWith("/subscription"));
     expect(hydrateCall).toBeTruthy();
     expect(String(hydrateCall?.[0])).toContain(`/api/devices/${DEVICE_KEY}/subscription`);
@@ -227,6 +229,8 @@ describe("TestPage", () => {
     renderTestPage();
     fireEvent.click(screen.getByRole("tab", { name: "历史回放" }));
     expect(await screen.findByText("四川汶川")).toBeInTheDocument();
+    expect(screen.queryByText(/\/api\/history/)).toBeNull();
+    expect(screen.queryByText(/当前来源/)).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "测试" }));
     await waitFor(() => {
       const simulateCall = fetchMock.mock.calls.find(([input, init]) => {

@@ -305,6 +305,7 @@ export function TestPage() {
     >
       <div className="test-page">
       <section className="panel test-sheet">
+      <div className="test-sheet-body">
         <div className="test-status-strip" aria-label="设备状态">
           <div className="test-status-cell">
             <StatusIcon name="cloud" />
@@ -350,6 +351,11 @@ export function TestPage() {
           ) : (
             <p className="test-note">尚未配置规则</p>
           )}
+        </section>
+
+        <section className="test-block" aria-labelledby="test-updated-heading">
+          <h2 id="test-updated-heading">上次更新</h2>
+          <p className="test-note">{formatDraftUpdatedAt(draftUpdatedAt)}</p>
         </section>
 
         {!hasDraftContent ? (
@@ -426,7 +432,6 @@ export function TestPage() {
             id="panel-history"
             aria-labelledby="tab-history"
           >
-            <p className="test-note">目录由 `/api/history` 下发，当前来源 {historySource}。每条可回放到当前设备。</p>
             {historyError ? <p className="test-status is-error" role="status">{historyError}</p> : null}
             {historyLoading ? <p className="test-note">正在读取历史目录…</p> : null}
             {!historyLoading && !historyError && history.length === 0 ? (
@@ -476,14 +481,13 @@ export function TestPage() {
         {actionStatus ? (
           <p className={`test-status is-${actionStatus.kind}`} role="status">{actionStatus.text}</p>
         ) : null}
-        </section>
-      </section>
-      <p className="test-updated">上次更新 {formatDraftUpdatedAt(draftUpdatedAt)}</p>
-      <div className="add-actions">
-        <Link className="ds-btn ds-btn-quiet" to="/devices">
+      </div>
+      <div className="form-actions">
+        <Link className="btn-ghost" to="/devices">
           返回设备
         </Link>
       </div>
+      </section>
       <LegalFooter />
       </div>
     </AppShell>

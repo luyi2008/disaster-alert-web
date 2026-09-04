@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { apiUrl, fetchDevices, fetchStatus, matchDevice, type DeviceRecord } from "../api";
 import { AppShell } from "../components/ds/AppShell";
 import { LegalFooter } from "../components/LegalFooter";
@@ -105,11 +105,6 @@ export function SubscribePage() {
           <section className="panel">
             <div className="shell-slot" ref={bodyRef} />
           </section>
-          <div className="add-actions">
-            <Link className="ds-btn ds-btn-quiet" to="/devices">
-              返回设备
-            </Link>
-          </div>
           <LegalFooter />
         </div>
       </AppShell>

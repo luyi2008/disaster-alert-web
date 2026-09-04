@@ -71,13 +71,13 @@ export function AddDevicePage() {
             onChange={(event) => setName(event.target.value)}
           />
         </Field>
-        <div className="add-actions">
-          <Button type="submit" variant="primary">
-            添加设备
-          </Button>
+        <div className="form-actions">
           <Link className="ds-btn ds-btn-quiet" to="/devices">
             返回设备
           </Link>
+          <Button type="submit" variant="primary">
+            添加设备
+          </Button>
         </div>
       </form>
     </AppShell>

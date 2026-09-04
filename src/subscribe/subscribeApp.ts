@@ -25,12 +25,16 @@ export function mountSubscribeApp(root: HTMLElement, options: MountSubscribeOpti
   function updateDraftStatus(): void {
     if (!ctx.instanceTermsAccepted) {
       el.draftStatus.textContent = "当前实例未确认部署责任，不能新增或保存订阅；仍可取消已有订阅。";
-    } else if (!ctx.lastSubmittedSignature) {
-      el.draftStatus.textContent = "";
-    } else if (draftSignature(ctx.subscriptionDraft) === ctx.lastSubmittedSignature && currentDestinationIdentity() === ctx.lastSubmittedIdentity) {
-      el.draftStatus.textContent = "本浏览器中的配置已提交。";
-    } else {
+    } else if (
+      ctx.lastSubmittedSignature
+      && (
+        draftSignature(ctx.subscriptionDraft) !== ctx.lastSubmittedSignature
+        || currentDestinationIdentity() !== ctx.lastSubmittedIdentity
+      )
+    ) {
       el.draftStatus.textContent = "有尚未提交的配置更改。";
+    } else {
+      el.draftStatus.textContent = "";
     }
   }
 
