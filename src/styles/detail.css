@@ -119,3 +119,48 @@ h1,h2,h3{overflow-wrap:anywhere}h1{margin:0;font-size:30px;line-height:1.2}h2{ma
 .dark .incident-map {
   background: var(--soft);
 }
+
+.message-page {
+  background: var(--bg);
+  color: var(--text);
+}
+.message-shade {
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--bg) 94%, transparent) 0%,
+      color-mix(in srgb, var(--bg) 42%, transparent) 72%,
+      color-mix(in srgb, var(--bg) 68%, transparent) 100%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--bg) 28%, transparent),
+      transparent 55%,
+      color-mix(in srgb, var(--bg) 72%, transparent)
+    );
+}
+.message-map-base {
+  fill: var(--soft);
+}
+.message-grid {
+  stroke: var(--muted);
+}
+.message-contours {
+  stroke: var(--line);
+}
+.message-brand,
+.message-copy h1 {
+  color: var(--text);
+}
+.message-lead,
+.message-retry {
+  color: var(--muted);
+}
+.message-state {
+  color: var(--warn);
+}
+.message-home {
+  background: var(--panel);
+  color: var(--text);
+  border-color: var(--line);
+}
