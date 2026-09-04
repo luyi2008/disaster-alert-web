@@ -509,17 +509,19 @@
 .shell-account-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   min-height: 36px;
   padding: 0 8px;
-  color: var(--muted);
+  color: var(--text);
   font-size: 13px;
 }
 
 .shell-account-caret {
   display: block;
   flex-shrink: 0;
-  color: currentColor;
+  width: 22px;
+  height: 22px;
+  color: var(--text);
 }
 
 .shell-menu {
