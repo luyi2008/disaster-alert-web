@@ -97,8 +97,6 @@ export type SubscribeRuntime = {
     locationMode: LocationMode;
     editingTarget: SubscriptionTarget | null;
   };
-  lastSubmittedSignature: string;
-  lastSubmittedIdentity: string;
   optionCategories: CategoryOption[];
   deviceId: string;
   deviceKey: string;
@@ -131,8 +129,6 @@ export function createRuntime(root: HTMLElement, options: MountSubscribeOptions)
       locationMode: "overview",
       editingTarget: null,
     },
-    lastSubmittedSignature: "",
-    lastSubmittedIdentity: "",
     optionCategories: [],
     deviceId: String(options.deviceId || ""),
     deviceKey: String(options.deviceKey || ""),

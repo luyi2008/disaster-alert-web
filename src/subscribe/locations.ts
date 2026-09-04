@@ -25,7 +25,6 @@ export type LocationController = {
 export function bindLocations(
   ctx: SubscribeRuntime,
   helpers: {
-    persistDraft: () => void;
     show: (message: string, type?: ToastType) => void;
   },
 ): LocationController {
@@ -190,7 +189,6 @@ export function bindLocations(
         setRegionStatus(resolved || "未识别到行政区", resolved ? "ready" : "");
       }
       renderLocations();
-      helpers.persistDraft();
     } catch (error) {
       const err = error as { name?: string; message?: string };
       if (err.name === "AbortError" || ctx.geocodeJobs.get(targetId) !== job) return;
@@ -375,7 +373,6 @@ export function bindLocations(
     setRegionEditorOpen(false);
     renderLocations();
     renderLocationEditor();
-    helpers.persistDraft();
   }
 
   function discardLocationChanges(): void {
@@ -412,7 +409,6 @@ export function bindLocations(
     }
     renderLocations();
     renderLocationEditor();
-    helpers.persistDraft();
     helpers.show("已从订阅草稿移除地点", "success");
   }
 
@@ -427,7 +423,6 @@ export function bindLocations(
     renderLocationEditor();
     if (ctx.uiState.locationMode === "adding") el.nameInput.focus({ preventScroll: true });
     scheduleReverseGeocode(target.id);
-    helpers.persistDraft();
   }
 
   function locateCurrentPosition(): void {
@@ -446,7 +441,6 @@ export function bindLocations(
           target.label = "当前位置";
           renderLocations();
           renderLocationEditor();
-          helpers.persistDraft();
         }
         helpers.show("定位成功", "success");
         if (ctx.locate) ctx.locate.disabled = false;
@@ -499,7 +493,6 @@ export function bindLocations(
     if (!target) return;
     target.label = el.nameInput.value;
     renderLocations();
-    helpers.persistDraft();
   });
   for (const input of [el.provinceInput, el.cityInput, el.districtInput]) {
     ctx.cleanup.listen(input, "input", () => {
@@ -513,7 +506,6 @@ export function bindLocations(
       const region = targetRegion(target);
       setRegionStatus(region ? "已手动修改" : "可手动填写行政区", region ? "ready" : "");
       renderLocations();
-      helpers.persistDraft();
     });
   }
   for (const input of [el.latInput, el.lonInput]) {
@@ -526,7 +518,6 @@ export function bindLocations(
       cancelReverseGeocode(target.id);
       renderLocations();
       renderLocationEditor();
-      helpers.persistDraft();
     });
     ctx.cleanup.listen(input, "change", () => {
       const target = activeTarget();

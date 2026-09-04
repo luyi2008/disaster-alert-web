@@ -26,13 +26,12 @@ export type AlertController = {
   enabledAlertRules: () => AlertRuleDraft[];
   alertRuleForPayload: (rule: AlertRuleDraft) => AlertRuleDraft;
   alertEntry: (category: string) => AlertEntry | null;
-  commitBands: (showWarning?: boolean) => boolean;
+  commitBands: () => boolean;
 };
 
 export function bindAlertRules(
   ctx: SubscribeRuntime,
   helpers: {
-    persistDraft: () => void;
     show: (message: string, type?: ToastType) => void;
   },
 ): AlertController {
@@ -315,10 +314,9 @@ export function bindAlertRules(
     if (control.classList.contains("band-max") && control instanceof HTMLInputElement) band.max = control.value;
     if (control.classList.contains("band-select") && control instanceof HTMLSelectElement) band.interruption_level = control.value;
     setNotifyWarning(validateBands(collectBands()));
-    helpers.persistDraft();
   }
 
-  function commitBands(showWarning = false): boolean {
+  function commitBands(): boolean {
     const bands = collectBands();
     const error = validateBands(bands);
     setNotifyWarning(error || "");
@@ -330,7 +328,6 @@ export function bindAlertRules(
       }));
     }
     renderNotifyBands();
-    if (showWarning && !error) helpers.persistDraft();
     return true;
   }
 
@@ -439,7 +436,6 @@ export function bindAlertRules(
     ]));
     setNotifyWarning("");
     renderDisasterGroups();
-    helpers.persistDraft();
     helpers.show("预警规则已恢复默认设置", "success");
   });
 
@@ -478,7 +474,6 @@ export function bindAlertRules(
         }));
         setNotifyWarning("");
         renderDisasterGroups();
-        helpers.persistDraft();
         return;
       }
       const bands = normalizeBands(rule.estimated_intensity_bands);
@@ -496,7 +491,6 @@ export function bindAlertRules(
       });
       rule.estimated_intensity_bands = bands.map((band) => ({ min: band.min, max: band.max, interruption_level: band.level }));
       renderDisasterGroups();
-      helpers.persistDraft();
       return;
     }
 
@@ -511,7 +505,6 @@ export function bindAlertRules(
         warningRule.estimated_intensity_bands = nextBands.map((band) => ({ min: band.min, max: band.max, interruption_level: band.level }));
       }
       renderDisasterGroups();
-      helpers.persistDraft();
       return;
     }
 
@@ -527,7 +520,6 @@ export function bindAlertRules(
       ? [...new Set([...selected, ...groupIds])]
       : selected.filter((id) => !groupIds.has(id)));
     renderDisasterGroups();
-    helpers.persistDraft();
   });
 
   ctx.cleanup.listen(ctx.el.disasterGroupsEl, "change", (event) => {
@@ -565,7 +557,6 @@ export function bindAlertRules(
         renderDisasterGroups();
       }
     }
-    helpers.persistDraft();
   });
 
   ctx.cleanup.listen(ctx.el.disasterGroupsEl, "input", (event) => {
