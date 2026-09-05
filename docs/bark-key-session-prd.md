@@ -1,8 +1,6 @@
 # PRD：Bark Key 作为站点登录身份
 
-本文是产品需求，描述「Bark Key 当作本机登录账号」这一能力要解决什么问题、用户怎么走、以及有效/失效由谁判定。实现细节与模块拆分见 [architecture.md](architecture.md)、[subscribe-frontend.md](subscribe-frontend.md)。
-
-状态：已在本仓库落地（入口页、订阅页、测试页共用同一套会话）。
+状态：**已被** [账号登录设计](superpowers/specs/2026-09-01-account-login-design.md) **取代**。站点登录改为 BFF session cookie；Bark token 只是账号下的设备资产。下文保留作历史对照，不要按本文实现新功能。
 
 ---
 

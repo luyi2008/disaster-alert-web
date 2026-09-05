@@ -1,28 +1,21 @@
-import { useEffect, useRef, useState } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
-import { apiUrl, fetchStatus } from "../api";
-import { clearCachedBarkKey } from "../bark/session";
-import { DeviceIdentity } from "../components/DeviceIdentity";
+import { useEffect, useState } from "react";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { apiUrl, fetchDevices, fetchStatus, matchDevice, type DeviceRecord } from "../api";
+import { AppShell } from "../components/AppShell";
 import { LegalFooter } from "../components/LegalFooter";
 import { TermsDialog } from "../components/TermsDialog";
-import { resolveBarkKey, type SubscribeLocationState } from "../subscribe/barkKeyState";
-import bodyHtml from "../subscribe/body.html?raw";
-import headerHtml from "../subscribe/header.html?raw";
-import { mountSubscribeApp } from "../subscribe/subscribeApp";
+import { SubscribeWorkspace } from "../subscribe/SubscribeWorkspace";
 import "../styles/base.css";
+import "../styles/ds.css";
 import "../styles/subscribe.css";
 import "leaflet/dist/leaflet.css";
 
-export type { SubscribeLocationState };
-
 export function SubscribePage() {
-  const location = useLocation();
+  const { id } = useParams();
   const navigate = useNavigate();
-  const barkKey = resolveBarkKey(location.state);
-  const rootRef = useRef<HTMLElement>(null);
-  const headerRef = useRef<HTMLDivElement>(null);
-  const bodyRef = useRef<HTMLDivElement>(null);
   const [termsAccepted, setTermsAccepted] = useState<boolean | null>(null);
+  const [device, setDevice] = useState<DeviceRecord | null>(null);
+  const [missing, setMissing] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -43,47 +36,62 @@ export function SubscribePage() {
   }, []);
 
   useEffect(() => {
-    const root = rootRef.current;
-    const header = headerRef.current;
-    const body = bodyRef.current;
-    if (!root || !header || !body || termsAccepted === null || !barkKey) {
+    if (!id) {
       return;
     }
-    header.innerHTML = headerHtml;
-    body.innerHTML = bodyHtml;
-    const app = mountSubscribeApp(root, {
-      api: apiUrl(""),
-      instanceTermsAccepted: termsAccepted,
-      deviceKey: barkKey,
-      onInvalidBarkKey: () => {
-        clearCachedBarkKey();
-        navigate("/", { replace: true });
-      },
-    });
+    let cancelled = false;
+    fetchDevices()
+      .then((result) => {
+        if (cancelled) {
+          return;
+        }
+        if (result.status === 401) {
+          navigate("/login", { replace: true });
+          return;
+        }
+        const found = matchDevice(result.body.data?.devices ?? [], id);
+        if (!found) {
+          setMissing(true);
+          return;
+        }
+        setDevice(found);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setMissing(true);
+        }
+      });
     return () => {
-      app.teardown();
-      header.innerHTML = "";
-      body.innerHTML = "";
+      cancelled = true;
     };
-  }, [termsAccepted, barkKey, navigate]);
+  }, [id, navigate]);
 
-  if (!barkKey) {
-    return <Navigate to="/" replace />;
+  if (!id || missing) {
+    return <Navigate to="/devices" replace />;
   }
 
   return (
     <>
       <TermsDialog open={termsAccepted === false} />
-      <main ref={rootRef}>
-        <div className="app-bar">
-          <div className="shell-slot" ref={headerRef} />
-          <DeviceIdentity barkId={barkKey} />
+      <AppShell
+        title="配置订阅"
+        description={device ? `为「${device.name}」选择监测地点和预警规则。` : "选择监测地点和预警规则。"}
+      >
+        <div className="subscribe-workspace">
+          <section className="panel">
+            {device && termsAccepted !== null ? (
+              <SubscribeWorkspace
+                api={apiUrl("")}
+                instanceTermsAccepted={termsAccepted}
+                deviceKey={device.deviceKey}
+                onUnauthorized={() => navigate("/login", { replace: true })}
+                onMissingDevice={() => navigate("/devices", { replace: true })}
+              />
+            ) : null}
+          </section>
+          <LegalFooter />
         </div>
-        <section className="panel">
-          <div className="shell-slot" ref={bodyRef} />
-        </section>
-        <LegalFooter />
-      </main>
+      </AppShell>
     </>
   );
 }

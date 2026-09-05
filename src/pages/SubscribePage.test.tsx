@@ -1,10 +1,11 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { writeCachedBarkKey } from "../bark/session";
 import { SubscribePage } from "./SubscribePage";
 
-const KEY = "ynJ5Ft4atkMkWeo2PAvFhF";
+const DEVICE_ID = "11111111-1111-1111-1111-111111111111";
+const DEVICE_KEY = "ynJ5Ft4atkMkWeo2PAvFhF";
+const DEVICE_TOKEN_MASKED = "toke****naaa";
 
 vi.mock("leaflet", () => {
   const map = {
@@ -60,90 +61,85 @@ function jsonResponse(data: unknown): Response {
 describe("SubscribePage", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
-    localStorage.clear();
   });
 
-  it("redirects to the entry page without a validated bark key", () => {
+  it("goes back to devices when the device is missing", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/api/devices") || url === "/api/devices") {
+        return jsonResponse({ devices: [] });
+      }
+      if (url.includes("/api/status")) {
+        return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
+      }
+      return jsonResponse({});
+    }));
     render(
-      <MemoryRouter initialEntries={["/subscribe"]}>
+      <MemoryRouter initialEntries={[`/devices/${DEVICE_KEY}/subscribe`]}>
         <Routes>
-          <Route path="/" element={<div>entry</div>} />
-          <Route path="/subscribe" element={<SubscribePage />} />
+          <Route path="/devices" element={<div>devices</div>} />
+          <Route path="/devices/:id/subscribe" element={<SubscribePage />} />
         </Routes>
       </MemoryRouter>,
     );
-    expect(screen.getByText("entry")).toBeInTheDocument();
+    expect(await screen.findByText("devices")).toBeInTheDocument();
   });
 
-  it("renders Bark identity in React and does not keep Bark controls in the shell", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL) => {
-        const url = String(input);
-        if (url.includes("/api/bark-urls")) {
-          return jsonResponse({ bark_urls: ["https://bark.example", "https://bark.other"] });
-        }
-        if (url.includes("/api/subscription-options")) {
-          return jsonResponse({ categories: [] });
-        }
-        if (url.includes("/api/status")) {
-          return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
-        }
-        return jsonResponse({});
-      }),
-    );
+  it("renders the account shell header and a back-to-devices action", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/auth/get-session")) {
+        return new Response(JSON.stringify({ user: { id: "u1", name: "微信用户" } }), { status: 200 });
+      }
+      if (url.includes("/api/devices") && !url.includes("subscribe") && !url.includes("subscription")) {
+        return jsonResponse({
+          devices: [{
+            id: DEVICE_ID,
+            name: "设备1",
+            deviceKey: DEVICE_KEY,
+            deviceTokenMasked: DEVICE_TOKEN_MASKED,
+            createdAt: 1,
+            updatedAt: 1,
+          }],
+        });
+      }
+      if (url.includes("/api/status")) {
+        return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
+      }
+      if (url.includes("/devices/") && url.endsWith("/subscription")) {
+        return new Response(JSON.stringify({ success: false, message: "没有订阅" }), { status: 200 });
+      }
+      if (url.includes("/api/subscription-options")) {
+        return jsonResponse({ categories: [] });
+      }
+      return jsonResponse({});
+    });
+    vi.stubGlobal("fetch", fetchMock);
 
     const { container } = render(
-      <MemoryRouter initialEntries={[{ pathname: "/subscribe", state: { barkKey: KEY } }]}>
+      <MemoryRouter initialEntries={[`/devices/${DEVICE_KEY}/subscribe`]}>
         <Routes>
-          <Route path="/" element={<div>entry</div>} />
-          <Route path="/subscribe" element={<SubscribePage />} />
+          <Route path="/devices/:id/subscribe" element={<SubscribePage />} />
         </Routes>
       </MemoryRouter>,
     );
 
-    expect(screen.getByText("Bark · ••••FhF")).toBeInTheDocument();
-    expect(screen.queryByText("通知 APP：Bark")).toBeNull();
-    expect(screen.getByRole("link", { name: "测试" })).toHaveAttribute("href", "/subscribe/test");
-    expect(screen.getByRole("link", { name: "更换设备" })).toHaveAttribute("href", "/");
-    expect(screen.queryByRole("button", { name: "重新加载" })).toBeNull();
+    expect(await screen.findByRole("heading", { name: "配置订阅" })).toBeInTheDocument();
+    expect(await screen.findByText(/设备1/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "灾害预警" })).toHaveAttribute("href", "/devices");
+    expect(screen.getByRole("link", { name: "返回设备" })).toHaveAttribute("href", "/devices");
+    expect(screen.getByRole("link", { name: "设备管理" })).toHaveAttribute("href", "/devices");
+    expect(screen.queryByRole("navigation", { name: "主导航" })).toBeNull();
+    const account = await screen.findByRole("button", { name: /微信用户|账号/ });
+    fireEvent.pointerDown(account);
+    fireEvent.click(account);
+    expect(await screen.findByRole("menuitem", { name: "账号设置" })).toHaveAttribute("href", "/settings");
     expect(container.querySelector("#bark-id")).toBeNull();
-    expect(container.querySelector("#bark-url")).toBeNull();
-    expect(container.querySelector("#retry-config")).toBeNull();
-    expect(container.querySelector("input#bark-id")).toBeNull();
-    expect(await screen.findByRole("heading", { name: "灾害预警" })).toBeInTheDocument();
-    expect(screen.getByText(/本服务仅用于灾害信息转发与个人提醒/)).toBeInTheDocument();
-  });
-
-  it("renders from a cached Bark Key when location state is missing", async () => {
-    writeCachedBarkKey(KEY);
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL) => {
-        const url = String(input);
-        if (url.includes("/api/bark-urls")) {
-          return jsonResponse({ bark_urls: ["https://bark.example"] });
-        }
-        if (url.includes("/api/subscription-options")) {
-          return jsonResponse({ categories: [] });
-        }
-        if (url.includes("/api/status")) {
-          return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
-        }
-        return jsonResponse({});
-      }),
-    );
-
-    render(
-      <MemoryRouter initialEntries={["/subscribe"]}>
-        <Routes>
-          <Route path="/" element={<div>entry</div>} />
-          <Route path="/subscribe" element={<SubscribePage />} />
-        </Routes>
-      </MemoryRouter>,
-    );
-
-    expect(screen.getByText("Bark · ••••FhF")).toBeInTheDocument();
-    expect(await screen.findByRole("heading", { name: "灾害预警" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "灾害预警" })).toBeNull();
+    await vi.waitFor(() => {
+      const hydrateCall = fetchMock.mock.calls.find(([input]) => String(input).includes("/subscription"));
+      expect(String(hydrateCall?.[0])).toContain(`/api/devices/${DEVICE_KEY}/subscription`);
+      expect(String(hydrateCall?.[0])).not.toContain(`/api/devices/${DEVICE_ID}/`);
+    });
   });
 });

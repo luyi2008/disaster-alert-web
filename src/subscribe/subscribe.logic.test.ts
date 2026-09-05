@@ -68,27 +68,21 @@ describe("locations", () => {
 });
 
 describe("saved subscription mapping", () => {
-  it("selects the row for the session key and prefers a whitelisted base_url", () => {
-    const other: SavedSubscription = sampleRow({
+  it("selects the first saved row", () => {
+    const first = sampleRow({
       destination: { type: "bark", base_url: "https://other.example", device_key: KEY },
     });
-    const preferred = sampleRow();
-    const chosen = selectSavedSubscription(
-      [other, preferred],
-      KEY,
-      ["https://bark.mangguo.cloud"],
-    );
-    expect(chosen?.destination?.base_url).toBe("https://bark.mangguo.cloud");
+    const second = sampleRow();
+    expect(selectSavedSubscription([first, second])?.destination?.base_url).toBe("https://other.example");
   });
 
-  it("returns null when success payload has no matching key", () => {
-    expect(selectSavedSubscription([sampleRow()], "otherKeyotherKeyother12", ["https://bark.mangguo.cloud"])).toBeNull();
-    expect(selectSavedSubscription([], KEY, [])).toBeNull();
-    expect(selectSavedSubscription(undefined, KEY, [])).toBeNull();
+  it("returns null when there are no rows", () => {
+    expect(selectSavedSubscription([])).toBeNull();
+    expect(selectSavedSubscription(undefined)).toBeNull();
   });
 
   it("maps numeric points to 4-decimal strings and enables payload alerts only", () => {
-    const draft = draftFromSavedSubscription(sampleRow(), ["https://bark.mangguo.cloud"]);
+    const draft = draftFromSavedSubscription(sampleRow());
     expect(draft.targets).toHaveLength(1);
     expect(draft.targets[0].id).toEqual(expect.any(String));
     expect(draft.targets[0].point).toEqual({ latitude: "30.6377", longitude: "104.1119" });
@@ -98,9 +92,9 @@ describe("saved subscription mapping", () => {
     expect(draft.bark_url).toBe("https://bark.mangguo.cloud");
   });
 
-  it("falls back to the first whitelist URL when destination is not listed", () => {
-    const draft = draftFromSavedSubscription(sampleRow(), ["https://api.day.app"]);
-    expect(draft.bark_url).toBe("https://api.day.app");
+  it("keeps the destination base_url from the saved row", () => {
+    const draft = draftFromSavedSubscription(sampleRow());
+    expect(draft.bark_url).toBe("https://bark.mangguo.cloud");
   });
 
   it("canonicalizes the in-memory draft without a storage blob", () => {

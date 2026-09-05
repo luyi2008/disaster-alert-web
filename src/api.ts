@@ -1,3 +1,4 @@
+import { bffFetch } from "./auth/session";
 import { parseApiResponse } from "./subscribe/http";
 import type { SavedSubscriptionsData } from "./subscribe/types";
 
@@ -133,12 +134,78 @@ export async function fetchIncidentDetail(
   return { status: response.status, body };
 }
 
-export async function fetchSavedSubscriptions(
-  barkKey: string,
-): Promise<{ status: number; body: ApiEnvelope<SavedSubscriptionsData> }> {
-  const response = await fetch(apiUrl("/api/subscriptions"), {
-    headers: { Authorization: `Bearer ${barkKey}` },
-  });
-  const body = await parseApiResponse(response) as ApiEnvelope<SavedSubscriptionsData>;
+export type DeviceRecord = {
+  id: string;
+  userId?: string;
+  name: string;
+  deviceKey: string;
+  deviceTokenMasked: string;
+  createdAt: number;
+  updatedAt: number;
+};
+
+export function deviceRouteKey(device: Pick<DeviceRecord, "id" | "deviceKey">): string {
+  return device.deviceKey || device.id;
+}
+
+export function matchDevice(devices: DeviceRecord[], routeId: string): DeviceRecord | undefined {
+  return devices.find((row) => row.deviceKey === routeId || row.id === routeId);
+}
+
+async function bffEnvelope<T>(path: string, init?: RequestInit): Promise<{ status: number; body: ApiEnvelope<T> }> {
+  const response = await bffFetch(path, init);
+  const body = await parseApiResponse(response) as ApiEnvelope<T>;
   return { status: response.status, body };
+}
+
+export async function fetchDevices(): Promise<{ status: number; body: ApiEnvelope<{ devices: DeviceRecord[] }> }> {
+  return bffEnvelope("/api/devices");
+}
+
+export async function bindDevice(
+  deviceToken: string,
+  name?: string,
+): Promise<{ status: number; body: ApiEnvelope<{ device: DeviceRecord }> }> {
+  const body: { device_token: string; name?: string } = { device_token: deviceToken };
+  const trimmedName = name?.trim();
+  if (trimmedName) {
+    body.name = trimmedName;
+  }
+  return bffEnvelope("/api/devices", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function renameDevice(
+  id: string,
+  name: string,
+): Promise<{ status: number; body: ApiEnvelope<{ device: DeviceRecord }> }> {
+  return bffEnvelope(`/api/devices/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify({ name }),
+  });
+}
+
+export async function deleteDevice(id: string): Promise<{ status: number; body: ApiEnvelope<unknown> }> {
+  return bffEnvelope(`/api/devices/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
+export async function fetchDeviceSubscription(
+  deviceKey: string,
+): Promise<{ status: number; body: ApiEnvelope<SavedSubscriptionsData> }> {
+  return bffEnvelope(`/api/devices/${encodeURIComponent(deviceKey)}/subscription`);
+}
+
+export async function saveDeviceSubscription(
+  deviceKey: string,
+  payload: { targets: unknown; alerts: unknown },
+): Promise<{ status: number; body: ApiEnvelope<{ saved?: boolean }> }> {
+  return bffEnvelope(`/api/devices/${encodeURIComponent(deviceKey)}/subscribe`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteDeviceSubscription(
+  deviceKey: string,
+): Promise<{ status: number; body: ApiEnvelope<unknown> }> {
+  return bffEnvelope(`/api/devices/${encodeURIComponent(deviceKey)}/subscribe`, { method: "DELETE" });
 }

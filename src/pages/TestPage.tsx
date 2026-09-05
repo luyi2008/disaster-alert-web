@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
-import { fetchSavedSubscriptions } from "../api";
-import { maskBarkId } from "../bark/maskBarkId";
-import { maybeExpireBarkSession } from "../bark/session";
-import { AppBrand } from "../components/AppBrand";
-import { DeviceIdentity } from "../components/DeviceIdentity";
+import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Activity, BarChart3, Cloud, CloudRain, MapPin, Server, Tornado, Waves } from "lucide-react";
+import { fetchDeviceSubscription, fetchDevices, matchDevice, type DeviceRecord } from "../api";
+import { AppShell } from "../components/AppShell";
 import { LegalFooter } from "../components/LegalFooter";
 import {
-  fetchBarkUrls,
   fetchHistoryCatalog,
   fetchSubscriptionOptions,
   simulateHistoryReplay,
@@ -22,15 +24,14 @@ import {
   formatDraftUpdatedAt,
   formatTargetChip,
   type AlertRuleCard,
-  type RuleCardTone,
 } from "../simulate/subscriptionPreview";
-import { resolveBarkKey } from "../subscribe/barkKeyState";
 import {
   createEmptyDraft,
   draftFromSavedSubscription,
   selectSavedSubscription,
 } from "../subscribe/draft";
 import "../styles/base.css";
+import "../styles/ds.css";
 import "../styles/subscribe.css";
 import "../styles/test.css";
 
@@ -43,91 +44,44 @@ type ActionStatus = {
 
 function StatusIcon({ name }: { name: "cloud" | "server" | "pin" }) {
   if (name === "cloud") {
-    return (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M7 18h10a4 4 0 0 0 .4-8 6 6 0 0 0-11.6 1.5A3.5 3.5 0 0 0 7 18Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
-      </svg>
-    );
+    return <Cloud className="size-4 text-muted-foreground" aria-hidden="true" />;
   }
   if (name === "server") {
-    return (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <rect x="4" y="4" width="16" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.7" />
-        <rect x="4" y="14" width="16" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.7" />
-        <circle cx="8" cy="7" r="1" fill="currentColor" />
-        <circle cx="8" cy="17" r="1" fill="currentColor" />
-      </svg>
-    );
+    return <Server className="size-4 text-muted-foreground" aria-hidden="true" />;
   }
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M12 21s7-6.2 7-11.2A7 7 0 0 0 5 9.8C5 14.8 12 21 12 21Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
-      <circle cx="12" cy="10" r="2.2" stroke="currentColor" strokeWidth="1.7" />
-    </svg>
-  );
+  return <MapPin className="size-3.5 text-muted-foreground" aria-hidden="true" />;
 }
 
 function RuleGlyph({ category }: { category: string }) {
-  const common = { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none" as const };
+  const common = { className: "size-4 text-muted-foreground", "aria-hidden": true as const };
   if (category === "earthquake_warning") {
-    return (
-      <svg {...common} aria-hidden="true">
-        <path d="M3 12h3.2l2.4 7 4.8-14 2.4 7H21" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    );
+    return <Activity {...common} />;
   }
   if (category === "earthquake_report") {
-    return (
-      <svg {...common} aria-hidden="true">
-        <path d="M5 19V10M10 19V5M15 19v-7M20 19V8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-      </svg>
-    );
+    return <BarChart3 {...common} />;
   }
   if (category === "weather_warning") {
-    return (
-      <svg {...common} aria-hidden="true">
-        <circle cx="10" cy="10" r="3.2" stroke="currentColor" strokeWidth="1.7" />
-        <path d="M8 16h8.5a3 3 0 0 0 .2-6 5 5 0 0 0-9.4 1.2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-      </svg>
-    );
+    return <CloudRain {...common} />;
   }
   if (category === "tsunami") {
-    return (
-      <svg {...common} aria-hidden="true">
-        <path d="M4 16c2.2-2 4.2-3 6-3s3.8 1 6 3 4.2 3 6 3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-        <path d="M4 10c2.2-2 4.2-3 6-3s3.8 1 6 3 4.2 3 6 3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-      </svg>
-    );
+    return <Waves {...common} />;
   }
-  return (
-    <svg {...common} aria-hidden="true">
-      <path d="M12 5c2.8 2.4 4.5 5.2 4.5 7.6A4.5 4.5 0 0 1 7.5 12.6C7.5 10.2 9.2 7.4 12 5Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
-    </svg>
-  );
+  return <Tornado {...common} />;
 }
 
 function RuleCard({ card }: { card: AlertRuleCard }) {
   return (
-    <li className={`rule-card is-${card.tone}`}>
-      <span className="rule-card-bar" aria-hidden="true" />
-      <RuleGlyph category={card.category} />
-      <strong>{card.title}</strong>
-      {card.badge ? (
-        <span className={`rule-badge is-${card.badge.tone}`}>{card.badge.label}</span>
-      ) : null}
-      {card.metric ? <span className="rule-metric">{card.metric}</span> : null}
+    <li>
+      <Card className="flex-row items-center gap-2 px-3 py-2 shadow-none">
+        <RuleGlyph category={card.category} />
+        <strong className="text-sm font-semibold">{card.title}</strong>
+        {card.badge ? (
+          <Badge variant={card.badge.tone === "warn" ? "destructive" : "secondary"}>{card.badge.label}</Badge>
+        ) : null}
+        {card.metric ? <span className="text-muted-foreground text-xs">{card.metric}</span> : null}
+      </Card>
     </li>
   );
-}
-
-function levelTone(id: string): RuleCardTone {
-  if (id === "critical") {
-    return "warn";
-  }
-  if (id === "active") {
-    return "primary";
-  }
-  return "quiet";
 }
 
 function resultMessage(status: number, message: string, data?: SimulateResult): string {
@@ -149,9 +103,10 @@ function formatDistance(value: number | undefined, unit: string): string | null 
 }
 
 export function TestPage() {
-  const location = useLocation();
+  const { id } = useParams();
   const navigate = useNavigate();
-  const barkKey = resolveBarkKey(location.state);
+  const [device, setDevice] = useState<DeviceRecord | null>(null);
+  const [missing, setMissing] = useState(false);
   const [draft, setDraft] = useState(createEmptyDraft);
   const [draftUpdatedAt, setDraftUpdatedAt] = useState<number | null>(null);
   const [barkUrl, setBarkUrl] = useState("");
@@ -166,49 +121,63 @@ export function TestPage() {
   const [actionStatus, setActionStatus] = useState<ActionStatus | null>(null);
 
   useEffect(() => {
-    if (!barkKey) {
+    if (!id) {
+      return;
+    }
+    let cancelled = false;
+    fetchDevices().then((result) => {
+      if (cancelled) {
+        return;
+      }
+      if (result.status === 401) {
+        navigate("/login", { replace: true });
+        return;
+      }
+      const found = matchDevice(result.body.data?.devices ?? [], id);
+      if (!found) {
+        setMissing(true);
+        return;
+      }
+      setDevice(found);
+    }).catch(() => {
+      if (!cancelled) {
+        setMissing(true);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [id, navigate]);
+
+  useEffect(() => {
+    if (!device) {
       return;
     }
     let cancelled = false;
     Promise.all([
-      fetchBarkUrls(),
       fetchSubscriptionOptions(),
-      fetchSavedSubscriptions(barkKey).catch(
-        (error: { message?: string }): Awaited<ReturnType<typeof fetchSavedSubscriptions>> => ({
-          status: 0,
-          body: {
-            success: false,
-            message: error?.message || "无法加载已保存的订阅",
-          },
-        }),
-      ),
+      fetchDeviceSubscription(device.deviceKey),
     ])
-      .then(async ([urls, options, saved]) => {
+      .then(async ([options, saved]) => {
         if (cancelled) {
           return;
         }
         setLevels(notifyLevelsFromOptions(options));
-        setBarkUrl(urls[0] || "");
-        if (await maybeExpireBarkSession(barkKey, saved.status, "bearer")) {
-          if (!cancelled) {
-            navigate("/", { replace: true });
-          }
+        if (saved.status === 401) {
+          navigate("/login", { replace: true });
           return;
         }
-        if (cancelled) {
+        if (saved.status === 404) {
+          setMissing(true);
           return;
         }
         if (saved.status === 200 && saved.body.success) {
-          const row = selectSavedSubscription(
-            saved.body.data?.subscriptions,
-            barkKey,
-            urls,
-          );
+          const row = selectSavedSubscription(saved.body.data?.subscriptions);
           if (row) {
-            const mapped = draftFromSavedSubscription(row, urls);
+            const mapped = draftFromSavedSubscription(row);
             setDraft(mapped);
             setDraftUpdatedAt(row.updated_at ?? null);
-            setBarkUrl(mapped.bark_url || urls[0] || "");
+            setBarkUrl(mapped.bark_url || "");
           }
         } else if (saved.status !== 200) {
           setLoadError(saved.body.message || "无法加载已保存的订阅");
@@ -223,24 +192,15 @@ export function TestPage() {
     return () => {
       cancelled = true;
     };
-  }, [barkKey, navigate]);
+  }, [device, navigate]);
 
   useEffect(() => {
-    if (!barkKey || tab !== "history") {
+    if (!id || tab !== "history") {
       return;
     }
     let cancelled = false;
-    fetchHistoryCatalog(barkKey)
-      .then(async ({ status, body }) => {
-        if (cancelled) {
-          return;
-        }
-        if (await maybeExpireBarkSession(barkKey, status, "bearer")) {
-          if (!cancelled) {
-            navigate("/", { replace: true });
-          }
-          return;
-        }
+    fetchHistoryCatalog()
+      .then(({ status, body }) => {
         if (cancelled) {
           return;
         }
@@ -266,10 +226,10 @@ export function TestPage() {
     return () => {
       cancelled = true;
     };
-  }, [barkKey, tab, navigate]);
+  }, [id, tab]);
 
-  if (!barkKey) {
-    return <Navigate to="/" replace />;
+  if (!id || missing) {
+    return <Navigate to="/devices" replace />;
   }
 
   const alertCards = alertRuleCards(draft);
@@ -280,8 +240,8 @@ export function TestPage() {
     setActionStatus(null);
     try {
       const { status, body } = await send();
-      if (await maybeExpireBarkSession(barkKey, status, "bearer")) {
-        navigate("/", { replace: true });
+      if (status === 401) {
+        navigate("/login", { replace: true });
         return;
       }
       const text = resultMessage(status, body.message, body.data);
@@ -297,16 +257,17 @@ export function TestPage() {
   };
 
   return (
-    <main className="test-page">
-      <div className="app-bar">
-        <AppBrand />
-        <DeviceIdentity barkId={barkKey} currentPage="test" />
-      </div>
-      <section className="panel test-sheet">
+    <AppShell
+      title="测试通知"
+      description={device ? `向「${device.name}」发送测试推送。` : "向当前设备发送测试推送。"}
+    >
+      <div className="test-page">
+      <Card className="test-sheet max-w-none gap-0 py-0 shadow-none">
+      <CardContent className="test-sheet-body p-5">
         <div className="test-status-strip" aria-label="设备状态">
           <div className="test-status-cell">
             <StatusIcon name="cloud" />
-            <span title={barkKey}>{maskBarkId(barkKey)}</span>
+            <span>{device?.name || "设备"}</span>
           </div>
           <div className="test-status-cell">
             <StatusIcon name="server" />
@@ -327,8 +288,10 @@ export function TestPage() {
             <ul className="test-location-chips">
               {draft.targets.map((target) => (
                 <li key={target.id}>
-                  <StatusIcon name="pin" />
-                  {formatTargetChip(target)}
+                  <Badge variant="secondary" className="gap-1 px-2.5 py-1">
+                    <StatusIcon name="pin" />
+                    {formatTargetChip(target)}
+                  </Badge>
                 </li>
               ))}
             </ul>
@@ -350,124 +313,149 @@ export function TestPage() {
           )}
         </section>
 
+        <section className="test-block" aria-labelledby="test-updated-heading">
+          <h2 id="test-updated-heading">上次更新</h2>
+          <p className="test-note">{formatDraftUpdatedAt(draftUpdatedAt)}</p>
+        </section>
+
         {!hasDraftContent ? (
           <p className="test-note">模拟接口只认本实例已保存的订阅，请先回到订阅页保存。</p>
         ) : null}
 
         <section className="test-block" aria-labelledby="test-priority-heading">
-          <h2 id="test-priority-heading">Push Priority</h2>
-          <div className="test-tabs" role="tablist" aria-label="测试方式">
-            <button
-              type="button"
-              role="tab"
-              id="tab-levels"
-              aria-controls="panel-levels"
-              aria-selected={tab === "levels"}
-              className={tab === "levels" ? "is-active" : undefined}
-              onClick={() => setTab("levels")}
-            >
-              烈度试推
-            </button>
-            <button
-              type="button"
-              role="tab"
-              id="tab-history"
-              aria-controls="panel-history"
-              aria-selected={tab === "history"}
-              className={tab === "history" ? "is-active" : undefined}
-              onClick={() => {
-                setTab("history");
+          <h2 id="test-priority-heading">通知级别</h2>
+          <Tabs
+            value={tab}
+            onValueChange={(value) => {
+              const next = value as TabId;
+              setTab(next);
+              if (next === "history") {
                 setHistoryLoading(true);
                 setHistoryError(null);
-              }}
-            >
-              历史回放
-            </button>
-          </div>
-
-        {tab === "levels" ? (
-          <section
-            className="test-panel"
-            role="tabpanel"
-            id="panel-levels"
-            aria-labelledby="tab-levels"
+              }
+            }}
           >
-            {loadError ? <p className="test-status is-error" role="status">{loadError}</p> : null}
-            <ul className="test-level-list">
-              {levels.map((level) => (
-                <li key={level.id} className={`test-card is-${levelTone(level.id)}`}>
-                  <div>
-                    <strong>{notifyLevelLabel(level.id)}</strong>
-                    <p>{formatIntensityRange(level.min, level.max)}</p>
-                  </div>
-                  <button
-                    type="button"
-                    className="btn-ghost"
-                    disabled={pendingAction !== null}
-                    onClick={() => runAction(`level:${level.id}`, () => simulateNotifyLevel(barkKey, level.id))}
-                  >
-                    {pendingAction === `level:${level.id}` ? "发送中…" : "发送测试"}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : (
-          <section
-            className="test-panel"
-            role="tabpanel"
-            id="panel-history"
-            aria-labelledby="tab-history"
-          >
-            <p className="test-note">目录由 `/api/history` 下发，当前来源 {historySource}。每条可回放到当前设备。</p>
-            {historyError ? <p className="test-status is-error" role="status">{historyError}</p> : null}
-            {historyLoading ? <p className="test-note">正在读取历史目录…</p> : null}
-            {!historyLoading && !historyError && history.length === 0 ? (
-              <p className="test-note">历史目录为空。</p>
-            ) : null}
-            <ul className="test-history-list">
-              {history.map((record) => {
-                const distance = formatDistance(record.distance_km, "km");
-                const intensity = typeof record.estimated_intensity === "number"
-                  ? `估算烈度 ${record.estimated_intensity}`
-                  : null;
-                return (
-                  <li key={record.key} className="test-card">
-                    <div>
-                      <strong>{record.hypocenter || record.key}</strong>
-                      <p>
-                        {record.origin_time} · M{record.magnitude} · 深度 {record.depth_km} km · 最大烈度 {record.max_intensity}
-                      </p>
-                      {record.note ? <p>{record.note}</p> : null}
-                      {distance || intensity ? (
-                        <p>{[distance && `距监测点 ${distance}`, intensity].filter(Boolean).join(" · ")}</p>
-                      ) : null}
-                    </div>
-                    <button
-                      type="button"
-                      className="btn-ghost"
-                      disabled={pendingAction !== null}
-                      onClick={() => runAction(
-                        `history:${record.key}`,
-                        () => simulateHistoryReplay(barkKey, record.source || historySource, record.key),
-                      )}
-                    >
-                      {pendingAction === `history:${record.key}` ? "发送中…" : "测试"}
-                    </button>
+            <TabsList aria-label="测试方式">
+              <TabsTrigger value="levels">烈度试推</TabsTrigger>
+              <TabsTrigger
+                value="history"
+                onClick={() => {
+                  setTab("history");
+                  setHistoryLoading(true);
+                  setHistoryError(null);
+                }}
+              >
+                历史回放
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="levels">
+              {loadError ? (
+                <Alert variant="destructive" className="mb-3" role="status">
+                  <AlertDescription>{loadError}</AlertDescription>
+                </Alert>
+              ) : null}
+              <ul className="test-level-list">
+                {levels.map((level) => (
+                  <li key={level.id}>
+                    <Card className="flex-row items-center justify-between gap-3 py-4 shadow-none">
+                      <CardHeader className="px-5">
+                        <CardTitle className="text-base">{notifyLevelLabel(level.id)}</CardTitle>
+                        <CardDescription>{formatIntensityRange(level.min, level.max)}</CardDescription>
+                      </CardHeader>
+                      <CardContent className="px-5">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={pendingAction !== null || !device}
+                          onClick={() => {
+                            if (!device) {
+                              return;
+                            }
+                            void runAction(`level:${level.id}`, () => simulateNotifyLevel(device.deviceKey, level.id));
+                          }}
+                        >
+                          {pendingAction === `level:${level.id}` ? "发送中…" : "发送测试"}
+                        </Button>
+                      </CardContent>
+                    </Card>
                   </li>
-                );
-              })}
-            </ul>
-          </section>
-        )}
+                ))}
+              </ul>
+            </TabsContent>
+            <TabsContent value="history">
+              {historyError ? (
+                <Alert variant="destructive" className="mb-3" role="status">
+                  <AlertDescription>{historyError}</AlertDescription>
+                </Alert>
+              ) : null}
+              {historyLoading ? <p className="test-note">正在读取历史目录…</p> : null}
+              {!historyLoading && !historyError && history.length === 0 ? (
+                <p className="test-note">历史目录为空。</p>
+              ) : null}
+              <ul className="test-history-list">
+                {history.map((record) => {
+                  const distance = formatDistance(record.distance_km, "km");
+                  const intensity = typeof record.estimated_intensity === "number"
+                    ? `估算烈度 ${record.estimated_intensity}`
+                    : null;
+                  return (
+                    <li key={record.key}>
+                      <Card className="flex-row items-center justify-between gap-3 py-4 shadow-none">
+                        <CardHeader className="px-5">
+                          <CardTitle className="text-base">{record.hypocenter || record.key}</CardTitle>
+                          <CardDescription>
+                            {record.origin_time} · M{record.magnitude} · 深度 {record.depth_km} km · 最大烈度 {record.max_intensity}
+                          </CardDescription>
+                          {record.note ? <CardDescription>{record.note}</CardDescription> : null}
+                          {distance || intensity ? (
+                            <CardDescription>{[distance && `距监测点 ${distance}`, intensity].filter(Boolean).join(" · ")}</CardDescription>
+                          ) : null}
+                        </CardHeader>
+                        <CardContent className="px-5">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            disabled={pendingAction !== null || !device}
+                            onClick={() => {
+                              if (!device) {
+                                return;
+                              }
+                              void runAction(
+                                `history:${record.key}`,
+                                () => simulateHistoryReplay(device.deviceKey, record.source || historySource, record.key),
+                              );
+                            }}
+                          >
+                            {pendingAction === `history:${record.key}` ? "发送中…" : "测试"}
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    </li>
+                  );
+                })}
+              </ul>
+            </TabsContent>
+          </Tabs>
 
         {actionStatus ? (
-          <p className={`test-status is-${actionStatus.kind}`} role="status">{actionStatus.text}</p>
+          <Alert
+            className="mt-3"
+            variant={actionStatus.kind === "error" ? "destructive" : "success"}
+            role="status"
+          >
+            <AlertDescription>{actionStatus.text}</AlertDescription>
+          </Alert>
         ) : null}
         </section>
-      </section>
-      <p className="test-updated">上次更新 {formatDraftUpdatedAt(draftUpdatedAt)}</p>
+      </CardContent>
+      <div className="form-actions px-5 pb-5">
+        <Button asChild variant="outline">
+          <Link to="/devices">返回设备</Link>
+        </Button>
+      </div>
+      </Card>
       <LegalFooter />
-    </main>
+      </div>
+    </AppShell>
   );
 }
