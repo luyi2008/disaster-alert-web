@@ -252,11 +252,11 @@ export function LoginPage() {
       </section>
       <aside className="login-visual" aria-hidden="true">
         <svg viewBox="0 0 640 720" fill="none">
-          <circle cx="320" cy="340" r="280" stroke="var(--line)" strokeWidth="1" />
-          <circle cx="320" cy="340" r="196" stroke="var(--line)" strokeWidth="1" />
-          <circle cx="320" cy="340" r="112" stroke="var(--muted)" strokeWidth="1.25" />
+          <circle cx="320" cy="340" r="280" stroke="var(--border)" strokeWidth="1" />
+          <circle cx="320" cy="340" r="196" stroke="var(--border)" strokeWidth="1" />
+          <circle cx="320" cy="340" r="112" stroke="var(--muted-foreground)" strokeWidth="1.25" />
           <circle cx="320" cy="340" r="8" fill="currentColor" />
-          <path d="M320 60v560M40 340h560" stroke="var(--line)" strokeWidth="1" />
+          <path d="M320 60v560M40 340h560" stroke="var(--border)" strokeWidth="1" />
           <path d="M320 340 L 534 188" stroke="currentColor" strokeWidth="1.25" opacity="0.45" />
           <path d="M168 248c42-58 96-86 152-86s110 28 152 86" stroke="currentColor" strokeWidth="1.4" opacity="0.55" />
           <path d="M188 430c38 40 84 62 132 62s94-22 132-62" stroke="currentColor" strokeWidth="1.4" opacity="0.4" />
