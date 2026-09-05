@@ -3,7 +3,7 @@
 .account-loading {
   margin: 48px auto;
   text-align: center;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 
 .visually-hidden {
@@ -22,8 +22,8 @@
   min-height: 100dvh;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  background: var(--bg);
-  color: var(--text);
+  background: var(--background);
+  color: var(--foreground);
   font-family: var(--font-sans);
 }
 
@@ -74,7 +74,7 @@
 
 .login-lead {
   margin: 0;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -82,7 +82,7 @@
 .login-mark {
   display: grid;
   place-items: center;
-  color: var(--text);
+  color: var(--foreground);
 }
 
 .login-mark svg {
@@ -133,7 +133,7 @@
 .login-legal,
 .legal-footer {
   margin: 0;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 12px;
   line-height: 1.55;
   text-align: center;
@@ -148,14 +148,14 @@
   word-break: break-all;
   font-family: var(--font-mono);
   font-size: 12px;
-  color: var(--text);
+  color: var(--foreground);
 }
 
 .login-visual {
   position: relative;
   overflow: hidden;
-  background: var(--soft);
-  color: var(--text);
+  background: var(--muted);
+  color: var(--foreground);
 }
 
 .login-visual svg {
@@ -179,7 +179,7 @@
 
 .login-visual-copy p {
   margin: 8px 0 0;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -189,8 +189,8 @@
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  background: var(--bg);
-  color: var(--text);
+  background: var(--background);
+  color: var(--foreground);
   font-family: var(--font-sans);
 }
 
@@ -200,8 +200,8 @@
   justify-content: space-between;
   min-height: 64px;
   padding: 0 24px;
-  border-bottom: 1px solid var(--line);
-  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
 }
 
 .shell-brand {
@@ -217,7 +217,7 @@
 .app-brand-mark {
   display: grid;
   place-items: center;
-  color: var(--text);
+  color: var(--foreground);
 }
 
 .shell-top-end {
@@ -249,7 +249,7 @@
 
 .shell-pagehead p {
   margin: 6px 0 0;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 14px;
 }
 
@@ -297,7 +297,7 @@
 }
 
 .device-card-kv dt {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -305,7 +305,7 @@
 
 .device-card-kv dd {
   margin: 0;
-  color: var(--text);
+  color: var(--foreground);
   font-family: var(--font-mono);
   font-size: 13px;
   overflow-wrap: anywhere;
@@ -313,7 +313,7 @@
 
 .device-card-meta {
   margin: 4px 0 0;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 13px;
 }
 

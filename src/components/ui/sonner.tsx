@@ -7,9 +7,9 @@ function Toaster({ ...props }: ToasterProps) {
       theme="system"
       className="toaster group"
       style={{
-        "--normal-bg": "var(--panel)",
-        "--normal-text": "var(--text)",
-        "--normal-border": "var(--line)",
+        "--normal-bg": "var(--popover)",
+        "--normal-text": "var(--popover-foreground)",
+        "--normal-border": "var(--border)",
       } as CSSProperties}
       {...props}
     />
