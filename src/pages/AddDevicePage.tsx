@@ -45,7 +45,7 @@ export function AddDevicePage() {
     <AppShell title="添加设备" description="输入这台设备的推送令牌。名称可选。">
       {formError ? <StatusMessage kind="error">{formError}</StatusMessage> : null}
       {ok ? <StatusMessage kind="success">设备已添加。</StatusMessage> : null}
-      <Card className="max-w-md">
+      <Card>
         <CardContent>
           <form className="grid gap-4" onSubmit={(event) => void onSubmit(event)}>
             <Field
