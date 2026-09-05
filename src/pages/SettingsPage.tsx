@@ -85,7 +85,7 @@ export function SettingsPage() {
   return (
     <AppShell title="账号设置" description="给当前账号补绑手机号或微信。已被其他账号使用的身份不会合并。">
       {status ? <StatusMessage kind={ok ? "success" : "error"}>{status}</StatusMessage> : null}
-      <div className="grid max-w-md gap-4">
+      <div className="grid gap-4">
         <Card>
           <CardContent>
             <form className="grid gap-4" onSubmit={(event) => void verifyPhone(event)}>
