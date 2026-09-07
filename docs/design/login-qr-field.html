@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>设计稿 · 登录二维码输入框</title>
+    <title>设计稿 · 手机验证码输入框</title>
     <style>
       :root {
         color-scheme: light;
@@ -265,6 +265,87 @@
         gap: 8px;
       }
 
+      .otp-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .otp-head label { margin: 0; }
+      .otp-send {
+        height: auto;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: var(--foreground);
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        cursor: pointer;
+      }
+      .otp-send:disabled {
+        color: var(--muted-foreground);
+        text-decoration: none;
+        cursor: not-allowed;
+      }
+      .otp-well {
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        height: 48px;
+        border: 1px solid var(--input);
+        border-radius: 6px;
+        background: var(--background);
+      }
+      .otp-well:focus-within {
+        border-color: var(--ring);
+        box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent);
+      }
+      .otp-well.is-invalid {
+        border-color: var(--destructive);
+        box-shadow: 0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent);
+      }
+      .otp-slot {
+        position: relative;
+        display: grid;
+        place-items: center;
+        font-family: var(--font-mono);
+        font-size: 20px;
+        font-variant-numeric: tabular-nums;
+        border-right: 1px solid var(--border);
+      }
+      .otp-slot:last-child { border-right: 0; }
+      .otp-slot.is-empty::before {
+        content: "";
+        width: 10px;
+        height: 1.5px;
+        background: var(--muted-foreground);
+        opacity: 0.55;
+      }
+      .otp-slot.is-active::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        bottom: 8px;
+        width: 12px;
+        height: 2px;
+        background: var(--foreground);
+        transform: translateX(-50%);
+      }
+      .otp-hidden {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        border: 0;
+        margin: 0;
+        padding: 0;
+        font-size: 16px;
+      }
+
       .btn {
         font: inherit;
         font-size: 14px;
@@ -496,16 +577,20 @@
     <div class="deck">
       <header class="deck-head">
         <div>
-          <h1>登录 · 二维码输入框</h1>
-          <p>扫码与手机号并列。码井是表单字段，准星承接右列雷达，不用微信绿。</p>
+          <h1>登录 · 手机验证码输入框</h1>
+          <p>默认停在手机号段。验证码是六格读数井。扫码界面仍可从分段或微信入口打开，本轮先保留。</p>
         </div>
         <div class="toolbar" role="toolbar" aria-label="设计稿状态">
           <button type="button" id="theme-btn" aria-pressed="false">暗色</button>
-          <button type="button" data-method="phone">手机号段</button>
-          <button type="button" data-method="scan" aria-pressed="true">扫码段</button>
-          <button type="button" data-mode="prod">生产</button>
+          <button type="button" data-method="phone" aria-pressed="true">手机号段</button>
+          <button type="button" data-method="scan">扫码段（保留）</button>
+          <button type="button" data-otp="empty" aria-pressed="true">码空</button>
+          <button type="button" data-otp="typing">输入中</button>
+          <button type="button" data-otp="full">六位满</button>
+          <button type="button" data-otp="error">校验失败</button>
+          <button type="button" data-mode="prod">生产扫码</button>
           <button type="button" data-mode="mock" aria-pressed="true">开发 mock</button>
-          <button type="button" data-state="ready" aria-pressed="true">就绪</button>
+          <button type="button" data-state="ready" aria-pressed="true">码就绪</button>
           <button type="button" data-state="loading">生成中</button>
           <button type="button" data-state="expired">过期</button>
           <button type="button" data-state="unavailable">不可用</button>
@@ -532,30 +617,46 @@
 
               <div class="card">
                 <div class="seg" role="tablist" aria-label="登录方式">
-                  <button type="button" role="tab" id="tab-phone" aria-selected="false">手机号</button>
-                  <button type="button" role="tab" id="tab-scan" aria-selected="true">扫码</button>
+                  <button type="button" role="tab" id="tab-phone" aria-selected="true">手机号</button>
+                  <button type="button" role="tab" id="tab-scan" aria-selected="false">扫码</button>
                 </div>
 
-                <form class="phone-pane" id="phone-pane" hidden>
+                <form class="phone-pane" id="phone-pane">
                   <div class="field">
                     <label for="login-phone">手机号</label>
                     <div class="phone">
                       <span class="addon">+86</span>
-                      <input class="control" id="login-phone" placeholder="11 位大陆手机号" />
+                      <input class="control" id="login-phone" placeholder="11 位大陆手机号" value="13812345678" />
                     </div>
                     <span class="hint"></span>
                   </div>
                   <div class="field">
-                    <label for="login-code">验证码</label>
-                    <div class="otp-row">
-                      <input class="control" id="login-code" placeholder="6 位验证码" />
-                      <button class="btn btn-outline" type="button">发送验证码</button>
+                    <div class="otp-head">
+                      <label for="login-code">验证码</label>
+                      <button class="otp-send" type="button" id="otp-send">发送验证码</button>
                     </div>
+                    <div class="otp-well" id="otp-well">
+                      <span class="otp-slot is-empty is-active" data-i="0"></span>
+                      <span class="otp-slot is-empty" data-i="1"></span>
+                      <span class="otp-slot is-empty" data-i="2"></span>
+                      <span class="otp-slot is-empty" data-i="3"></span>
+                      <span class="otp-slot is-empty" data-i="4"></span>
+                      <span class="otp-slot is-empty" data-i="5"></span>
+                      <input
+                        class="otp-hidden"
+                        id="login-code"
+                        inputmode="numeric"
+                        autocomplete="one-time-code"
+                        maxlength="6"
+                        aria-label="验证码"
+                      />
+                    </div>
+                    <span class="hint" id="otp-hint"></span>
                   </div>
-                  <button class="btn btn-primary" type="button">登录</button>
+                  <button class="btn btn-primary" type="button" id="login-submit">登录</button>
                 </form>
 
-                <div class="scan-pane" id="scan-pane">
+                <div class="scan-pane" id="scan-pane" hidden>
                   <div class="field">
                     <label for="qr-ticket">二维码</label>
                     <div class="qr-field is-ready" id="qr-field">
@@ -650,13 +751,29 @@
         el.innerHTML = `<svg class="qr" viewBox="0 0 168 168" aria-hidden="true"><rect width="168" height="168" fill="var(--background)"/><g fill="var(--foreground)">${rects}</g></svg>`;
       }
 
-      const state = { theme: "light", method: "scan", mode: "mock", qr: "ready" };
+      const state = { theme: "light", method: "phone", mode: "mock", qr: "ready", otp: "", otpError: "" };
+      let sendLeft = 0;
+      let sendTimer = null;
 
       function setPressed(selector, value, attr) {
         document.querySelectorAll(selector).forEach((btn) => {
           const key = btn.getAttribute(attr);
           btn.setAttribute("aria-pressed", key === value ? "true" : "false");
         });
+      }
+
+      function paintOtp(code, invalid) {
+        const well = document.getElementById("otp-well");
+        const slots = well.querySelectorAll(".otp-slot");
+        const active = Math.min(code.length, 5);
+        slots.forEach((slot, i) => {
+          const ch = code[i] || "";
+          slot.textContent = ch;
+          slot.classList.toggle("is-empty", !ch);
+          slot.classList.toggle("is-active", i === active && code.length < 6);
+        });
+        well.classList.toggle("is-invalid", Boolean(invalid));
+        document.getElementById("login-code").value = code;
       }
 
       function apply() {
@@ -715,6 +832,19 @@
           hint.dataset.error = "false";
         }
         setPressed("[data-state]", state.qr, "data-state");
+
+        const otpHint = document.getElementById("otp-hint");
+        paintOtp(state.otp, Boolean(state.otpError));
+        otpHint.textContent = state.otpError || "";
+        otpHint.dataset.error = state.otpError ? "true" : "false";
+        const otpKind = !state.otp ? "empty" : state.otpError ? "error" : state.otp.length === 6 ? "full" : "typing";
+        setPressed("[data-otp]", otpKind, "data-otp");
+      }
+
+      function setOtp(code, error) {
+        state.otp = code.replace(/\D/g, "").slice(0, 6);
+        state.otpError = error || "";
+        apply();
       }
 
       renderQr(document.getElementById("qr-canvas"));
@@ -754,6 +884,47 @@
           state.qr = btn.getAttribute("data-state");
           apply();
         });
+      });
+      document.querySelectorAll("[data-otp]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          state.method = "phone";
+          const kind = btn.getAttribute("data-otp");
+          if (kind === "empty") setOtp("", "");
+          if (kind === "typing") setOtp("81", "");
+          if (kind === "full") setOtp("000000", "");
+          if (kind === "error") setOtp("123456", "验证码错误，请重新输入");
+        });
+      });
+      document.getElementById("login-code").addEventListener("input", (event) => {
+        setOtp(event.target.value, "");
+      });
+      document.getElementById("otp-well").addEventListener("click", () => {
+        document.getElementById("login-code").focus();
+      });
+      document.getElementById("login-submit").addEventListener("click", () => {
+        state.method = "phone";
+        if (!state.otp) setOtp("", "请输入验证码");
+        else if (state.otp.length < 6) setOtp(state.otp, "请输入验证码");
+        else setOtp(state.otp, "");
+      });
+      document.getElementById("otp-send").addEventListener("click", () => {
+        if (sendLeft > 0) return;
+        sendLeft = 60;
+        const btn = document.getElementById("otp-send");
+        btn.disabled = true;
+        btn.textContent = "60s";
+        if (sendTimer) window.clearInterval(sendTimer);
+        sendTimer = window.setInterval(() => {
+          sendLeft -= 1;
+          if (sendLeft <= 0) {
+            window.clearInterval(sendTimer);
+            sendTimer = null;
+            btn.disabled = false;
+            btn.textContent = "发送验证码";
+            return;
+          }
+          btn.textContent = sendLeft + "s";
+        }, 1000);
       });
     </script>
   </body>
