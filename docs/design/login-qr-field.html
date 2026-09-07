@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>设计稿 · 手机验证码输入框</title>
+    <title>设计稿 · 图形验证码门闩短信</title>
     <style>
       :root {
         color-scheme: light;
@@ -346,6 +346,20 @@
         font-size: 16px;
       }
 
+      .captcha-tape {
+        height: 56px;
+        border: 1px solid var(--input);
+        border-radius: 6px;
+        background: var(--muted);
+        overflow: hidden;
+        color: var(--foreground);
+      }
+      .captcha-tape svg {
+        display: block;
+        width: 100%;
+        height: 56px;
+      }
+
       .btn {
         font: inherit;
         font-size: 14px;
@@ -577,17 +591,17 @@
     <div class="deck">
       <header class="deck-head">
         <div>
-          <h1>登录 · 手机验证码输入框</h1>
-          <p>默认停在手机号段。验证码是六格读数井。扫码界面仍可从分段或微信入口打开，本轮先保留。</p>
+          <h1>登录 · 图形验证码门闩短信</h1>
+          <p>先看图抄 6 位数字，对了才发短信。扫码界面仍可打开，本轮先保留。</p>
         </div>
         <div class="toolbar" role="toolbar" aria-label="设计稿状态">
           <button type="button" id="theme-btn" aria-pressed="false">暗色</button>
           <button type="button" data-method="phone" aria-pressed="true">手机号段</button>
           <button type="button" data-method="scan">扫码段（保留）</button>
-          <button type="button" data-otp="empty" aria-pressed="true">码空</button>
-          <button type="button" data-otp="typing">输入中</button>
-          <button type="button" data-otp="full">六位满</button>
-          <button type="button" data-otp="error">校验失败</button>
+          <button type="button" data-scene="captcha-empty" aria-pressed="true">图形空</button>
+          <button type="button" data-scene="captcha-filled">图形已填</button>
+          <button type="button" data-scene="captcha-wrong">图形错误</button>
+          <button type="button" data-scene="sms-sent">已发短信</button>
           <button type="button" data-mode="prod">生产扫码</button>
           <button type="button" data-mode="mock" aria-pressed="true">开发 mock</button>
           <button type="button" data-state="ready" aria-pressed="true">码就绪</button>
@@ -628,13 +642,14 @@
                       <span class="addon">+86</span>
                       <input class="control" id="login-phone" placeholder="11 位大陆手机号" value="13812345678" />
                     </div>
-                    <span class="hint"></span>
+                    <span class="hint" id="phone-hint"></span>
                   </div>
                   <div class="field">
                     <div class="otp-head">
-                      <label for="login-code">验证码</label>
-                      <button class="otp-send" type="button" id="otp-send">发送验证码</button>
+                      <label for="captcha-code">图形验证码</label>
+                      <button class="otp-send" type="button" id="captcha-refresh">换一张</button>
                     </div>
+                    <div class="captcha-tape" id="captcha-tape" role="img" aria-label="图形验证码"></div>
                     <div class="otp-well" id="otp-well">
                       <span class="otp-slot is-empty is-active" data-i="0"></span>
                       <span class="otp-slot is-empty" data-i="1"></span>
@@ -644,13 +659,21 @@
                       <span class="otp-slot is-empty" data-i="5"></span>
                       <input
                         class="otp-hidden"
-                        id="login-code"
+                        id="captcha-code"
                         inputmode="numeric"
-                        autocomplete="one-time-code"
+                        autocomplete="off"
                         maxlength="6"
-                        aria-label="验证码"
+                        aria-label="图形验证码"
                       />
                     </div>
+                    <span class="hint" id="captcha-hint"></span>
+                  </div>
+                  <div class="field">
+                    <div class="otp-head">
+                      <label for="login-code">短信验证码</label>
+                      <button class="otp-send" type="button" id="otp-send">发送验证码</button>
+                    </div>
+                    <input class="control" id="login-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 位短信验证码" />
                     <span class="hint" id="otp-hint"></span>
                   </div>
                   <button class="btn btn-primary" type="button" id="login-submit">登录</button>
@@ -751,9 +774,56 @@
         el.innerHTML = `<svg class="qr" viewBox="0 0 168 168" aria-hidden="true"><rect width="168" height="168" fill="var(--background)"/><g fill="var(--foreground)">${rects}</g></svg>`;
       }
 
-      const state = { theme: "light", method: "phone", mode: "mock", qr: "ready", otp: "", otpError: "" };
+      const state = {
+        theme: "light",
+        method: "phone",
+        mode: "mock",
+        qr: "ready",
+        captchaAnswer: "",
+        captcha: "",
+        captchaError: "",
+        sms: "",
+        smsError: "",
+        smsSent: false,
+        scene: "captcha-empty",
+      };
       let sendLeft = 0;
       let sendTimer = null;
+
+      function randomDigits() {
+        let out = "";
+        for (let i = 0; i < 6; i++) out += String(Math.floor(Math.random() * 10));
+        return out;
+      }
+
+      function renderCaptcha(code) {
+        const w = 360;
+        const h = 56;
+        let glyphs = "";
+        for (let i = 0; i < 6; i++) {
+          const x = 28 + i * 56;
+          const rot = (i % 2 === 0 ? -1 : 1) * (5 + (i % 3) * 2);
+          const y = 38 + ((i % 3) - 1) * 3;
+          glyphs += `<text x="${x}" y="${y}" transform="rotate(${rot} ${x} ${y})" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="22" font-weight="600" fill="currentColor">${code[i]}</text>`;
+        }
+        document.getElementById("captcha-tape").innerHTML = `
+          <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">
+            <rect width="${w}" height="${h}" fill="transparent" />
+            <g stroke="currentColor" stroke-width="0.6" opacity="0.18" fill="none">
+              <path d="M0 14h360M0 28h360M0 42h360" />
+              <path d="M60 0v56M120 0v56M180 0v56M240 0v56M300 0v56" />
+            </g>
+            <path d="M0 30 C 40 18, 80 44, 120 26 S 200 12, 240 34 S 320 22, 360 28" fill="none" stroke="currentColor" stroke-width="1" opacity="0.35" />
+            ${glyphs}
+          </svg>`;
+      }
+
+      function newCaptcha(keepError) {
+        state.captchaAnswer = randomDigits();
+        state.captcha = "";
+        if (!keepError) state.captchaError = "";
+        renderCaptcha(state.captchaAnswer);
+      }
 
       function setPressed(selector, value, attr) {
         document.querySelectorAll(selector).forEach((btn) => {
@@ -762,7 +832,7 @@
         });
       }
 
-      function paintOtp(code, invalid) {
+      function paintCaptcha(code, invalid) {
         const well = document.getElementById("otp-well");
         const slots = well.querySelectorAll(".otp-slot");
         const active = Math.min(code.length, 5);
@@ -773,7 +843,14 @@
           slot.classList.toggle("is-active", i === active && code.length < 6);
         });
         well.classList.toggle("is-invalid", Boolean(invalid));
-        document.getElementById("login-code").value = code;
+        document.getElementById("captcha-code").value = code;
+      }
+
+      function sceneFromState() {
+        if (state.smsSent) return "sms-sent";
+        if (state.captchaError) return "captcha-wrong";
+        if (state.captcha.length === 6) return "captcha-filled";
+        return "captcha-empty";
       }
 
       function apply() {
@@ -833,21 +910,72 @@
         }
         setPressed("[data-state]", state.qr, "data-state");
 
+        paintCaptcha(state.captcha, Boolean(state.captchaError));
+        const captchaHint = document.getElementById("captcha-hint");
+        captchaHint.textContent = state.captchaError || "";
+        captchaHint.dataset.error = state.captchaError ? "true" : "false";
         const otpHint = document.getElementById("otp-hint");
-        paintOtp(state.otp, Boolean(state.otpError));
-        otpHint.textContent = state.otpError || "";
-        otpHint.dataset.error = state.otpError ? "true" : "false";
-        const otpKind = !state.otp ? "empty" : state.otpError ? "error" : state.otp.length === 6 ? "full" : "typing";
-        setPressed("[data-otp]", otpKind, "data-otp");
+        otpHint.textContent = state.smsError || (state.smsSent && !state.smsError ? "短信验证码已发送" : "");
+        otpHint.dataset.error = state.smsError ? "true" : "false";
+        document.getElementById("login-code").value = state.sms;
+        state.scene = sceneFromState();
+        setPressed("[data-scene]", state.scene, "data-scene");
       }
 
-      function setOtp(code, error) {
-        state.otp = code.replace(/\D/g, "").slice(0, 6);
-        state.otpError = error || "";
+      function startCountdown() {
+        sendLeft = 60;
+        const btn = document.getElementById("otp-send");
+        btn.disabled = true;
+        btn.textContent = "60s";
+        if (sendTimer) window.clearInterval(sendTimer);
+        sendTimer = window.setInterval(() => {
+          sendLeft -= 1;
+          if (sendLeft <= 0) {
+            window.clearInterval(sendTimer);
+            sendTimer = null;
+            btn.disabled = false;
+            btn.textContent = "发送验证码";
+            return;
+          }
+          btn.textContent = sendLeft + "s";
+        }, 1000);
+      }
+
+      function trySendSms() {
+        state.method = "phone";
+        const phone = document.getElementById("login-phone").value.replace(/\D/g, "");
+        const phoneHint = document.getElementById("phone-hint");
+        if (!/^1[3-9]\d{9}$/.test(phone)) {
+          phoneHint.textContent = "请输入 11 位大陆手机号";
+          phoneHint.dataset.error = "true";
+          apply();
+          return;
+        }
+        phoneHint.textContent = "";
+        phoneHint.dataset.error = "false";
+        if (state.captcha.length < 6) {
+          state.captchaError = "请输入图形验证码";
+          state.smsSent = false;
+          apply();
+          return;
+        }
+        if (state.captcha !== state.captchaAnswer) {
+          state.captchaError = "图形验证码不正确";
+          state.smsSent = false;
+          newCaptcha(true);
+          apply();
+          return;
+        }
+        if (sendLeft > 0) return;
+        state.captchaError = "";
+        state.smsError = "";
+        state.smsSent = true;
         apply();
+        startCountdown();
       }
 
       renderQr(document.getElementById("qr-canvas"));
+      newCaptcha();
       apply();
 
       document.getElementById("theme-btn").addEventListener("click", () => {
@@ -885,46 +1013,68 @@
           apply();
         });
       });
-      document.querySelectorAll("[data-otp]").forEach((btn) => {
+      document.querySelectorAll("[data-scene]").forEach((btn) => {
         btn.addEventListener("click", () => {
           state.method = "phone";
-          const kind = btn.getAttribute("data-otp");
-          if (kind === "empty") setOtp("", "");
-          if (kind === "typing") setOtp("81", "");
-          if (kind === "full") setOtp("000000", "");
-          if (kind === "error") setOtp("123456", "验证码错误，请重新输入");
+          const scene = btn.getAttribute("data-scene");
+          if (scene === "captcha-empty") {
+            newCaptcha();
+            state.smsSent = false;
+            state.smsError = "";
+          } else if (scene === "captcha-filled") {
+            state.captcha = state.captchaAnswer;
+            state.captchaError = "";
+            state.smsSent = false;
+            state.smsError = "";
+          } else if (scene === "captcha-wrong") {
+            state.captcha = "000000";
+            if (state.captcha === state.captchaAnswer) state.captchaAnswer = "111111";
+            state.captchaError = "图形验证码不正确";
+            state.smsSent = false;
+            renderCaptcha(state.captchaAnswer);
+          } else if (scene === "sms-sent") {
+            state.captcha = state.captchaAnswer;
+            state.captchaError = "";
+            state.smsSent = true;
+            state.smsError = "";
+          }
+          apply();
         });
       });
-      document.getElementById("login-code").addEventListener("input", (event) => {
-        setOtp(event.target.value, "");
+      document.getElementById("captcha-code").addEventListener("input", (event) => {
+        state.captcha = event.target.value.replace(/\D/g, "").slice(0, 6);
+        state.captchaError = "";
+        apply();
       });
       document.getElementById("otp-well").addEventListener("click", () => {
-        document.getElementById("login-code").focus();
+        document.getElementById("captcha-code").focus();
+      });
+      document.getElementById("captcha-refresh").addEventListener("click", () => {
+        newCaptcha();
+        apply();
+      });
+      document.getElementById("login-code").addEventListener("input", (event) => {
+        state.sms = event.target.value.replace(/\D/g, "").slice(0, 6);
+        state.smsError = "";
+        apply();
       });
       document.getElementById("login-submit").addEventListener("click", () => {
         state.method = "phone";
-        if (!state.otp) setOtp("", "请输入验证码");
-        else if (state.otp.length < 6) setOtp(state.otp, "请输入验证码");
-        else setOtp(state.otp, "");
+        if (!state.smsSent) {
+          state.smsError = "请先通过图形验证码并发送短信";
+          apply();
+          return;
+        }
+        if (state.sms.length < 6) {
+          state.smsError = "请输入短信验证码";
+          apply();
+          return;
+        }
+        state.smsError = "";
+        apply();
       });
       document.getElementById("otp-send").addEventListener("click", () => {
-        if (sendLeft > 0) return;
-        sendLeft = 60;
-        const btn = document.getElementById("otp-send");
-        btn.disabled = true;
-        btn.textContent = "60s";
-        if (sendTimer) window.clearInterval(sendTimer);
-        sendTimer = window.setInterval(() => {
-          sendLeft -= 1;
-          if (sendLeft <= 0) {
-            window.clearInterval(sendTimer);
-            sendTimer = null;
-            btn.disabled = false;
-            btn.textContent = "发送验证码";
-            return;
-          }
-          btn.textContent = sendLeft + "s";
-        }, 1000);
+        trySendSms();
       });
     </script>
   </body>
