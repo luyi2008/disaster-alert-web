@@ -278,11 +278,18 @@
         gap: 8px;
       }
 
+      .otp-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
       .otp-head h3 {
         margin: 0;
         font-size: 16px;
         font-weight: 600;
       }
+      .otp-head label { margin: 0; }
       .otp-send {
         height: auto;
         padding: 0;
@@ -400,11 +407,23 @@
         border-radius: 999px;
         background: var(--border);
       }
+      .sheet-lead-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+      }
       .sheet-lead {
         margin: 0;
+        flex: 1;
+        min-width: 0;
         font-size: 13px;
         line-height: 1.45;
         color: var(--muted-foreground);
+      }
+      .sheet-lead-row .otp-send {
+        flex: none;
+        white-space: nowrap;
       }
       .sheet-cancel {
         width: 100%;
@@ -631,6 +650,13 @@
         line-height: 1.5;
       }
 
+      .phone-pane {
+        display: grid;
+        gap: 16px;
+      }
+      .phone-pane .btn-primary {
+        margin-top: 12px;
+      }
       .phone-pane[hidden],
       .scan-pane[hidden],
       .qr-readout[hidden],
@@ -815,11 +841,11 @@
           <div class="captcha-scrim" id="captcha-scrim"></div>
           <div class="captcha-sheet" role="dialog" aria-modal="true" aria-labelledby="captcha-title">
             <div class="sheet-handle" aria-hidden="true"></div>
-            <div class="otp-head">
-              <h3 id="captcha-title">图形验证码</h3>
+            <h3 id="captcha-title">图形验证码</h3>
+            <div class="sheet-lead-row">
+              <p class="sheet-lead">看图输入 6 位数字，正确后发送短信</p>
               <button class="otp-send" type="button" id="captcha-refresh">换一张</button>
             </div>
-            <p class="sheet-lead">看图输入 6 位数字，正确后发送短信</p>
             <div class="captcha-tape" id="captcha-tape" role="img" aria-label="图形验证码"></div>
             <div class="otp-well" id="otp-well">
               <span class="otp-slot is-empty is-active" data-i="0"></span>
