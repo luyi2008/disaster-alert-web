@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CaptchaError, fetchCaptchaChallenge, sendSmsAfterCaptcha, type CaptchaChallenge } from "../auth/captcha";
-import { normalizeMainlandPhone } from "../auth/phone";
+import { nationalMainlandPhone } from "../auth/phone";
 import { bffFetch } from "../auth/session";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -78,11 +78,11 @@ export function LoginPage() {
     };
   }, []);
 
-  function startCountdown() {
+  function startCountdown(seconds = 60) {
     if (countdownRef.current !== null) {
       window.clearInterval(countdownRef.current);
     }
-    setCountdown(60);
+    setCountdown(seconds);
     countdownRef.current = window.setInterval(() => {
       setCountdown((value) => {
         if (value <= 1) {
@@ -98,8 +98,8 @@ export function LoginPage() {
   }
 
   async function requestCaptcha() {
-    const normalized = normalizeMainlandPhone(phone);
-    if (!normalized) {
+    const national = nationalMainlandPhone(phone);
+    if (!national) {
       setPhoneError("请输入 11 位大陆手机号");
       return;
     }
@@ -139,8 +139,8 @@ export function LoginPage() {
     if (!captcha || captchaSubmitting) {
       return;
     }
-    const normalized = normalizeMainlandPhone(phone);
-    if (!normalized) {
+    const national = nationalMainlandPhone(phone);
+    if (!national) {
       setCaptchaOpen(false);
       setPhoneError("请输入 11 位大陆手机号");
       return;
@@ -148,15 +148,15 @@ export function LoginPage() {
     setCaptchaSubmitting(true);
     setCaptchaError(null);
     try {
-      await sendSmsAfterCaptcha({
+      const result = await sendSmsAfterCaptcha({
         token: captcha.token,
         code: captchaCode,
-        phoneNumber: normalized,
+        phone: national,
       });
       setCaptchaOpen(false);
       setSmsSent(true);
       setOtpError(null);
-      startCountdown();
+      startCountdown(result.cooldown);
     } catch (error) {
       setCaptchaError(captchaMessage(error, "图形验证码不正确"));
       try {
@@ -172,8 +172,8 @@ export function LoginPage() {
 
   async function loginWithOtp(event: React.FormEvent) {
     event.preventDefault();
-    const normalized = normalizeMainlandPhone(phone);
-    if (!normalized) {
+    const national = nationalMainlandPhone(phone);
+    if (!national) {
       setPhoneError("请输入 11 位大陆手机号");
       return;
     }

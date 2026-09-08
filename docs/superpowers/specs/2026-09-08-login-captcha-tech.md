@@ -44,7 +44,7 @@ sequenceDiagram
   E-->>W: SVG + 无状态 Token（可带边缘 Session Cookie）
   W->>U: 打开弹层，展示 SVG
   U->>W: 填 6 位，确认并发送
-  W->>E: POST /api/send-code（Token + 6 位 + 手机号）
+  W->>E: POST /api/send-code { phone, captcha_token, captcha_code }
   alt 图形码失败
     E-->>W: 4xx，不回源
     W->>U: 「图形验证码不正确」，换图
@@ -86,13 +86,13 @@ Token 无状态（HMAC），TTL 默认 `CAPTCHA_TTL_SECONDS=120`。Assertion TTL
 
 可选边缘 Cookie：`SESSION_COOKIE_NAME`，默认 `session`。这会和 Better Auth 的 session cookie **撞名**。部署时改成独立名字（例如 `mango_captcha`），Path 尽量只覆盖边缘路由。
 
-JSON 字段名 README 未列出。前端解析做成窄适配层，对照 mango-captcha `src/` 钉死。本仓库 `src/auth/captcha.ts` 按 `{ token, svg }` 解析，并接受 `data` 信封与 `captchaToken` / `image` / `captchaSvg` / `captcha` 别名；`POST /api/send-code` 发送 `{ token, code, phoneNumber }`。类型里没有正确答案。语义上需要：
+JSON 字段按 mango-captcha OpenAPI：GET 解析 `captcha_token` + `svg`（仍兼容 `token` / `image` 等别名）；`POST /api/send-code` 发送 `{ phone, captcha_token, captcha_code }`，`phone` 为 11 位大陆号（不带 `+86`），`credentials: "include"` 带上边缘 Session Cookie。类型里没有正确答案。语义上需要：
 
 | 步骤 | 浏览器必须拿到 / 送出 |
 | --- | --- |
-| GET `/api/code` | 可内联的 SVG（字符串或 data URI）、后续 POST 要用的 Token |
-| POST `/api/send-code` | Token、用户输入的 6 位数字、规范化手机号；`credentials: "include"` 以带上边缘 Cookie |
-| 4xx | 可映射到「请输入图形验证码」/「图形验证码不正确」/「图形验证码暂不可用」 |
+| GET `/api/code` | 可内联的 SVG（字符串或 data URI）、后续 POST 要用的 `captcha_token` |
+| POST `/api/send-code` | `{ phone, captcha_token, captcha_code }`；`credentials: "include"` |
+| 4xx | `error`：`CAPTCHA_REQUIRED` / `CAPTCHA_INVALID` / `CAPTCHA_EXPIRED` / `INVALID_PHONE` |
 
 「换一张」再 `GET /api/code`，丢掉旧 Token。
 
@@ -172,7 +172,7 @@ BFF 与边缘共用 `ASSERTION_SECRET`（独立随机串，勿复用 `CAPTCHA_SE
 - 非法手机号：不请求 `/api/code`，也不请求 `/api/send-code`。
 - 点发送：`GET /api/code`，dialog 里出现 SVG。
 - 换一张：第二次 `GET /api/code`，Token 更换。
-- 确认：`POST /api/send-code` 带 Token、6 位、手机号，`credentials: "include"`。
+- 确认：`POST /api/send-code` 带 `{ phone, captcha_token, captcha_code }`，`credentials: "include"`。
 - `send-code` 4xx：dialog 仍开，随后再 `GET /api/code`。
 - `send-code` 200：dialog 关闭，「短信验证码已发送」。
 - 取消：无 `send-code`。

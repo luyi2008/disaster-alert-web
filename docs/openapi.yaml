@@ -28,7 +28,9 @@ tags:
       不是 disaster-alert。浏览器只打 GET /api/code 与 POST /api/send-code。
       校验通过后边缘带 X-ESA-Assertion 回源 BFF /internal/sms/*。
       短信登录校验仍走 BFF POST /api/auth/phone-number/verify。
-      JSON 字段名以 mango-captcha 源码为准；网页客户端同时接受扁平或 data 信封，以及 token/captchaToken、svg/image 别名。
+      JSON 字段与 mango-captcha OpenAPI 对齐：GET 解析 `captcha_token` + `svg`；
+      POST `/api/send-code` 发送 `{ phone, captcha_token, captcha_code }`（11 位手机号，不带 +86）。
+      登录校验仍走 BFF POST /api/auth/phone-number/verify，不打边缘 `/api/verify-code`。
 paths:
   /api/code:
     get:
@@ -36,62 +38,82 @@ paths:
       operationId: getLoginCaptcha
       summary: 取图形验证码 SVG 与无状态 Token
       description: |
-        mango-captcha 边缘入口。`credentials: include` 以便带上边缘 Session Cookie（部署时不要与 Better Auth 的 session 撞名）。
-        失败时边缘直接 4xx，不会回源发短信。
+        mango-captcha 边缘入口。`credentials: include` 带上边缘 Session Cookie
+        （部署时不要与 Better Auth 的 session 撞名）。不访问源站。
       responses:
         "200":
-          description: SVG 与后续 POST 要用的 Token
+          description: SVG 与后续 POST 要用的 captcha_token
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: true
                 properties:
-                  token:
+                  captcha_token:
                     type: string
                   svg:
                     type: string
                     description: 内联 SVG 或 data URI
-                  data:
-                    type: object
-                    additionalProperties: true
-                    properties:
-                      token:
-                        type: string
-                      svg:
-                        type: string
-        "4XX":
-          description: 图形码暂不可用或被限流
+        "429":
+          description: 边缘拉图限流
+        "500":
+          description: 边缘配置错误
   /api/send-code:
     post:
       tags: [Captcha]
       operationId: sendLoginSmsAfterCaptcha
       summary: 校验图形码后发送短信 OTP
       description: |
-        边缘验 CAPTCHA；失败 4xx 且不回源。通过后才请求 BFF 内网发短信。
+        边缘验 CAPTCHA；失败 4xx 且不回源。通过后 POST `{ECS_ORIGIN}/internal/sms/send`。
         登录页不再调用公网 POST /api/auth/phone-number/send-otp。
+        登录校验仍走 BFF，不使用 POST /api/verify-code。
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [token, code, phoneNumber]
+              required: [phone, captcha_token, captcha_code]
               properties:
-                token:
+                phone:
                   type: string
-                code:
+                  description: 11 位大陆手机号，不带 +86，例如 13800138000
+                  pattern: '^1[3-9]\d{9}$'
+                captcha_token:
                   type: string
-                  description: 用户输入的 6 位数字
-                  pattern: '^[0-9]{6}$'
-                phoneNumber:
+                captcha_code:
                   type: string
-                  description: 规范化大陆手机号，例如 +8613812345678
+                  description: 用户输入的图形码数字
+            example:
+              phone: "13800138000"
+              captcha_token: "v1...."
+              captcha_code: "583721"
       responses:
         "200":
-          description: 图形码通过且源站已接受发送
-        "4XX":
-          description: 图形码不正确、过期或被限流
+          description: 源站接受发送
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  cooldown:
+                    type: integer
+              example:
+                ok: true
+                cooldown: 60
+        "400":
+          description: |
+            `error` 常见值：INVALID_PHONE、CAPTCHA_REQUIRED、CAPTCHA_INVALID、CAPTCHA_EXPIRED。
+        "401":
+          description: 缺少或无效的边缘 Session Cookie
+        "429":
+          description: 边缘限流
+        "500":
+          description: 边缘配置错误
+        "502":
+          description: 回源发短信失败
   /api/subscribe:
     post:
       tags: [Subscriptions]

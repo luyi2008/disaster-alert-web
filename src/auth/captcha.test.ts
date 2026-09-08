@@ -13,8 +13,8 @@ afterEach(() => {
 const SAMPLE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 32"><text>42</text></svg>`;
 
 describe("parseCaptchaChallenge", () => {
-  it("reads token and svg from a flat body", () => {
-    expect(parseCaptchaChallenge({ token: "tok-1", svg: SAMPLE_SVG })).toEqual({
+  it("reads captcha_token and svg from the edge issue body", () => {
+    expect(parseCaptchaChallenge({ captcha_token: "tok-1", svg: SAMPLE_SVG })).toEqual({
       token: "tok-1",
       svg: SAMPLE_SVG,
     });
@@ -57,7 +57,7 @@ describe("fetchCaptchaChallenge", () => {
       expect(String(input)).toContain("/api/code");
       expect(init?.credentials).toBe("include");
       expect(init?.method ?? "GET").toBe("GET");
-      return new Response(JSON.stringify({ token: "tok-1", svg: SAMPLE_SVG }), { status: 200 });
+      return new Response(JSON.stringify({ captcha_token: "tok-1", svg: SAMPLE_SVG }), { status: 200 });
     });
     vi.stubGlobal("fetch", fetchMock);
     await expect(fetchCaptchaChallenge()).resolves.toEqual({ token: "tok-1", svg: SAMPLE_SVG });
@@ -76,32 +76,35 @@ describe("fetchCaptchaChallenge", () => {
 });
 
 describe("sendSmsAfterCaptcha", () => {
-  it("POSTs token, 6-digit code, and phone with credentials", async () => {
+  it("POSTs phone, captcha_token, and captcha_code with credentials", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       expect(String(input)).toContain("/api/send-code");
       expect(init?.method).toBe("POST");
       expect(init?.credentials).toBe("include");
       expect(JSON.parse(String(init?.body))).toEqual({
-        token: "tok-1",
-        code: "123456",
-        phoneNumber: "+8613812345678",
+        phone: "13812345678",
+        captcha_token: "tok-1",
+        captcha_code: "123456",
       });
-      return new Response(JSON.stringify({ success: true }), { status: 200 });
+      return new Response(JSON.stringify({ ok: true, cooldown: 60 }), { status: 200 });
     });
     vi.stubGlobal("fetch", fetchMock);
     await expect(
       sendSmsAfterCaptcha({
         token: "tok-1",
         code: "123456",
-        phoneNumber: "+8613812345678",
+        phone: "13812345678",
       }),
-    ).resolves.toBeUndefined();
+    ).resolves.toEqual({ cooldown: 60 });
   });
 
-  it("maps a 4xx send to 图形验证码不正确 when the body has no message", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => new Response("{}", { status: 400 })));
+  it("maps CAPTCHA_INVALID to 图形验证码不正确", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({ error: "CAPTCHA_INVALID" }), { status: 400 })),
+    );
     await expect(
-      sendSmsAfterCaptcha({ token: "tok-1", code: "000000", phoneNumber: "+8613812345678" }),
+      sendSmsAfterCaptcha({ token: "tok-1", code: "000000", phone: "13812345678" }),
     ).rejects.toMatchObject({
       name: "CaptchaError",
       message: "图形验证码不正确",

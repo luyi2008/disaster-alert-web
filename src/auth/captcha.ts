@@ -18,7 +18,11 @@ export type CaptchaChallenge = {
 export type SendSmsAfterCaptchaInput = {
   token: string;
   code: string;
-  phoneNumber: string;
+  phone: string;
+};
+
+export type SendSmsAfterCaptchaResult = {
+  cooldown: number;
 };
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -38,14 +42,36 @@ function pickString(record: Record<string, unknown>, keys: string[]): string | n
   return null;
 }
 
-function messageFromBody(body: unknown): string | null {
+function edgeErrorMessage(body: unknown, status: number, fallback: string): string {
   const record = asRecord(body);
-  if (!record) {
-    return null;
+  const code = record ? pickString(record, ["error"]) : null;
+  switch (code) {
+    case "INVALID_PHONE":
+      return "请输入 11 位大陆手机号";
+    case "CAPTCHA_REQUIRED":
+      return "请输入图形验证码";
+    case "CAPTCHA_INVALID":
+      return "图形验证码不正确";
+    case "CAPTCHA_EXPIRED":
+      return "图形验证码已过期，请换一张";
+    default:
+      break;
   }
-  const nested = asRecord(record.data);
-  const message = pickString(record, ["message"]) ?? (nested ? pickString(nested, ["message"]) : null);
-  return message;
+  if (status === 429) {
+    return "请求过于频繁，请稍后重试";
+  }
+  if (status === 401) {
+    return "图形验证码已过期，请换一张";
+  }
+  if (status >= 500) {
+    return "图形验证码暂不可用";
+  }
+  return fallback;
+}
+
+function readCooldown(body: unknown): number {
+  const value = asRecord(body)?.cooldown;
+  return typeof value === "number" && value > 0 ? value : 60;
 }
 
 export function parseCaptchaChallenge(body: unknown): CaptchaChallenge {
@@ -54,8 +80,8 @@ export function parseCaptchaChallenge(body: unknown): CaptchaChallenge {
     throw new CaptchaError("图形验证码暂不可用");
   }
   const data = asRecord(root.data) ?? root;
-  const token = pickString(data, ["token", "captchaToken", "id"]);
-  const svg = pickString(data, ["svg", "image", "captchaSvg", "captcha"]);
+  const token = pickString(data, ["captcha_token", "token", "captchaToken", "id"]);
+  const svg = pickString(data, ["svg", "captcha_svg", "image", "captchaSvg", "captcha"]);
   if (!token || !svg) {
     throw new CaptchaError("图形验证码暂不可用");
   }
@@ -83,7 +109,7 @@ export async function fetchCaptchaChallenge(): Promise<CaptchaChallenge> {
   }
   const body = await readBody(response);
   if (!response.ok) {
-    throw new CaptchaError("图形验证码暂不可用", response.status);
+    throw new CaptchaError(edgeErrorMessage(body, response.status, "图形验证码暂不可用"), response.status);
   }
   try {
     return parseCaptchaChallenge(body);
@@ -95,7 +121,9 @@ export async function fetchCaptchaChallenge(): Promise<CaptchaChallenge> {
   }
 }
 
-export async function sendSmsAfterCaptcha(input: SendSmsAfterCaptchaInput): Promise<void> {
+export async function sendSmsAfterCaptcha(
+  input: SendSmsAfterCaptchaInput,
+): Promise<SendSmsAfterCaptchaResult> {
   let response: Response;
   try {
     response = await fetch(apiUrl("/api/send-code"), {
@@ -103,20 +131,17 @@ export async function sendSmsAfterCaptcha(input: SendSmsAfterCaptchaInput): Prom
       credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        token: input.token,
-        code: input.code,
-        phoneNumber: input.phoneNumber,
+        phone: input.phone,
+        captcha_token: input.token,
+        captcha_code: input.code,
       }),
     });
   } catch {
     throw new CaptchaError("图形验证码暂不可用");
   }
-  if (response.ok) {
-    return;
-  }
   const body = await readBody(response);
-  throw new CaptchaError(
-    messageFromBody(body) ?? "图形验证码不正确",
-    response.status,
-  );
+  if (response.ok) {
+    return { cooldown: readCooldown(body) };
+  }
+  throw new CaptchaError(edgeErrorMessage(body, response.status, "图形验证码不正确"), response.status);
 }
