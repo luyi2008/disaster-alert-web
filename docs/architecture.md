@@ -6,6 +6,7 @@
 
 - 订阅页 React 模块拆分见 [subscribe-frontend.md](subscribe-frontend.md)。
 - 账号登录与设备绑定见 [superpowers/specs/2026-09-01-account-login-design.md](superpowers/specs/2026-09-01-account-login-design.md)（源仓 [disaster-alert](https://github.com/luyi2008/disaster-alert)）。旧 PRD [bark-key-session-prd.md](bark-key-session-prd.md) 仅作历史对照。
+- 登录图形验证码（mango-captcha，经 BFF）见 [superpowers/specs/2026-09-08-login-captcha-tech.md](superpowers/specs/2026-09-08-login-captcha-tech.md)。视觉稿 [superpowers/specs/2026-09-07-login-qr-field-design.md](superpowers/specs/2026-09-07-login-qr-field-design.md)。
 - 后端契约快照见 [openapi.yaml](openapi.yaml)。
 - 部署操作步骤见 [README](../README.md)。
 

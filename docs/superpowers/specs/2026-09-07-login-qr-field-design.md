@@ -141,12 +141,11 @@
 | 短信空 | 请输入短信验证码 |
 | 手机号非法 | 请输入 11 位大陆手机号 |
 
-## 8. 契约缺口（实现时）
+## 8. 技术契约
 
-- `GET /api/auth/captcha` → `{ challengeId, image }`
-- `POST /api/auth/phone-number/send-otp` `{ phoneNumber, challengeId, captcha }`
-- 打开弹层时拉新挑战；换图、校验失败都作废旧 id
-- 实现落点：`LoginPage` 打开 `Dialog`；`ds.css` 增加窄屏底栏修饰类。现成 `Dialog` 的关闭文案已是「关闭」，弹层内再用「取消」作明确按钮。
+视觉已定稿。实现以 [2026-09-08-login-captcha-tech.md](./2026-09-08-login-captcha-tech.md) 为准。
+
+图形码由 [mango-captcha](https://github.com/luyi2008/mango-captcha) 签发和核销。浏览器只打 BFF：`POST /api/auth/captcha`，以及带 `captchaId`+`captcha` 的 `send-otp`。
 
 ## 9. 不做
 
