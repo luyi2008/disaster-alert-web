@@ -145,7 +145,7 @@
 
 视觉已定稿。实现以 [2026-09-08-login-captcha-tech.md](./2026-09-08-login-captcha-tech.md) 为准。
 
-图形码由 [mango-captcha](https://github.com/luyi2008/mango-captcha) 签发和核销。浏览器只打 BFF：`POST /api/auth/captcha`，以及带 `captchaId`+`captcha` 的 `send-otp`。
+图形码由 [mango-captcha](https://github.com/luyi2008/mango-captcha) 边缘函数签发并校验。浏览器打 `GET /api/code` 与 `POST /api/send-code`；源站 BFF 只信 `X-ESA-Assertion`。公网 `send-otp` 关掉。
 
 ## 9. 不做
 

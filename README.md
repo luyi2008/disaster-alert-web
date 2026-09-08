@@ -96,6 +96,6 @@ PR 不会部署、也不会写 `.env`。未配置上述 secrets 时，合并后�
 
 整体架构、模块划分、数据流与部署拓扑，见 [docs/architecture.md](docs/architecture.md)。
 
-账号登录设计见 [docs/superpowers/specs/2026-09-01-account-login-design.md](docs/superpowers/specs/2026-09-01-account-login-design.md)。登录图形验证码（经 BFF 调 mango-captcha）见 [docs/superpowers/specs/2026-09-08-login-captcha-tech.md](docs/superpowers/specs/2026-09-08-login-captcha-tech.md)。
+账号登录设计见 [docs/superpowers/specs/2026-09-01-account-login-design.md](docs/superpowers/specs/2026-09-01-account-login-design.md)。登录图形验证码见 [docs/superpowers/specs/2026-09-08-login-captcha-tech.md](docs/superpowers/specs/2026-09-08-login-captcha-tech.md)（浏览器经 mango-captcha ESA，源站只信 Assertion）。
 
 订阅页的 DOM 工作区如何拆分、卸载和查询节点，见 [docs/subscribe-frontend.md](docs/subscribe-frontend.md)。
