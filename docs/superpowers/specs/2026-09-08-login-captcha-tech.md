@@ -86,7 +86,7 @@ Token 无状态（HMAC），TTL 默认 `CAPTCHA_TTL_SECONDS=120`。Assertion TTL
 
 可选边缘 Cookie：`SESSION_COOKIE_NAME`，默认 `session`。这会和 Better Auth 的 session cookie **撞名**。部署时改成独立名字（例如 `mango_captcha`），Path 尽量只覆盖边缘路由。
 
-JSON 字段名 README 未列出。前端解析做成窄适配层，对照 mango-captcha `src/` 钉死。语义上需要：
+JSON 字段名 README 未列出。前端解析做成窄适配层，对照 mango-captcha `src/` 钉死。本仓库 `src/auth/captcha.ts` 按 `{ token, svg }` 解析，并接受 `data` 信封与 `captchaToken` / `image` / `captchaSvg` / `captcha` 别名；`POST /api/send-code` 发送 `{ token, code, phoneNumber }`。类型里没有正确答案。语义上需要：
 
 | 步骤 | 浏览器必须拿到 / 送出 |
 | --- | --- |

@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { CaptchaError, fetchCaptchaChallenge, sendSmsAfterCaptcha, type CaptchaChallenge } from "../auth/captcha";
 import { normalizeMainlandPhone } from "../auth/phone";
 import { bffFetch } from "../auth/session";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BrandMark } from "../components/AppShell";
+import { CaptchaDialog } from "../components/CaptchaDialog";
 import { Field, StatusMessage } from "../components/Field";
 import { LegalFooter } from "../components/LegalFooter";
 import { OtpInput, PhoneInput } from "../components/PhoneInput";
@@ -23,6 +25,13 @@ function messageFromBody(body: unknown, fallback: string): string {
   return fallback;
 }
 
+function captchaMessage(error: unknown, fallback: string): string {
+  if (error instanceof CaptchaError && error.message.trim()) {
+    return error.message;
+  }
+  return fallback;
+}
+
 export function LoginPage() {
   const navigate = useNavigate();
   const [phone, setPhone] = useState("");
@@ -36,6 +45,12 @@ export function LoginPage() {
   const [countdown, setCountdown] = useState(0);
   const [sending, setSending] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [smsSent, setSmsSent] = useState(false);
+  const [captchaOpen, setCaptchaOpen] = useState(false);
+  const [captcha, setCaptcha] = useState<CaptchaChallenge | null>(null);
+  const [captchaLoading, setCaptchaLoading] = useState(false);
+  const [captchaSubmitting, setCaptchaSubmitting] = useState(false);
+  const [captchaError, setCaptchaError] = useState<string | null>(null);
   const countdownRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -82,34 +97,76 @@ export function LoginPage() {
     }, 1000);
   }
 
-  async function sendOtp() {
+  async function requestCaptcha() {
     const normalized = normalizeMainlandPhone(phone);
     if (!normalized) {
       setPhoneError("请输入 11 位大陆手机号");
       return;
     }
+    if (countdown > 0) {
+      return;
+    }
     setPhoneError(null);
     setFormError(null);
+    setCaptchaError(null);
     setSending(true);
     try {
-      const response = await bffFetch("/api/auth/phone-number/send-otp", {
-        method: "POST",
-        body: JSON.stringify({ phoneNumber: phone.trim() }),
-      });
-      const body = await response.json().catch(() => null);
-      if (!response.ok) {
-        setStatusKind("error");
-        setFormError(messageFromBody(body, "验证码发送失败"));
-        return;
-      }
-      setStatusKind("ok");
-      setFormError(null);
-      startCountdown();
-    } catch {
+      const challenge = await fetchCaptchaChallenge();
+      setCaptcha(challenge);
+      setCaptchaOpen(true);
+    } catch (error) {
       setStatusKind("error");
-      setFormError("验证码发送失败");
+      setFormError(captchaMessage(error, "图形验证码暂不可用"));
     } finally {
       setSending(false);
+    }
+  }
+
+  async function refreshCaptcha() {
+    setCaptchaError(null);
+    setCaptchaLoading(true);
+    try {
+      const challenge = await fetchCaptchaChallenge();
+      setCaptcha(challenge);
+    } catch (error) {
+      setCaptchaError(captchaMessage(error, "图形验证码暂不可用"));
+    } finally {
+      setCaptchaLoading(false);
+    }
+  }
+
+  async function confirmCaptcha(captchaCode: string) {
+    if (!captcha || captchaSubmitting) {
+      return;
+    }
+    const normalized = normalizeMainlandPhone(phone);
+    if (!normalized) {
+      setCaptchaOpen(false);
+      setPhoneError("请输入 11 位大陆手机号");
+      return;
+    }
+    setCaptchaSubmitting(true);
+    setCaptchaError(null);
+    try {
+      await sendSmsAfterCaptcha({
+        token: captcha.token,
+        code: captchaCode,
+        phoneNumber: normalized,
+      });
+      setCaptchaOpen(false);
+      setSmsSent(true);
+      setOtpError(null);
+      startCountdown();
+    } catch (error) {
+      setCaptchaError(captchaMessage(error, "图形验证码不正确"));
+      try {
+        const next = await fetchCaptchaChallenge();
+        setCaptcha(next);
+      } catch {
+        /* keep the current tape if refresh fails */
+      }
+    } finally {
+      setCaptchaSubmitting(false);
     }
   }
 
@@ -121,8 +178,12 @@ export function LoginPage() {
       return;
     }
     setPhoneError(null);
+    if (!smsSent) {
+      setOtpError("请先发送短信验证码");
+      return;
+    }
     if (!code.trim()) {
-      setOtpError("请输入验证码");
+      setOtpError("请输入短信验证码");
       return;
     }
     setOtpError(null);
@@ -194,26 +255,39 @@ export function LoginPage() {
                 onChange={(value) => {
                   setPhone(value);
                   setPhoneError(null);
+                  setSmsSent(false);
                 }}
               />
             </Field>
-            <Field label="验证码" htmlFor="login-code" error={otpError}>
-              <div className="otp-row">
-                <OtpInput
-                  id="login-code"
-                  value={code}
-                  invalid={Boolean(otpError)}
-                  onChange={(value) => {
-                    setCode(value);
-                    setOtpError(null);
-                  }}
-                />
-                <Button type="button" variant="outline" disabled={countdown > 0 || sending} onClick={() => void sendOtp()}>
+            <Field
+              label="短信验证码"
+              htmlFor="login-code"
+              error={otpError}
+              hint={smsSent && !otpError ? "短信验证码已发送" : undefined}
+              action={
+                <Button
+                  type="button"
+                  variant="link"
+                  className="otp-send"
+                  disabled={countdown > 0 || sending || captchaOpen}
+                  onClick={() => void requestCaptcha()}
+                >
                   {sending ? "发送中" : countdown > 0 ? `${countdown}s` : "发送验证码"}
                 </Button>
-              </div>
+              }
+            >
+              <OtpInput
+                id="login-code"
+                value={code}
+                invalid={Boolean(otpError)}
+                placeholder="6 位短信验证码"
+                onChange={(value) => {
+                  setCode(value);
+                  setOtpError(null);
+                }}
+              />
             </Field>
-            <Button type="submit" className="w-full" disabled={submitting}>
+            <Button type="submit" className="login-submit w-full" disabled={submitting}>
               {submitting ? "登录中…" : "登录"}
             </Button>
           </form>
@@ -266,6 +340,17 @@ export function LoginPage() {
           <p>为地震、海啸和天气预警准备的安静监测台。</p>
         </div>
       </aside>
+      <CaptchaDialog
+        open={captchaOpen}
+        svg={captcha?.svg ?? null}
+        challengeKey={captcha?.token ?? ""}
+        loading={captchaLoading}
+        submitting={captchaSubmitting}
+        error={captchaError}
+        onOpenChange={setCaptchaOpen}
+        onRefresh={() => void refreshCaptcha()}
+        onConfirm={(value) => void confirmCaptcha(value)}
+      />
     </div>
   );
 }

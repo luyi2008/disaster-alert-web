@@ -8,7 +8,7 @@
 
 ## 本地开发
 
-先在 API 仓库启动 `disaster-alert`（默认 `http://127.0.0.1:30010`），在 BFF 仓库启动 `disaster-alert-bff`（默认 `http://127.0.0.1:30012`，开发可 `AUTH_MOCK=true`），再：
+先在 API 仓库启动 `disaster-alert`（默认 `http://127.0.0.1:30010`），在 BFF 仓库启动 `disaster-alert-bff`（默认 `http://127.0.0.1:30012`，开发可 `AUTH_MOCK=true`），再启动 [mango-captcha](https://github.com/luyi2008/mango-captcha) 边缘函数（默认 `http://127.0.0.1:43141`），然后：
 
 ```bash
 npm install
@@ -17,12 +17,13 @@ npm run dev
 
 Vite 监听本机所有地址（`localhost` 和 `127.0.0.1` 都能打开）。BFF 默认只信任 Origin `http://127.0.0.1:5173`；开发代理会把 `localhost` / `[::1]` 改写成该值。若用局域网 IP 打开页面，把该 Origin 加进 BFF 的 `TRUSTED_ORIGINS`。
 
-Vite 会把 `/api/auth`、`/api/devices`、`/api/settings` 代理到 BFF，其余 `/api` 与 `/health` 代理到 API。
+Vite 会把 `/api/code`、`/api/send-code` 代理到 mango-captcha，把 `/api/auth`、`/api/devices`、`/api/settings` 代理到 BFF，其余 `/api` 与 `/health` 代理到 API。
 
 可选环境变量：
 
 - `VITE_DEV_API_ORIGIN`：开发时代理公开只读 API 的目标，默认 `http://127.0.0.1:30010`
 - `VITE_DEV_BFF_ORIGIN`：开发时代理 `/api/auth`、`/api/devices`、`/api/settings` 的目标，默认 `http://127.0.0.1:30012`
+- `VITE_CAPTCHA_ORIGIN`：开发时代理 `/api/code`、`/api/send-code` 的目标，默认 `http://127.0.0.1:43141`
 - `VITE_API_BASE`：构建时 API 前缀。同源反代时保持为空
 
 ```bash
@@ -85,6 +86,7 @@ PR 不会部署、也不会写 `.env`。未配置上述 secrets 时，合并后�
 站点若与 API 共用域名，由运维反代：
 
 ```
+/api/code  /api/send-code  -> mango-captcha ESA（本地开发 127.0.0.1:43141）
 /api/auth/*  /api/devices/*  /api/settings/*  -> disaster-alert-bff（默认 127.0.0.1:30012）
 /api/incidents/*  /api/status  /api/subscription-options  /api/reverse-geocode  /api/history  /health  -> disaster-alert（默认 127.0.0.1:30010）
 /  /login  /devices  /settings  /incidents/*  -> 本镜像（0.0.0.0:30011）

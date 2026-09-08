@@ -22,7 +22,76 @@ tags:
     description: 服务状态与健康检查
   - name: Testing
     description: 旁路测试推送（不进入真实 EEW 入队）。设计说明见 docs/simulate.md。
+  - name: Captcha
+    description: |
+      登录图形验证码由 mango-captcha ESA 边缘函数提供（本地默认 http://127.0.0.1:43141），
+      不是 disaster-alert。浏览器只打 GET /api/code 与 POST /api/send-code。
+      校验通过后边缘带 X-ESA-Assertion 回源 BFF /internal/sms/*。
+      短信登录校验仍走 BFF POST /api/auth/phone-number/verify。
+      JSON 字段名以 mango-captcha 源码为准；网页客户端同时接受扁平或 data 信封，以及 token/captchaToken、svg/image 别名。
 paths:
+  /api/code:
+    get:
+      tags: [Captcha]
+      operationId: getLoginCaptcha
+      summary: 取图形验证码 SVG 与无状态 Token
+      description: |
+        mango-captcha 边缘入口。`credentials: include` 以便带上边缘 Session Cookie（部署时不要与 Better Auth 的 session 撞名）。
+        失败时边缘直接 4xx，不会回源发短信。
+      responses:
+        "200":
+          description: SVG 与后续 POST 要用的 Token
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                properties:
+                  token:
+                    type: string
+                  svg:
+                    type: string
+                    description: 内联 SVG 或 data URI
+                  data:
+                    type: object
+                    additionalProperties: true
+                    properties:
+                      token:
+                        type: string
+                      svg:
+                        type: string
+        "4XX":
+          description: 图形码暂不可用或被限流
+  /api/send-code:
+    post:
+      tags: [Captcha]
+      operationId: sendLoginSmsAfterCaptcha
+      summary: 校验图形码后发送短信 OTP
+      description: |
+        边缘验 CAPTCHA；失败 4xx 且不回源。通过后才请求 BFF 内网发短信。
+        登录页不再调用公网 POST /api/auth/phone-number/send-otp。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, code, phoneNumber]
+              properties:
+                token:
+                  type: string
+                code:
+                  type: string
+                  description: 用户输入的 6 位数字
+                  pattern: '^[0-9]{6}$'
+                phoneNumber:
+                  type: string
+                  description: 规范化大陆手机号，例如 +8613812345678
+      responses:
+        "200":
+          description: 图形码通过且源站已接受发送
+        "4XX":
+          description: 图形码不正确、过期或被限流
   /api/subscribe:
     post:
       tags: [Subscriptions]

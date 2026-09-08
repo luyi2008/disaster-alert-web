@@ -30,6 +30,7 @@ graph TB
     end
     Proxy["主机反向代理<br/>（HTTPS 终止，不在本仓库）"]
     BFF["disaster-alert-bff<br/>127.0.0.1:30012"]
+    Captcha["mango-captcha ESA<br/>本地 127.0.0.1:43141"]
     API["disaster-alert API<br/>127.0.0.1:30010<br/>（独立仓库）"]
     Tiles["basemaps.cartocdn.com<br/>地图瓦片"]
     Bark["Bark 推送服务"]
@@ -37,8 +38,10 @@ graph TB
 
     User -->|"/login /devices /settings /incidents/*"| Proxy
     Proxy --> Web
+    Proxy -->|"/api/code /api/send-code"| Captcha
     Proxy -->|"/api/auth /api/devices /api/settings"| BFF
     Proxy -->|"公开只读 /api 与 /health"| API
+    Captcha -->|"X-ESA-Assertion /internal/sms"| BFF
     BFF -->|"HTTP JSON + 服务凭证"| API
     User -.->|"直连瓦片"| Tiles
     API --> Sources
@@ -52,7 +55,7 @@ graph TB
 | --- | --- |
 | 同源反代 | 站点与 API 共用域名时，由主机上的反向代理分流。容器自身**不代理** `/api`，单独部署容器无法完成订阅。 |
 | 瓦片直连 | 地图瓦片由浏览器直接向 CDN 请求，不经过本站或 API。 |
-| BFF 登录 | 浏览器只带 session cookie 访问 `/api/auth`、`/api/devices`、`/api/settings` 以及设备订阅读写。不把 Bark token 当站点身份，也不再请求 `/api/bark-urls` 或 `/check`。 |
+| BFF 登录 | 浏览器只带 session cookie 访问 `/api/auth`、`/api/devices`、`/api/settings` 以及设备订阅读写。登录发送短信先打 mango-captcha `/api/code` 与 `/api/send-code`，不把 Bark token 当站点身份，也不再请求 `/api/bark-urls` 或 `/check`。 |
 | 闭环入口 | 详情页的唯一正常入口是 Bark 推送里的深链，路径中带通知凭据。 |
 
 ---
@@ -295,6 +298,8 @@ graph LR
 | DELETE | `/api/devices/:device_key/subscribe` | `api.ts` | 删除该设备服务端订阅 |
 | GET / POST / PATCH / DELETE | `/api/devices` | `api.ts` | 设备列表与绑定 |
 | GET | `/api/incidents/{id}/notifications/{token}` | `api.ts` | 通知详情 |
+| GET | `/api/code` | `auth/captcha.ts`、登录弹层 | mango-captcha 取 SVG + Token |
+| POST | `/api/send-code` | `auth/captcha.ts`、登录弹层 | 边缘验图形码后回源发短信 |
 | GET | `/health` | 仅反代/开发代理 | 进程健康检查 |
 
 `/api/subscription-options` 是一个重要的架构选择：**灾种、来源列表和默认规则由服务端下发，不在前端硬编码**。后端新增数据源或灾种，前端无需改代码。前端只保留渲染逻辑和各灾种的数值范围校验（如 `min_magnitude` 0–10、`min_severity` 1–4）。
@@ -303,7 +308,9 @@ graph LR
 
 ```mermaid
 graph LR
-    Dev["开发：npm run dev"] -->|"Vite proxy /api + /health"| DevAPI["VITE_DEV_API_ORIGIN<br/>默认 127.0.0.1:30010"]
+    Dev["开发：npm run dev"] -->|"Vite proxy /api/code /api/send-code"| DevCaptcha["VITE_CAPTCHA_ORIGIN<br/>默认 127.0.0.1:43141"]
+    Dev -->|"Vite proxy /api/auth /api/devices /api/settings"| DevBFF["VITE_DEV_BFF_ORIGIN<br/>默认 127.0.0.1:30012"]
+    Dev -->|"Vite proxy 其余 /api + /health"| DevAPI["VITE_DEV_API_ORIGIN<br/>默认 127.0.0.1:30010"]
     Dev -->|"Vite proxy /bark-check"| BarkCheck["bark.mangguo.cloud/check"]
     Prod["生产：VITE_API_BASE"] -->|"留空 = 同源"| Reverse["主机反向代理分流"]
     Prod -->|"设值 = 跨源"| Cross["独立 API 域名"]
