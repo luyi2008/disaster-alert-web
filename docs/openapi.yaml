@@ -28,8 +28,8 @@ tags:
       不是 disaster-alert。浏览器只打 GET /api/code 与 POST /api/send-code。
       校验通过后边缘带 X-ESA-Assertion 回源 BFF /internal/sms/*。
       短信登录校验仍走 BFF POST /api/auth/phone-number/verify。
-      JSON 字段与 mango-captcha OpenAPI 对齐：GET 解析 `captcha_token` + `svg`；
-      POST `/api/send-code` 发送 `{ phone, captcha_token, captcha_code }`（11 位手机号，不带 +86）。
+      JSON 字段与 mango-captcha 对齐：GET 解析 `captchaToken` + `svg`；
+      POST `/api/send-code` 发送 `{ phone, captchaToken, captchaCode }`（11 位手机号，不带 +86）。
       登录校验仍走 BFF POST /api/auth/phone-number/verify，不打边缘 `/api/verify-code`。
 paths:
   /api/code:
@@ -42,14 +42,14 @@ paths:
         （部署时不要与 Better Auth 的 session 撞名）。不访问源站。
       responses:
         "200":
-          description: SVG 与后续 POST 要用的 captcha_token
+          description: SVG 与后续 POST 要用的 captchaToken
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: true
                 properties:
-                  captcha_token:
+                  captchaToken:
                     type: string
                   svg:
                     type: string
@@ -73,21 +73,21 @@ paths:
           application/json:
             schema:
               type: object
-              required: [phone, captcha_token, captcha_code]
+              required: [phone, captchaToken, captchaCode]
               properties:
                 phone:
                   type: string
                   description: 11 位大陆手机号，不带 +86，例如 13800138000
                   pattern: '^1[3-9]\d{9}$'
-                captcha_token:
+                captchaToken:
                   type: string
-                captcha_code:
+                captchaCode:
                   type: string
                   description: 用户输入的图形码数字
             example:
               phone: "13800138000"
-              captcha_token: "v1...."
-              captcha_code: "583721"
+              captchaToken: "v1...."
+              captchaCode: "583721"
       responses:
         "200":
           description: 源站接受发送

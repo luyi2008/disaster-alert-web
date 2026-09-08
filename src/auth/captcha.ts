@@ -80,8 +80,8 @@ export function parseCaptchaChallenge(body: unknown): CaptchaChallenge {
     throw new CaptchaError("图形验证码暂不可用");
   }
   const data = asRecord(root.data) ?? root;
-  const token = pickString(data, ["captcha_token", "token", "captchaToken", "id"]);
-  const svg = pickString(data, ["svg", "captcha_svg", "image", "captchaSvg", "captcha"]);
+  const token = pickString(data, ["captchaToken", "captcha_token", "token", "id"]);
+  const svg = pickString(data, ["svg", "captchaSvg", "captcha_svg", "image", "captcha"]);
   if (!token || !svg) {
     throw new CaptchaError("图形验证码暂不可用");
   }
@@ -132,8 +132,8 @@ export async function sendSmsAfterCaptcha(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         phone: input.phone,
-        captcha_token: input.token,
-        captcha_code: input.code,
+        captchaToken: input.token,
+        captchaCode: input.code,
       }),
     });
   } catch {

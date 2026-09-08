@@ -13,8 +13,8 @@ afterEach(() => {
 const SAMPLE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 32"><text>42</text></svg>`;
 
 describe("parseCaptchaChallenge", () => {
-  it("reads captcha_token and svg from the edge issue body", () => {
-    expect(parseCaptchaChallenge({ captcha_token: "tok-1", svg: SAMPLE_SVG })).toEqual({
+  it("reads captchaToken and svg from the edge issue body", () => {
+    expect(parseCaptchaChallenge({ captchaToken: "tok-1", svg: SAMPLE_SVG })).toEqual({
       token: "tok-1",
       svg: SAMPLE_SVG,
     });
@@ -57,7 +57,7 @@ describe("fetchCaptchaChallenge", () => {
       expect(String(input)).toContain("/api/code");
       expect(init?.credentials).toBe("include");
       expect(init?.method ?? "GET").toBe("GET");
-      return new Response(JSON.stringify({ captcha_token: "tok-1", svg: SAMPLE_SVG }), { status: 200 });
+      return new Response(JSON.stringify({ captchaToken: "tok-1", svg: SAMPLE_SVG }), { status: 200 });
     });
     vi.stubGlobal("fetch", fetchMock);
     await expect(fetchCaptchaChallenge()).resolves.toEqual({ token: "tok-1", svg: SAMPLE_SVG });
@@ -76,15 +76,15 @@ describe("fetchCaptchaChallenge", () => {
 });
 
 describe("sendSmsAfterCaptcha", () => {
-  it("POSTs phone, captcha_token, and captcha_code with credentials", async () => {
+  it("POSTs phone, captchaToken, and captchaCode with credentials", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       expect(String(input)).toContain("/api/send-code");
       expect(init?.method).toBe("POST");
       expect(init?.credentials).toBe("include");
       expect(JSON.parse(String(init?.body))).toEqual({
         phone: "13812345678",
-        captcha_token: "tok-1",
-        captcha_code: "123456",
+        captchaToken: "tok-1",
+        captchaCode: "123456",
       });
       return new Response(JSON.stringify({ ok: true, cooldown: 60 }), { status: 200 });
     });

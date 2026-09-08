@@ -27,9 +27,9 @@ function isCodeUrl(url: string): boolean {
 
 function mockLoginFetch(options?: {
   sendStatus?: number;
-  challenges?: Array<{ captcha_token: string; svg: string }>;
+  challenges?: Array<{ captchaToken: string; svg: string }>;
 }) {
-  const challenges = options?.challenges ?? [{ captcha_token: "tok-1", svg: SAMPLE_SVG }];
+  const challenges = options?.challenges ?? [{ captchaToken: "tok-1", svg: SAMPLE_SVG }];
   let codeIndex = 0;
   const fetchMock = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
     const url = String(input);
@@ -118,8 +118,8 @@ describe("LoginPage", () => {
   it("refreshes the captcha token when 换一张 is clicked", async () => {
     const fetchMock = mockLoginFetch({
       challenges: [
-        { captcha_token: "tok-1", svg: SAMPLE_SVG },
-        { captcha_token: "tok-2", svg: REFRESH_SVG },
+        { captchaToken: "tok-1", svg: SAMPLE_SVG },
+        { captchaToken: "tok-2", svg: REFRESH_SVG },
       ],
     });
     renderLogin();
@@ -133,8 +133,8 @@ describe("LoginPage", () => {
     await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/api/send-code"))).toBe(true));
     const send = fetchMock.mock.calls.find(([url]) => String(url).includes("/api/send-code"));
     expect(JSON.parse(String(send?.[1]?.body))).toMatchObject({
-      captcha_token: "tok-2",
-      captcha_code: "123456",
+      captchaToken: "tok-2",
+      captchaCode: "123456",
       phone: "13812345678",
     });
   });
@@ -148,8 +148,8 @@ describe("LoginPage", () => {
     const send = fetchMock.mock.calls.find(([url]) => String(url).includes("/api/send-code"));
     expect(JSON.parse(String(send?.[1]?.body))).toEqual({
       phone: "13812345678",
-      captcha_token: "tok-1",
-      captcha_code: "123456",
+      captchaToken: "tok-1",
+      captchaCode: "123456",
     });
     expect(send?.[1]?.credentials).toBe("include");
     expect(fetchMock.mock.calls.some(([url]) => String(url).includes("send-otp"))).toBe(false);
@@ -159,8 +159,8 @@ describe("LoginPage", () => {
     const fetchMock = mockLoginFetch({
       sendStatus: 400,
       challenges: [
-        { captcha_token: "tok-1", svg: SAMPLE_SVG },
-        { captcha_token: "tok-2", svg: REFRESH_SVG },
+        { captchaToken: "tok-1", svg: SAMPLE_SVG },
+        { captchaToken: "tok-2", svg: REFRESH_SVG },
       ],
     });
     renderLogin();
