@@ -53,7 +53,7 @@ describe("parseCaptchaChallenge", () => {
 });
 
 describe("captchaUrl", () => {
-  it("returns the path unchanged when CAPTCHA_BASE is unset", () => {
+  it("returns the path unchanged when CAPTCHA_ORIGIN is unset", () => {
     expect(captchaUrl("/api/captcha")).toBe("/api/captcha");
     expect(captchaUrl("/api/captcha/verify")).toBe("/api/captcha/verify");
   });
