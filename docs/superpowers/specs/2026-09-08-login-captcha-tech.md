@@ -40,11 +40,11 @@ sequenceDiagram
   participant S as 短信或 mock
 
   U->>W: 11 位手机号，点发送验证码
-  W->>E: GET /api/code
+  W->>E: GET /api/captcha
   E-->>W: SVG + 无状态 Token（可带边缘 Session Cookie）
   W->>U: 打开弹层，展示 SVG
   U->>W: 填 6 位，确认并发送
-  W->>E: POST /api/send-code { phone, captchaToken, captchaCode }
+  W->>E: POST /api/captcha/verify { phone, captchaToken, captchaCode }
   alt 图形码失败
     E-->>W: 4xx，不回源
     W->>U: 「图形验证码不正确」，换图
@@ -62,7 +62,7 @@ sequenceDiagram
 
 | 进程 | 入口 | 负责 | 不负责 |
 | --- | --- | --- | --- |
-| 静态页 | `:30011` / Vite `:5173` | 弹层 UI、本地 11 位校验、调边缘 `/api/code` 与 `/api/send-code` | 存答案、发短信、校验 Assertion |
+| 静态页 | `:30011` / Vite `:5173` | 弹层 UI、本地 11 位校验、调边缘 `/api/captcha` 与 `/api/captcha/verify` | 存答案、发短信、校验 Assertion |
 | mango-captcha | 生产 ESA；本地 `:43141` | SVG、无状态 Token、边缘限流、验码、签发 Assertion、回源 | 短信通道、Better Auth 会话 |
 | BFF | 公网 `/api/auth/*`；内网 `/internal/sms/*` | 验 Assertion、发短信、OTP verify、session cookie | 画图、验图形 |
 | disaster-alert | `:30010` | 不变 | 登录、验证码 |
@@ -77,8 +77,8 @@ sequenceDiagram
 
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
-| GET | `/api/code` | 返回 SVG + 无状态 Token |
-| POST | `/api/send-code` | 边缘验 CAPTCHA，通过后回源发短信 |
+| GET | `/api/captcha` | 返回 SVG + 无状态 Token |
+| POST | `/api/captcha/verify` | 边缘验 CAPTCHA，通过后回源发短信 |
 | POST | `/api/verify-code` | 校验短信验证码（转发源站）；本登录页不用 |
 | GET | `/api/health` | 存活检查 |
 
@@ -86,15 +86,15 @@ Token 无状态（HMAC），TTL 默认 `CAPTCHA_TTL_SECONDS=120`。Assertion TTL
 
 可选边缘 Cookie：`SESSION_COOKIE_NAME`，默认 `session`。这会和 Better Auth 的 session cookie **撞名**。部署时改成独立名字（例如 `mango_captcha`），Path 尽量只覆盖边缘路由。
 
-JSON 字段按 mango-captcha 驼峰契约：GET 解析 `captchaToken` + `svg`（仍兼容 `captcha_token` / `image` 等别名）；`POST /api/send-code` 发送 `{ phone, captchaToken, captchaCode }`，`phone` 为 11 位大陆号（不带 `+86`），`credentials: "include"` 带上边缘 Session Cookie。类型里没有正确答案。语义上需要：
+JSON 字段按 mango-captcha 驼峰契约：GET 解析 `captchaToken` + `svg`（仍兼容 `captcha_token` / `image` 等别名）；`POST /api/captcha/verify` 发送 `{ phone, captchaToken, captchaCode }`，`phone` 为 11 位大陆号（不带 `+86`），`credentials: "include"` 带上边缘 Session Cookie。类型里没有正确答案。语义上需要：
 
 | 步骤 | 浏览器必须拿到 / 送出 |
 | --- | --- |
-| GET `/api/code` | 可内联的 SVG（字符串或 data URI）、后续 POST 要用的 `captchaToken` |
-| POST `/api/send-code` | `{ phone, captchaToken, captchaCode }`；`credentials: "include"` |
+| GET `/api/captcha` | 可内联的 SVG（字符串或 data URI）、后续 POST 要用的 `captchaToken` |
+| POST `/api/captcha/verify` | `{ phone, captchaToken, captchaCode }`；`credentials: "include"` |
 | 4xx | `error`：`CAPTCHA_REQUIRED` / `CAPTCHA_INVALID` / `CAPTCHA_EXPIRED` / `INVALID_PHONE` |
 
-「换一张」再 `GET /api/code`，丢掉旧 Token。
+「换一张」再 `GET /api/captcha`，丢掉旧 Token。
 
 ## 4. 源站（BFF）内网契约
 
@@ -114,14 +114,13 @@ BFF 与边缘共用 `ASSERTION_SECRET`（独立随机串，勿复用 `CAPTCHA_SE
 
 生产两种挂法（选一种）：
 
-- **路径反代**：站点域名把 `/api/code`、`/api/send-code`（及可选 `/api/health`）转到 ESA；其余 `/api/auth`、`/api/devices` 仍到 BFF。
+- **路径反代**：站点域名把 `/api/captcha`、`/api/captcha/verify`（及可选 `/api/health`）转到 ESA；其余 `/api/auth`、`/api/devices` 仍到 BFF。
 - **ESA 打头**：该站由 ESA 接入，CAPTCHA 路径进边缘函数，其它回源。
 
 本仓库 Vite 必须把这几条写在通配 `/api` → Rust **之前**：
 
 ```ts
-"/api/code": proxyTo("http://127.0.0.1:43141"),
-"/api/send-code": proxyTo("http://127.0.0.1:43141"),
+"/api/captcha": proxyTo("http://127.0.0.1:43141"),
 "/api/auth": proxyTo(bffOrigin),
 ```
 
@@ -133,10 +132,10 @@ BFF 与边缘共用 `ASSERTION_SECRET`（独立随机串，勿复用 `CAPTCHA_SE
 
 | 文件 | 职责 |
 | --- | --- |
-| `src/auth/captcha.ts` | `GET /api/code`、`POST /api/send-code`；解析 Token 与 SVG；类型里没有正确答案 |
+| `src/auth/captcha.ts` | `GET /api/captcha`、`POST /api/captcha/verify`；解析 Token 与 SVG；类型里没有正确答案 |
 | `src/components/CaptchaDialog.tsx` | 弹层：记录纸里渲染 SVG、六格井、换一张、确认并发送、取消 |
-| `src/pages/LoginPage.tsx` | 非法号不请求；打开弹层；确认走 `send-code`；登录仍 `verify` |
-| `vite.config.ts` | `/api/code`、`/api/send-code` → `:43141` |
+| `src/pages/LoginPage.tsx` | 非法号不请求；打开弹层；确认走 `POST /api/captcha/verify`；登录仍 `verify` |
+| `vite.config.ts` | `/api/captcha`（含 `/verify`）→ `:43141` |
 | `src/styles/ds.css` | 底栏 / 居中卡；标签行右对齐；登录钮与「已发送」间距 |
 | `src/pages/LoginPage.test.tsx` | 见 §8 |
 
@@ -144,14 +143,14 @@ BFF 与边缘共用 `ASSERTION_SECRET`（独立随机串，勿复用 `CAPTCHA_SE
 
 交互：
 
-1. 「发送验证码」：先 `normalizeMainlandPhone`；失败不请求 `/api/code`。
+1. 「发送验证码」：先 `normalizeMainlandPhone`；失败不请求 `/api/captcha`。
 2. 冷却中：不打开弹层。
-3. 合法：`GET /api/code`（`credentials: "include"`），成功再打开 Dialog，聚焦六格（`autocomplete=off`，`inputMode=numeric`）。
-4. 「换一张」再 `GET /api/code`，清空六格，换 Token。
-5. 满 6 位可自动提交，或点「确认并发送」→ `POST /api/send-code`。
+3. 合法：`GET /api/captcha`（`credentials: "include"`），成功再打开 Dialog，聚焦六格（`autocomplete=off`，`inputMode=numeric`）。
+4. 「换一张」再 `GET /api/captcha`，清空六格，换 Token。
+5. 满 6 位可自动提交，或点「确认并发送」→ `POST /api/captcha/verify`。
 6. 边缘 4xx：弹层不关，清空格子，再取一张图。
 7. 200：关层，「短信验证码已发送」，60s 冷却。
-8. 取消 / 遮罩 / Escape：关层，不 `send-code`。
+8. 取消 / 遮罩 / Escape：关层，不 `POST /api/captcha/verify`。
 9. 登录：`POST /api/auth/phone-number/verify`；未发送：「请先发送短信验证码」。
 
 文案与设计稿相同。登录按钮与「短信验证码已发送」至少隔 24px。
@@ -169,15 +168,15 @@ BFF 与边缘共用 `ASSERTION_SECRET`（独立随机串，勿复用 `CAPTCHA_SE
 
 本仓库：
 
-- 非法手机号：不请求 `/api/code`，也不请求 `/api/send-code`。
-- 点发送：`GET /api/code`，dialog 里出现 SVG。
-- 换一张：第二次 `GET /api/code`，Token 更换。
-- 确认：`POST /api/send-code` 带 `{ phone, captchaToken, captchaCode }`，`credentials: "include"`。
-- `send-code` 4xx：dialog 仍开，随后再 `GET /api/code`。
-- `send-code` 200：dialog 关闭，「短信验证码已发送」。
-- 取消：无 `send-code`。
+- 非法手机号：不请求 `/api/captcha`，也不请求 `/api/captcha/verify`。
+- 点发送：`GET /api/captcha`，dialog 里出现 SVG。
+- 换一张：第二次 `GET /api/captcha`，Token 更换。
+- 确认：`POST /api/captcha/verify` 带 `{ phone, captchaToken, captchaCode }`，`credentials: "include"`。
+- `captcha/verify` 4xx：dialog 仍开，随后再 `GET /api/captcha`。
+- `captcha/verify` 200：dialog 关闭，「短信验证码已发送」。
+- 取消：无 `POST /api/captcha/verify`。
 - 登录仍 `POST /api/auth/phone-number/verify`；mock 码 `000000` 可过。
-- 微信路径不请求 `/api/code`。
+- 微信路径不请求 `/api/captcha`。
 - 不请求公网 `/api/auth/phone-number/send-otp`。
 
 BFF：无 Assertion 或伪造 Assertion 的 `/internal/sms/*` 被拒，且不调短信适配器。
@@ -188,7 +187,7 @@ mango-captcha 仓库已覆盖 Token 真假、过期、跨 Session、错误答案
 
 1. **mango-captcha**：从 `src/` 钉死 JSON 字段；配置 `ECS_ORIGIN`、两套密钥。
 2. **disaster-alert-bff**：实现 `/internal/sms/*` + Assertion；公网 `send-otp` 关闭。
-3. **disaster-alert-web**：弹层改打 `/api/code`、`/api/send-code`；Vite / 反代分流；更新 `openapi.yaml`。
+3. **disaster-alert-web**：弹层改打 `/api/captcha`、`/api/captcha/verify`；Vite / 反代分流；更新 `openapi.yaml`。
 
 先源站内网发送，再指 ESA `ECS_ORIGIN`，最后改网页。不要先发网页去打尚不存在的边缘路由。
 

@@ -103,7 +103,7 @@ async function readBody(response: Response): Promise<unknown> {
 export async function fetchCaptchaChallenge(): Promise<CaptchaChallenge> {
   let response: Response;
   try {
-    response = await fetch(apiUrl("/api/code"), { credentials: "include" });
+    response = await fetch(apiUrl("/api/captcha"), { credentials: "include" });
   } catch {
     throw new CaptchaError("图形验证码暂不可用");
   }
@@ -126,7 +126,7 @@ export async function sendSmsAfterCaptcha(
 ): Promise<SendSmsAfterCaptchaResult> {
   let response: Response;
   try {
-    response = await fetch(apiUrl("/api/send-code"), {
+    response = await fetch(apiUrl("/api/captcha/verify"), {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },

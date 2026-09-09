@@ -21,8 +21,12 @@ function renderLogin() {
   );
 }
 
-function isCodeUrl(url: string): boolean {
-  return url.includes("/api/code");
+function isCaptchaIssueUrl(url: string): boolean {
+  return url.includes("/api/captcha") && !url.includes("/api/captcha/verify");
+}
+
+function isCaptchaVerifyUrl(url: string): boolean {
+  return url.includes("/api/captcha/verify");
 }
 
 function mockLoginFetch(options?: {
@@ -39,12 +43,12 @@ function mockLoginFetch(options?: {
     if (url.includes("/api/auth/phone-number/send-otp")) {
       return new Response(JSON.stringify({ message: "public send-otp is closed" }), { status: 403 });
     }
-    if (isCodeUrl(url)) {
+    if (isCaptchaIssueUrl(url)) {
       const challenge = challenges[Math.min(codeIndex, challenges.length - 1)]!;
       codeIndex += 1;
       return new Response(JSON.stringify(challenge), { status: 200 });
     }
-    if (url.includes("/api/send-code")) {
+    if (isCaptchaVerifyUrl(url)) {
       const status = options?.sendStatus ?? 200;
       return new Response(
         JSON.stringify(status >= 400 ? { error: "CAPTCHA_INVALID" } : { ok: true, cooldown: 60 }),
@@ -67,7 +71,7 @@ async function openCaptcha(fetchMock: ReturnType<typeof mockLoginFetch>) {
   fireEvent.change(screen.getByLabelText("手机号"), { target: { value: "13812345678" } });
   fireEvent.click(screen.getByRole("button", { name: "发送验证码" }));
   const dialog = await screen.findByRole("dialog");
-  await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => isCodeUrl(String(url)))).toBe(true));
+  await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => isCaptchaIssueUrl(String(url)))).toBe(true));
   return dialog;
 }
 
@@ -76,15 +80,15 @@ function captchaField(dialog: HTMLElement) {
 }
 
 describe("LoginPage", () => {
-  it("does not request captcha or send-code for an invalid phone number", () => {
+  it("does not request captcha or verify for an invalid phone number", () => {
     const fetchMock = mockLoginFetch();
     renderLogin();
     fireEvent.change(screen.getByLabelText("手机号"), { target: { value: "138" } });
     fireEvent.click(screen.getByRole("button", { name: "发送验证码" }));
     expect(screen.getByText("请输入 11 位大陆手机号")).toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(fetchMock.mock.calls.some(([url]) => isCodeUrl(String(url)))).toBe(false);
-    expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/api/send-code"))).toBe(false);
+    expect(fetchMock.mock.calls.some(([url]) => isCaptchaIssueUrl(String(url)))).toBe(false);
+    expect(fetchMock.mock.calls.some(([url]) => isCaptchaVerifyUrl(String(url)))).toBe(false);
     expect(fetchMock.mock.calls.some(([url]) => String(url).includes("send-otp"))).toBe(false);
   });
 
@@ -106,7 +110,7 @@ describe("LoginPage", () => {
     expect(await screen.findByText("ticket-1")).toBeInTheDocument();
   });
 
-  it("opens the captcha dialog after GET /api/code", async () => {
+  it("opens the captcha dialog after GET /api/captcha", async () => {
     const fetchMock = mockLoginFetch();
     renderLogin();
     const dialog = await openCaptcha(fetchMock);
@@ -126,12 +130,12 @@ describe("LoginPage", () => {
     const dialog = await openCaptcha(fetchMock);
     fireEvent.click(within(dialog).getByRole("button", { name: "换一张" }));
     await waitFor(() => {
-      expect(fetchMock.mock.calls.filter(([url]) => isCodeUrl(String(url)))).toHaveLength(2);
+      expect(fetchMock.mock.calls.filter(([url]) => isCaptchaIssueUrl(String(url)))).toHaveLength(2);
     });
     expect(within(dialog).getByRole("img", { name: "图形验证码" }).innerHTML).toContain("tok-2");
     fireEvent.change(captchaField(dialog), { target: { value: "123456" } });
-    await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/api/send-code"))).toBe(true));
-    const send = fetchMock.mock.calls.find(([url]) => String(url).includes("/api/send-code"));
+    await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => isCaptchaVerifyUrl(String(url)))).toBe(true));
+    const send = fetchMock.mock.calls.find(([url]) => isCaptchaVerifyUrl(String(url)));
     expect(JSON.parse(String(send?.[1]?.body))).toMatchObject({
       captchaToken: "tok-2",
       captchaCode: "123456",
@@ -139,13 +143,13 @@ describe("LoginPage", () => {
     });
   });
 
-  it("POSTs /api/send-code with token, digits, phone, and credentials", async () => {
+  it("POSTs /api/captcha/verify with token, digits, phone, and credentials", async () => {
     const fetchMock = mockLoginFetch();
     renderLogin();
     const dialog = await openCaptcha(fetchMock);
     fireEvent.change(captchaField(dialog), { target: { value: "123456" } });
-    await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/api/send-code"))).toBe(true));
-    const send = fetchMock.mock.calls.find(([url]) => String(url).includes("/api/send-code"));
+    await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => isCaptchaVerifyUrl(String(url)))).toBe(true));
+    const send = fetchMock.mock.calls.find(([url]) => isCaptchaVerifyUrl(String(url)));
     expect(JSON.parse(String(send?.[1]?.body))).toEqual({
       phone: "13812345678",
       captchaToken: "tok-1",
@@ -155,7 +159,7 @@ describe("LoginPage", () => {
     expect(fetchMock.mock.calls.some(([url]) => String(url).includes("send-otp"))).toBe(false);
   });
 
-  it("keeps the dialog open and refreshes the image after send-code 4xx", async () => {
+  it("keeps the dialog open and refreshes the image after captcha/verify 4xx", async () => {
     const fetchMock = mockLoginFetch({
       sendStatus: 400,
       challenges: [
@@ -168,14 +172,14 @@ describe("LoginPage", () => {
     fireEvent.change(captchaField(dialog), { target: { value: "000000" } });
     expect(await within(dialog).findByText("图形验证码不正确")).toBeInTheDocument();
     await waitFor(() => {
-      expect(fetchMock.mock.calls.filter(([url]) => isCodeUrl(String(url)))).toHaveLength(2);
+      expect(fetchMock.mock.calls.filter(([url]) => isCaptchaIssueUrl(String(url)))).toHaveLength(2);
     });
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(within(dialog).getByRole("img", { name: "图形验证码" }).innerHTML).toContain("tok-2");
     expect(captchaField(dialog)).toHaveValue("");
   });
 
-  it("closes the dialog and shows 短信验证码已发送 after send-code 200", async () => {
+  it("closes the dialog and shows 短信验证码已发送 after captcha/verify 200", async () => {
     const fetchMock = mockLoginFetch();
     renderLogin();
     const dialog = await openCaptcha(fetchMock);
@@ -184,13 +188,13 @@ describe("LoginPage", () => {
     expect(screen.getByText("短信验证码已发送")).toBeInTheDocument();
   });
 
-  it("does not POST send-code when the captcha dialog is cancelled", async () => {
+  it("does not POST captcha/verify when the captcha dialog is cancelled", async () => {
     const fetchMock = mockLoginFetch();
     renderLogin();
     const dialog = await openCaptcha(fetchMock);
     fireEvent.click(within(dialog).getByRole("button", { name: "取消" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-    expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/api/send-code"))).toBe(false);
+    expect(fetchMock.mock.calls.some(([url]) => isCaptchaVerifyUrl(String(url)))).toBe(false);
   });
 
   it("asks to send SMS before login if captcha never succeeded", async () => {
@@ -218,12 +222,12 @@ describe("LoginPage", () => {
     expect(fetchMock.mock.calls.some(([url]) => String(url).includes("send-otp"))).toBe(false);
   });
 
-  it("does not request /api/code on the WeChat path", async () => {
+  it("does not request /api/captcha on the WeChat path", async () => {
     const fetchMock = mockLoginFetch();
     renderLogin();
     fireEvent.click(screen.getByRole("button", { name: "微信" }));
     expect(await screen.findByText("ticket-1")).toBeInTheDocument();
-    expect(fetchMock.mock.calls.some(([url]) => isCodeUrl(String(url)))).toBe(false);
+    expect(fetchMock.mock.calls.some(([url]) => isCaptchaIssueUrl(String(url)))).toBe(false);
   });
 
   it("confirms the mock WeChat ticket and goes to devices", async () => {

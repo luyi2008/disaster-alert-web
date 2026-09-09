@@ -6,15 +6,14 @@ import { describe, expect, it } from "vitest";
 const repoRoot = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
 
 describe("vite captcha proxy", () => {
-  it("routes /api/code and /api/send-code before the /api catch-all", () => {
+  it("routes /api/captcha before the /api catch-all", () => {
     const source = readFileSync(join(repoRoot, "vite.config.ts"), "utf8");
-    const codeIdx = source.indexOf('"/api/code"');
-    const sendIdx = source.indexOf('"/api/send-code"');
+    const captchaIdx = source.indexOf('"/api/captcha"');
     const catchIdx = source.indexOf('"/api":');
-    expect(codeIdx).toBeGreaterThan(-1);
-    expect(sendIdx).toBeGreaterThan(-1);
+    expect(captchaIdx).toBeGreaterThan(-1);
+    expect(source).not.toContain('"/api/code"');
+    expect(source).not.toContain('"/api/send-code"');
     expect(catchIdx).toBeGreaterThan(-1);
-    expect(codeIdx).toBeLessThan(catchIdx);
-    expect(sendIdx).toBeLessThan(catchIdx);
+    expect(captchaIdx).toBeLessThan(catchIdx);
   });
 });
