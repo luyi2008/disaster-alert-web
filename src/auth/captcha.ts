@@ -1,8 +1,8 @@
-const captchaRoot =
-  (import.meta.env.CAPTCHA_BASE as string | undefined)?.replace(/\/$/, "") ?? "";
+const captchaOrigin =
+  (import.meta.env.CAPTCHA_ORIGIN as string | undefined)?.replace(/\/$/, "") ?? "";
 
 export function captchaUrl(path: string): string {
-  return `${captchaRoot}${path}`;
+  return `${captchaOrigin}${path}`;
 }
 
 export class CaptchaError extends Error {

@@ -18,9 +18,9 @@ describe("vite captcha proxy", () => {
     expect(source).toContain('envPrefix: ["VITE_", "CAPTCHA_"]');
   });
 
-  it("loads production CAPTCHA_BASE from .env.production", () => {
+  it("loads production CAPTCHA_ORIGIN from .env.production", () => {
     const envFile = readFileSync(join(repoRoot, ".env.production"), "utf8");
-    expect(envFile).toMatch(/^CAPTCHA_BASE=https:\/\/captcha\.mangguo\.cloud$/m);
-    expect(envFile).not.toContain("VITE_CAPTCHA_BASE");
+    expect(envFile).toMatch(/^CAPTCHA_ORIGIN=https:\/\/captcha\.mangguo\.cloud$/m);
+    expect(envFile).not.toContain("CAPTCHA_BASE");
   });
 });

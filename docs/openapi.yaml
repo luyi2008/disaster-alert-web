@@ -25,7 +25,7 @@ tags:
   - name: Captcha
     description: |
       登录图形验证码由 mango-captcha ESA 边缘函数提供，不是 disaster-alert。
-      生产浏览器直连 CAPTCHA_BASE（见 .env.production）下的 GET /api/captcha 与 POST /api/captcha/verify。
+      生产浏览器直连 CAPTCHA_ORIGIN（见 .env.production）下的 GET /api/captcha 与 POST /api/captcha/verify。
       本地开发默认 http://127.0.0.1:43141，由 Vite 同源代理。
       校验通过后边缘带 X-ESA-Assertion 回源 BFF /internal/sms/*。
       短信登录校验仍走 BFF POST /api/auth/phone-number/verify。
@@ -38,7 +38,7 @@ paths:
       operationId: getLoginCaptcha
       summary: 取图形验证码 SVG 与无状态 Token
       description: |
-        mango-captcha 边缘入口。生产直连 CAPTCHA_BASE（跨域，`credentials: include`）。
+        mango-captcha 边缘入口。生产直连 CAPTCHA_ORIGIN（跨域，`credentials: include`）。
         边缘需允许站点 Origin，并返回 Access-Control-Allow-Credentials。
         部署时不要与 Better Auth 的 session 撞名。不访问源站。
       responses:
