@@ -111,4 +111,38 @@ describe("sendSmsAfterCaptcha", () => {
       message: "图形验证码不正确",
     });
   });
+
+  it("maps SMS_FAILED to 短信发送失败，请稍后重试", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify({ error: "SMS_FAILED", message: "短信发送失败，请稍后重试" }), {
+            status: 400,
+          }),
+      ),
+    );
+    await expect(
+      sendSmsAfterCaptcha({ token: "tok-1", code: "123456", phone: "13812345678" }),
+    ).rejects.toMatchObject({
+      name: "CaptchaError",
+      message: "短信发送失败，请稍后重试",
+      code: "SMS_FAILED",
+    });
+  });
+
+  it("maps origin 502 to 短信发送失败，请稍后重试", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({ error: "SMS_FAILED" }), { status: 502 })),
+    );
+    await expect(
+      sendSmsAfterCaptcha({ token: "tok-1", code: "123456", phone: "13812345678" }),
+    ).rejects.toMatchObject({
+      name: "CaptchaError",
+      message: "短信发送失败，请稍后重试",
+      code: "SMS_FAILED",
+      status: 502,
+    });
+  });
 });

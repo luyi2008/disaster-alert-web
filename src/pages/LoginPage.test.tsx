@@ -31,6 +31,7 @@ function isCaptchaVerifyUrl(url: string): boolean {
 
 function mockLoginFetch(options?: {
   sendStatus?: number;
+  sendBody?: unknown;
   challenges?: Array<{ captchaToken: string; svg: string }>;
 }) {
   const challenges = options?.challenges ?? [{ captchaToken: "tok-1", svg: SAMPLE_SVG }];
@@ -50,10 +51,10 @@ function mockLoginFetch(options?: {
     }
     if (isCaptchaVerifyUrl(url)) {
       const status = options?.sendStatus ?? 200;
-      return new Response(
-        JSON.stringify(status >= 400 ? { error: "CAPTCHA_INVALID" } : { ok: true, cooldown: 60 }),
-        { status },
-      );
+      const body =
+        options?.sendBody ??
+        (status >= 400 ? { error: "CAPTCHA_INVALID" } : { ok: true, cooldown: 60 });
+      return new Response(JSON.stringify(body), { status });
     }
     if (url.includes("/api/auth/phone-number/verify")) {
       return new Response(JSON.stringify({ status: true }), { status: 200 });
@@ -177,6 +178,21 @@ describe("LoginPage", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(within(dialog).getByRole("img", { name: "图形验证码" }).innerHTML).toContain("tok-2");
     expect(captchaField(dialog)).toHaveValue("");
+  });
+
+  it("closes the dialog and shows SMS failure on the login form after SMS_FAILED", async () => {
+    const fetchMock = mockLoginFetch({
+      sendStatus: 400,
+      sendBody: { error: "SMS_FAILED", message: "短信发送失败，请稍后重试" },
+    });
+    renderLogin();
+    const dialog = await openCaptcha(fetchMock);
+    fireEvent.change(captchaField(dialog), { target: { value: "123456" } });
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(screen.getByText("短信发送失败，请稍后重试")).toBeInTheDocument();
+    expect(screen.queryByText("图形验证码不正确")).not.toBeInTheDocument();
+    expect(screen.queryByText("短信验证码已发送")).not.toBeInTheDocument();
+    expect(fetchMock.mock.calls.filter(([url]) => isCaptchaIssueUrl(String(url)))).toHaveLength(1);
   });
 
   it("closes the dialog and shows 短信验证码已发送 after captcha/verify 200", async () => {
