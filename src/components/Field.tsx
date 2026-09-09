@@ -10,6 +10,7 @@ export function Field({
   error,
   hint,
   reserveMessage = false,
+  action,
   children,
 }: {
   label: string;
@@ -17,13 +18,21 @@ export function Field({
   error?: string | null;
   hint?: string;
   reserveMessage?: boolean;
+  action?: ReactNode;
   children: ReactNode;
 }) {
   const message = error || hint || "";
   const showMessage = Boolean(error || hint || reserveMessage);
   return (
     <div className="flex flex-col gap-2" data-slot="field">
-      <Label htmlFor={htmlFor}>{label}</Label>
+      {action ? (
+        <div className="otp-head">
+          <Label htmlFor={htmlFor}>{label}</Label>
+          {action}
+        </div>
+      ) : (
+        <Label htmlFor={htmlFor}>{label}</Label>
+      )}
       {children}
       {showMessage ? (
         <span

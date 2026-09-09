@@ -1,0 +1,1272 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>设计稿 · 图形验证码弹层</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --radius: 0.625rem;
+        --background: oklch(1 0 0);
+        --foreground: oklch(0.141 0.005 285.823);
+        --card: oklch(1 0 0);
+        --card-foreground: oklch(0.141 0.005 285.823);
+        --primary: oklch(0.21 0.006 285.885);
+        --primary-foreground: oklch(0.985 0 0);
+        --secondary: oklch(0.967 0.001 286.375);
+        --secondary-foreground: oklch(0.21 0.006 285.885);
+        --muted: oklch(0.967 0.001 286.375);
+        --muted-foreground: oklch(0.552 0.016 285.938);
+        --accent: oklch(0.967 0.001 286.375);
+        --accent-foreground: oklch(0.21 0.006 285.885);
+        --destructive: oklch(0.577 0.245 27.325);
+        --border: oklch(0.92 0.004 286.32);
+        --input: oklch(0.92 0.004 286.32);
+        --ring: oklch(0.705 0.015 286.067);
+        --font-sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Segoe UI",
+          "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif;
+        --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      }
+
+      .dark {
+        color-scheme: dark;
+        --background: oklch(0.141 0.005 285.823);
+        --foreground: oklch(0.985 0 0);
+        --card: oklch(0.21 0.006 285.885);
+        --card-foreground: oklch(0.985 0 0);
+        --primary: oklch(0.92 0.004 286.32);
+        --primary-foreground: oklch(0.21 0.006 285.885);
+        --secondary: oklch(0.274 0.006 286.033);
+        --secondary-foreground: oklch(0.985 0 0);
+        --muted: oklch(0.274 0.006 286.033);
+        --muted-foreground: oklch(0.705 0.015 286.067);
+        --accent: oklch(0.274 0.006 286.033);
+        --accent-foreground: oklch(0.985 0 0);
+        --destructive: oklch(0.704 0.191 22.216);
+        --border: oklch(1 0 0 / 10%);
+        --input: oklch(1 0 0 / 15%);
+        --ring: oklch(0.552 0.016 285.938);
+      }
+
+      * { box-sizing: border-box; }
+      html, body { margin: 0; min-height: 100%; }
+      body {
+        font-family: var(--font-sans);
+        background: #d4d0cc;
+        color: var(--foreground);
+        -webkit-font-smoothing: antialiased;
+      }
+      .dark body, body.canvas-dark { background: #1a191c; }
+
+      .deck {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 32px 24px 80px;
+      }
+
+      .deck-head {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 28px;
+        color: #3f3c3a;
+      }
+      .canvas-dark .deck-head { color: #eceae8; }
+      .deck-head h1 {
+        margin: 0;
+        font-size: 22px;
+        letter-spacing: -0.03em;
+      }
+      .deck-head p {
+        margin: 6px 0 0;
+        font-size: 13px;
+        opacity: 0.72;
+        max-width: 52ch;
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+      .toolbar button {
+        font: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        border: 0;
+        border-radius: 999px;
+        padding: 8px 12px;
+        background: #efecea;
+        color: #2b2927;
+        cursor: pointer;
+      }
+      .canvas-dark .toolbar button { background: #2a282c; color: #f3f1ef; }
+      .toolbar button[aria-pressed="true"] {
+        background: #2b2927;
+        color: #f6f3ef;
+      }
+      .canvas-dark .toolbar button[aria-pressed="true"] {
+        background: #f3f1ef;
+        color: #1c1b1e;
+      }
+
+      .stage {
+        position: relative;
+        background: var(--background);
+        color: var(--foreground);
+        border-radius: 2px;
+        overflow: hidden;
+        box-shadow: 0 24px 60px rgb(40 36 32 / 0.18);
+      }
+      .stage.is-phone {
+        width: 390px;
+        max-width: 100%;
+        margin: 0 auto;
+      }
+      .stage.is-phone .login-page {
+        grid-template-columns: 1fr;
+        min-height: 760px;
+      }
+      .stage.is-phone .login-visual { display: none; }
+      .stage.is-phone .login-form-col { padding: 32px 20px 48px; }
+      .stage.is-phone .social-row { grid-template-columns: 1fr; }
+
+      .login-page {
+        min-height: 720px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      }
+
+      .login-form-col,
+      .login-visual {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .login-form-col { padding: 48px 40px; }
+      .login-panel {
+        width: min(420px, 100%);
+        margin: 0 auto;
+        display: grid;
+        gap: 24px;
+      }
+      .login-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .login-brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .login-brand h2 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .login-headline {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 600;
+        line-height: 1.2;
+        letter-spacing: -0.03em;
+      }
+      .login-lead {
+        margin: 0;
+        color: var(--muted-foreground);
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .icon-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        border: 1px solid var(--input);
+        background: var(--background);
+        color: var(--foreground);
+        display: grid;
+        place-items: center;
+      }
+
+      .card {
+        display: grid;
+        gap: 16px;
+        border: 1px solid var(--border);
+        border-radius: calc(var(--radius) + 4px);
+        background: var(--card);
+        padding: 20px;
+      }
+
+      .seg {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3px;
+        padding: 3px;
+        border-radius: 8px;
+        background: var(--muted);
+      }
+      .seg button {
+        font: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        height: 32px;
+        border: 0;
+        border-radius: 6px;
+        background: transparent;
+        color: var(--muted-foreground);
+        cursor: pointer;
+      }
+      .seg button[aria-selected="true"] {
+        background: var(--background);
+        color: var(--foreground);
+        box-shadow: 0 1px 2px rgb(20 16 20 / 0.08);
+      }
+
+      .field { display: grid; gap: 8px; }
+      .field label {
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .field .hint {
+        min-height: 1.45em;
+        font-size: 13px;
+        line-height: 1.45;
+        color: var(--muted-foreground);
+      }
+      .field .hint[data-error="true"] { color: var(--destructive); }
+
+      .control {
+        height: 36px;
+        width: 100%;
+        border: 1px solid var(--input);
+        border-radius: 6px;
+        background: var(--background);
+        color: var(--foreground);
+        padding: 0 12px;
+        font: inherit;
+        font-size: 14px;
+        outline: none;
+      }
+      .control:focus-visible {
+        border-color: var(--ring);
+        box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent);
+      }
+      .phone {
+        display: flex;
+        gap: 8px;
+      }
+      .addon {
+        width: 72px;
+        height: 36px;
+        display: grid;
+        place-items: center;
+        border: 1px solid var(--input);
+        border-radius: 6px;
+        color: var(--muted-foreground);
+        font-size: 14px;
+        flex: none;
+      }
+      .otp-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+      }
+
+      .otp-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .otp-head h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+      }
+      .otp-head label { margin: 0; }
+      .otp-send {
+        height: auto;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: var(--foreground);
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        cursor: pointer;
+      }
+      .otp-send:disabled {
+        color: var(--muted-foreground);
+        text-decoration: none;
+        cursor: not-allowed;
+      }
+      .otp-well {
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        height: 48px;
+        border: 1px solid var(--input);
+        border-radius: 6px;
+        background: var(--background);
+      }
+      .otp-well:focus-within {
+        border-color: var(--ring);
+        box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent);
+      }
+      .otp-well.is-invalid {
+        border-color: var(--destructive);
+        box-shadow: 0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent);
+      }
+      .otp-slot {
+        position: relative;
+        display: grid;
+        place-items: center;
+        font-family: var(--font-mono);
+        font-size: 20px;
+        font-variant-numeric: tabular-nums;
+        border-right: 1px solid var(--border);
+      }
+      .otp-slot:last-child { border-right: 0; }
+      .otp-slot.is-empty::before {
+        content: "";
+        width: 10px;
+        height: 1.5px;
+        background: var(--muted-foreground);
+        opacity: 0.55;
+      }
+      .otp-slot.is-active::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        bottom: 8px;
+        width: 12px;
+        height: 2px;
+        background: var(--foreground);
+        transform: translateX(-50%);
+      }
+      .otp-hidden {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        border: 0;
+        margin: 0;
+        padding: 0;
+        font-size: 16px;
+      }
+
+      .captcha-tape {
+        height: 56px;
+        border: 1px solid var(--input);
+        border-radius: 6px;
+        background: var(--muted);
+        overflow: hidden;
+        color: var(--foreground);
+      }
+      .captcha-tape svg {
+        display: block;
+        width: 100%;
+        height: 56px;
+      }
+
+      .captcha-layer {
+        position: absolute;
+        inset: 0;
+        z-index: 30;
+        display: none;
+      }
+      .captcha-layer.is-open { display: block; }
+      .captcha-scrim {
+        position: absolute;
+        inset: 0;
+        background: oklch(0.141 0.005 285.823 / 0.45);
+      }
+      .captcha-sheet {
+        position: absolute;
+        display: grid;
+        gap: 12px;
+        background: var(--card);
+        color: var(--card-foreground);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-float, 0 8px 24px oklch(0 0 0 / 0.2));
+      }
+      .sheet-handle {
+        display: none;
+        width: 36px;
+        height: 4px;
+        margin: 0 auto 4px;
+        border-radius: 999px;
+        background: var(--border);
+      }
+      .sheet-lead-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .sheet-lead {
+        margin: 0;
+        flex: 1;
+        min-width: 0;
+        font-size: 13px;
+        line-height: 1.45;
+        color: var(--muted-foreground);
+      }
+      .sheet-lead-row .otp-send {
+        flex: none;
+        white-space: nowrap;
+      }
+      .sheet-cancel {
+        width: 100%;
+        height: 44px;
+        background: none;
+        border: 0;
+        color: var(--muted-foreground);
+        font: inherit;
+        font-size: 14px;
+        cursor: pointer;
+      }
+
+      .stage:not(.is-phone) .captcha-sheet {
+        top: 50%;
+        left: 50%;
+        width: min(400px, calc(100% - 32px));
+        transform: translate(-50%, -50%);
+        border-radius: 12px;
+        padding: 20px;
+      }
+      .stage.is-phone .captcha-sheet {
+        top: auto;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        transform: none;
+        border-radius: 16px 16px 0 0;
+        padding: 10px 20px calc(16px + env(safe-area-inset-bottom, 0px));
+        max-height: 92dvh;
+      }
+      .stage.is-phone .sheet-handle { display: block; }
+      .stage.is-phone .captcha-sheet .btn-primary { height: 44px; }
+
+      @media (max-width: 640px) {
+        .stage:not(.is-phone) .captcha-sheet {
+          top: auto;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          width: 100%;
+          transform: none;
+          border-radius: 16px 16px 0 0;
+          padding: 10px 20px calc(16px + env(safe-area-inset-bottom, 0px));
+          max-height: 92dvh;
+        }
+        .stage:not(.is-phone) .sheet-handle { display: block; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .captcha-sheet { transition: none; }
+      }
+
+      .btn {
+        font: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        height: 36px;
+        padding: 0 16px;
+        border-radius: 6px;
+        border: 0;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        white-space: nowrap;
+      }
+      .btn-primary {
+        width: 100%;
+        background: var(--primary);
+        color: var(--primary-foreground);
+      }
+      .btn-outline {
+        background: var(--background);
+        color: var(--foreground);
+        border: 1px solid var(--input);
+      }
+
+      .qr-field {
+        display: grid;
+        gap: 12px;
+        border: 1px solid var(--input);
+        border-radius: 6px;
+        padding: 16px;
+        background: var(--background);
+      }
+      .qr-field:focus-within {
+        border-color: var(--ring);
+        box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent);
+      }
+
+      .qr-reticle {
+        position: relative;
+        width: 200px;
+        height: 200px;
+        margin: 4px auto 0;
+      }
+      .qr-reticle svg.qr { width: 168px; height: 168px; display: block; margin: 16px auto; }
+      .tick {
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        border-color: var(--foreground);
+        border-style: solid;
+        opacity: 0.88;
+      }
+      .tick-tl { top: 0; left: 0; border-width: 1.5px 0 0 1.5px; }
+      .tick-tr { top: 0; right: 0; border-width: 1.5px 1.5px 0 0; }
+      .tick-bl { bottom: 0; left: 0; border-width: 0 0 1.5px 1.5px; }
+      .tick-br { bottom: 0; right: 0; border-width: 0 1.5px 1.5px 0; }
+
+      .qr-overlay {
+        position: absolute;
+        inset: 16px;
+        display: none;
+        place-items: center;
+        background: color-mix(in oklab, var(--background) 78%, transparent);
+        text-align: center;
+        gap: 8px;
+      }
+      .qr-overlay strong {
+        display: block;
+        font-size: 14px;
+        margin-bottom: 8px;
+      }
+      .is-expired .qr-canvas { opacity: 0.28; }
+      .is-expired .qr-overlay,
+      .is-loading .qr-overlay,
+      .is-unavailable .qr-overlay { display: grid; }
+      .is-loading .qr-canvas,
+      .is-unavailable .qr-canvas { opacity: 0; }
+
+      .skeleton {
+        width: 168px;
+        height: 168px;
+        border-radius: 2px;
+        background: linear-gradient(90deg, var(--muted) 25%, var(--background) 50%, var(--muted) 75%);
+        background-size: 200% 100%;
+        animation: pulse 1.2s linear infinite;
+      }
+      @keyframes pulse {
+        to { background-position: -200% 0; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .skeleton { animation: none; }
+      }
+
+      .qr-readout {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: center;
+      }
+      .qr-readout .addon {
+        width: auto;
+        padding: 0 10px;
+        font-family: var(--font-mono);
+        font-size: 12px;
+      }
+      .qr-readout .control {
+        font-family: var(--font-mono);
+        font-size: 12px;
+      }
+
+      .social {
+        display: grid;
+        gap: 16px;
+      }
+      .or {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--muted-foreground);
+        font-size: 12px;
+      }
+      .or::before, .or::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+      }
+      .social-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .social-row .btn { width: 100%; }
+      .social-row .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+      .legal {
+        margin: 0;
+        color: var(--muted-foreground);
+        font-size: 12px;
+        line-height: 1.55;
+        text-align: center;
+      }
+
+      .login-visual {
+        position: relative;
+        overflow: hidden;
+        background: var(--muted);
+      }
+      .login-visual svg.radar {
+        width: min(560px, 80%);
+        height: auto;
+        margin: 0 auto;
+      }
+      .login-visual-copy {
+        position: absolute;
+        left: 48px;
+        bottom: 48px;
+        max-width: 280px;
+      }
+      .login-visual-copy strong {
+        display: block;
+        font-size: 13px;
+        letter-spacing: 0.08em;
+      }
+      .login-visual-copy p {
+        margin: 8px 0 0;
+        color: var(--muted-foreground);
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .phone-pane {
+        display: grid;
+        gap: 16px;
+      }
+      .phone-pane .btn-primary {
+        margin-top: 12px;
+      }
+      .phone-pane[hidden],
+      .scan-pane[hidden],
+      .qr-readout[hidden],
+      .mock-only[hidden] { display: none; }
+
+      .board {
+        margin-top: 36px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+      }
+      .shot {
+        background: #efecea;
+        border-radius: 12px;
+        padding: 14px;
+      }
+      .canvas-dark .shot { background: #262428; }
+      .shot h3 {
+        margin: 0 0 10px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #5c5854;
+      }
+      .canvas-dark .shot h3 { color: #c8c4bf; }
+      .mini {
+        transform-origin: top left;
+        transform: scale(0.42);
+        width: 238%;
+        height: 302px;
+        pointer-events: none;
+      }
+      .mini .login-page { min-height: 720px; }
+      .mini.mobile-frame {
+        transform: scale(0.55);
+        width: 182%;
+        height: 420px;
+      }
+      .mini.mobile-frame .login-page {
+        grid-template-columns: 1fr;
+        min-height: 760px;
+      }
+      .mini.mobile-frame .login-visual { display: none; }
+
+      @media (max-width: 880px) {
+        .login-page { grid-template-columns: 1fr; min-height: auto; }
+        .login-visual { display: none; }
+        .login-form-col { padding: 32px 20px 48px; }
+        .board { grid-template-columns: 1fr; }
+        .social-row { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="deck">
+      <header class="deck-head">
+        <div>
+          <h1>登录 · 图形验证码弹层</h1>
+          <p>点发送后弹出读数条。手机是底栏，桌面是居中卡。扫码界面先保留。</p>
+        </div>
+        <div class="toolbar" role="toolbar" aria-label="设计稿状态">
+          <button type="button" id="theme-btn" aria-pressed="false">暗色</button>
+          <button type="button" data-frame="desktop" aria-pressed="true">桌面预览</button>
+          <button type="button" data-frame="phone">手机预览</button>
+          <button type="button" data-method="phone" aria-pressed="true">手机号段</button>
+          <button type="button" data-method="scan">扫码段（保留）</button>
+          <button type="button" data-scene="captcha-empty">打开弹层</button>
+          <button type="button" data-scene="captcha-wrong">图形错误</button>
+          <button type="button" data-scene="sms-sent">已发短信</button>
+          <button type="button" data-mode="prod">生产扫码</button>
+          <button type="button" data-mode="mock" aria-pressed="true">开发 mock</button>
+          <button type="button" data-state="ready" aria-pressed="true">码就绪</button>
+          <button type="button" data-state="loading">生成中</button>
+          <button type="button" data-state="expired">过期</button>
+          <button type="button" data-state="unavailable">不可用</button>
+        </div>
+      </header>
+
+      <div class="stage" id="stage">
+        <div class="login-page" id="live">
+          <section class="login-form-col">
+            <div class="login-panel">
+              <div class="login-toolbar">
+                <div class="login-brand">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M3 12h3.2l2.4 7 4.8-14 2.4 7H21" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                  <h2>灾害预警</h2>
+                </div>
+                <span class="icon-btn" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.6"/><path d="M12 3v1.6M12 19.4V21M3 12h1.6M19.4 12H21M5.6 5.6l1.1 1.1M17.3 17.3l1.1 1.1M18.4 5.6l-1.1 1.1M6.7 17.3l-1.1 1.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                </span>
+              </div>
+              <p class="login-headline">及时知情，及时避险</p>
+              <p class="login-lead">用手机号或微信登录后，再绑定设备的推送令牌。</p>
+
+              <div class="card">
+                <div class="seg" role="tablist" aria-label="登录方式">
+                  <button type="button" role="tab" id="tab-phone" aria-selected="true">手机号</button>
+                  <button type="button" role="tab" id="tab-scan" aria-selected="false">扫码</button>
+                </div>
+
+                <form class="phone-pane" id="phone-pane">
+                  <div class="field">
+                    <label for="login-phone">手机号</label>
+                    <div class="phone">
+                      <span class="addon">+86</span>
+                      <input class="control" id="login-phone" placeholder="11 位大陆手机号" value="13812345678" />
+                    </div>
+                    <span class="hint" id="phone-hint"></span>
+                  </div>
+                  <div class="field">
+                    <div class="otp-head">
+                      <label for="login-code">短信验证码</label>
+                      <button class="otp-send" type="button" id="otp-send">发送验证码</button>
+                    </div>
+                    <input class="control" id="login-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 位短信验证码" />
+                    <span class="hint" id="otp-hint"></span>
+                  </div>
+                  <button class="btn btn-primary" type="button" id="login-submit">登录</button>
+                </form>
+
+                <div class="scan-pane" id="scan-pane" hidden>
+                  <div class="field">
+                    <label for="qr-ticket">二维码</label>
+                    <div class="qr-field is-ready" id="qr-field">
+                      <div class="qr-reticle">
+                        <span class="tick tick-tl"></span>
+                        <span class="tick tick-tr"></span>
+                        <span class="tick tick-bl"></span>
+                        <span class="tick tick-br"></span>
+                        <div class="qr-canvas" id="qr-canvas"></div>
+                        <div class="qr-overlay" id="qr-overlay">
+                          <div>
+                            <strong id="overlay-title">已过期</strong>
+                            <button class="btn btn-outline" type="button" id="overlay-action">刷新</button>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="qr-readout mock-only" id="qr-readout">
+                        <span class="addon">票据</span>
+                        <input class="control" id="qr-ticket" value="ticket-1" placeholder="粘贴开发票据" />
+                        <button class="btn btn-outline" type="button">刷新</button>
+                      </div>
+                    </div>
+                    <span class="hint" id="qr-hint">打开微信对准此码，或粘贴开发票据。</span>
+                  </div>
+                  <button class="btn btn-primary mock-only" type="button" id="confirm-btn">模拟确认</button>
+                </div>
+              </div>
+
+              <div class="social">
+                <div class="or">或者</div>
+                <div class="social-row">
+                  <button class="btn btn-outline" type="button" id="wechat-btn">微信</button>
+                  <button class="btn btn-outline" type="button" disabled>支付宝</button>
+                  <button class="btn btn-outline" type="button" disabled>Google</button>
+                </div>
+              </div>
+              <p class="legal">登录即表示同意使用条款。预警用于避险，不替代应急部门指令。</p>
+            </div>
+          </section>
+          <aside class="login-visual" aria-hidden="true">
+            <svg class="radar" viewBox="0 0 640 720" fill="none">
+              <circle cx="320" cy="340" r="280" stroke="var(--border)" stroke-width="1" />
+              <circle cx="320" cy="340" r="196" stroke="var(--border)" stroke-width="1" />
+              <circle cx="320" cy="340" r="112" stroke="var(--muted-foreground)" stroke-width="1.25" />
+              <circle cx="320" cy="340" r="8" fill="currentColor" />
+              <path d="M320 60v560M40 340h560" stroke="var(--border)" stroke-width="1" />
+              <path d="M320 340 L 534 188" stroke="currentColor" stroke-width="1.25" opacity="0.45" />
+              <path d="M168 248c42-58 96-86 152-86s110 28 152 86" stroke="currentColor" stroke-width="1.4" opacity="0.55" />
+              <path d="M188 430c38 40 84 62 132 62s94-22 132-62" stroke="currentColor" stroke-width="1.4" opacity="0.4" />
+            </svg>
+            <div class="login-visual-copy">
+              <strong>值班台</strong>
+              <p>为地震、海啸和天气预警准备的安静监测台。</p>
+            </div>
+          </aside>
+        </div>
+        <div class="captcha-layer" id="captcha-layer" aria-hidden="true">
+          <div class="captcha-scrim" id="captcha-scrim"></div>
+          <div class="captcha-sheet" role="dialog" aria-modal="true" aria-labelledby="captcha-title">
+            <div class="sheet-handle" aria-hidden="true"></div>
+            <h3 id="captcha-title">图形验证码</h3>
+            <div class="sheet-lead-row">
+              <p class="sheet-lead">看图输入 6 位数字，正确后发送短信</p>
+              <button class="otp-send" type="button" id="captcha-refresh">换一张</button>
+            </div>
+            <div class="captcha-tape" id="captcha-tape" role="img" aria-label="图形验证码"></div>
+            <div class="otp-well" id="otp-well">
+              <span class="otp-slot is-empty is-active" data-i="0"></span>
+              <span class="otp-slot is-empty" data-i="1"></span>
+              <span class="otp-slot is-empty" data-i="2"></span>
+              <span class="otp-slot is-empty" data-i="3"></span>
+              <span class="otp-slot is-empty" data-i="4"></span>
+              <span class="otp-slot is-empty" data-i="5"></span>
+              <input
+                class="otp-hidden"
+                id="captcha-code"
+                inputmode="numeric"
+                autocomplete="off"
+                maxlength="6"
+                aria-label="图形验证码"
+              />
+            </div>
+            <span class="hint" id="captcha-hint"></span>
+            <button class="btn btn-primary" type="button" id="captcha-confirm">确认并发送</button>
+            <button class="sheet-cancel" type="button" id="captcha-cancel">取消</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const finder = [
+        [1,1,1,1,1,1,1],
+        [1,0,0,0,0,0,1],
+        [1,0,1,1,1,0,1],
+        [1,0,1,1,1,0,1],
+        [1,0,1,1,1,0,1],
+        [1,0,0,0,0,0,1],
+        [1,1,1,1,1,1,1],
+      ];
+
+      function moduleOn(x, y, n) {
+        if ((x < 7 && y < 7) || (x >= n - 7 && y < 7) || (x < 7 && y >= n - 7)) {
+          const fx = x < 7 ? x : x - (n - 7);
+          const fy = y < 7 ? y : y - (n - 7);
+          if (fx >= 0 && fy >= 0 && fx < 7 && fy < 7) return finder[fy][fx] === 1;
+        }
+        const seed = (x * 13 + y * 29 + 7) % 11;
+        return seed > 4 && !((x + y) % 11 === 0);
+      }
+
+      function renderQr(el) {
+        const n = 25;
+        const s = 168 / n;
+        let rects = "";
+        for (let y = 0; y < n; y++) {
+          for (let x = 0; x < n; x++) {
+            if (moduleOn(x, y, n)) {
+              rects += `<rect x="${x * s}" y="${y * s}" width="${s}" height="${s}" />`;
+            }
+          }
+        }
+        el.innerHTML = `<svg class="qr" viewBox="0 0 168 168" aria-hidden="true"><rect width="168" height="168" fill="var(--background)"/><g fill="var(--foreground)">${rects}</g></svg>`;
+      }
+
+      const state = {
+        theme: "light",
+        method: "phone",
+        mode: "mock",
+        qr: "ready",
+        frame: "desktop",
+        layerOpen: false,
+        captchaAnswer: "",
+        captcha: "",
+        captchaError: "",
+        sms: "",
+        smsError: "",
+        smsSent: false,
+        scene: "captcha-empty",
+      };
+      let sendLeft = 0;
+      let sendTimer = null;
+
+      function randomDigits() {
+        let out = "";
+        for (let i = 0; i < 6; i++) out += String(Math.floor(Math.random() * 10));
+        return out;
+      }
+
+      function renderCaptcha(code) {
+        const w = 360;
+        const h = 56;
+        let glyphs = "";
+        for (let i = 0; i < 6; i++) {
+          const x = 28 + i * 56;
+          const rot = (i % 2 === 0 ? -1 : 1) * (5 + (i % 3) * 2);
+          const y = 38 + ((i % 3) - 1) * 3;
+          glyphs += `<text x="${x}" y="${y}" transform="rotate(${rot} ${x} ${y})" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="22" font-weight="600" fill="currentColor">${code[i]}</text>`;
+        }
+        document.getElementById("captcha-tape").innerHTML = `
+          <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">
+            <rect width="${w}" height="${h}" fill="transparent" />
+            <g stroke="currentColor" stroke-width="0.6" opacity="0.18" fill="none">
+              <path d="M0 14h360M0 28h360M0 42h360" />
+              <path d="M60 0v56M120 0v56M180 0v56M240 0v56M300 0v56" />
+            </g>
+            <path d="M0 30 C 40 18, 80 44, 120 26 S 200 12, 240 34 S 320 22, 360 28" fill="none" stroke="currentColor" stroke-width="1" opacity="0.35" />
+            ${glyphs}
+          </svg>`;
+      }
+
+      function newCaptcha(keepError) {
+        state.captchaAnswer = randomDigits();
+        state.captcha = "";
+        if (!keepError) state.captchaError = "";
+        renderCaptcha(state.captchaAnswer);
+      }
+
+      function setPressed(selector, value, attr) {
+        document.querySelectorAll(selector).forEach((btn) => {
+          const key = btn.getAttribute(attr);
+          btn.setAttribute("aria-pressed", key === value ? "true" : "false");
+        });
+      }
+
+      function paintCaptcha(code, invalid) {
+        const well = document.getElementById("otp-well");
+        const slots = well.querySelectorAll(".otp-slot");
+        const active = Math.min(code.length, 5);
+        slots.forEach((slot, i) => {
+          const ch = code[i] || "";
+          slot.textContent = ch;
+          slot.classList.toggle("is-empty", !ch);
+          slot.classList.toggle("is-active", i === active && code.length < 6);
+        });
+        well.classList.toggle("is-invalid", Boolean(invalid));
+        document.getElementById("captcha-code").value = code;
+      }
+
+      function sceneFromState() {
+        if (state.smsSent && !state.layerOpen) return "sms-sent";
+        if (state.layerOpen && state.captchaError) return "captcha-wrong";
+        if (state.layerOpen) return "captcha-empty";
+        return "sms-sent";
+      }
+
+      function apply() {
+        const dark = state.theme === "dark";
+        document.documentElement.classList.toggle("dark", dark);
+        document.body.classList.toggle("canvas-dark", dark);
+        document.getElementById("theme-btn").setAttribute("aria-pressed", dark ? "true" : "false");
+        document.getElementById("stage").classList.toggle("is-phone", state.frame === "phone");
+        setPressed("[data-frame]", state.frame, "data-frame");
+
+        const phone = state.method === "phone";
+        document.getElementById("phone-pane").hidden = !phone;
+        document.getElementById("scan-pane").hidden = phone;
+        document.getElementById("tab-phone").setAttribute("aria-selected", phone ? "true" : "false");
+        document.getElementById("tab-scan").setAttribute("aria-selected", phone ? "false" : "true");
+        setPressed("[data-method]", state.method, "data-method");
+
+        const mock = state.mode === "mock";
+        document.querySelectorAll(".mock-only").forEach((node) => {
+          node.hidden = !mock;
+        });
+        setPressed("[data-mode]", state.mode, "data-mode");
+
+        const field = document.getElementById("qr-field");
+        field.className = "qr-field is-" + state.qr;
+        const hint = document.getElementById("qr-hint");
+        const overlayTitle = document.getElementById("overlay-title");
+        const overlayAction = document.getElementById("overlay-action");
+        const confirmBtn = document.getElementById("confirm-btn");
+        confirmBtn.hidden = !mock || state.qr === "unavailable";
+
+        if (state.qr === "loading") {
+          overlayTitle.textContent = "正在生成二维码";
+          overlayAction.hidden = true;
+          document.getElementById("qr-canvas").innerHTML = '<div class="skeleton"></div>';
+          hint.textContent = "正在生成二维码";
+          hint.dataset.error = "false";
+        } else if (state.qr === "expired") {
+          renderQr(document.getElementById("qr-canvas"));
+          overlayTitle.textContent = "已过期";
+          overlayAction.hidden = false;
+          overlayAction.textContent = "刷新";
+          hint.textContent = "二维码已过期，点刷新";
+          hint.dataset.error = "true";
+        } else if (state.qr === "unavailable") {
+          document.getElementById("qr-canvas").innerHTML = "";
+          overlayTitle.textContent = "扫码暂不可用";
+          overlayAction.hidden = true;
+          hint.textContent = "扫码暂不可用，请用手机号登录";
+          hint.dataset.error = "true";
+          document.getElementById("qr-readout").hidden = true;
+        } else {
+          renderQr(document.getElementById("qr-canvas"));
+          overlayAction.hidden = true;
+          hint.textContent = mock
+            ? "打开微信对准此码，或粘贴开发票据。"
+            : "打开微信对准此码。值班台会自动签入。";
+          hint.dataset.error = "false";
+        }
+        setPressed("[data-state]", state.qr, "data-state");
+
+        const layer = document.getElementById("captcha-layer");
+        layer.classList.toggle("is-open", state.layerOpen);
+        layer.setAttribute("aria-hidden", state.layerOpen ? "false" : "true");
+        paintCaptcha(state.captcha, Boolean(state.captchaError));
+        const captchaHint = document.getElementById("captcha-hint");
+        captchaHint.textContent = state.captchaError || "";
+        captchaHint.dataset.error = state.captchaError ? "true" : "false";
+        const otpHint = document.getElementById("otp-hint");
+        otpHint.textContent = state.smsError || (state.smsSent && !state.smsError ? "短信验证码已发送" : "");
+        otpHint.dataset.error = state.smsError ? "true" : "false";
+        document.getElementById("login-code").value = state.sms;
+        state.scene = sceneFromState();
+        setPressed("[data-scene]", state.scene, "data-scene");
+      }
+
+      function startCountdown() {
+        sendLeft = 60;
+        const btn = document.getElementById("otp-send");
+        btn.disabled = true;
+        btn.textContent = "60s";
+        if (sendTimer) window.clearInterval(sendTimer);
+        sendTimer = window.setInterval(() => {
+          sendLeft -= 1;
+          if (sendLeft <= 0) {
+            window.clearInterval(sendTimer);
+            sendTimer = null;
+            btn.disabled = false;
+            btn.textContent = "发送验证码";
+            return;
+          }
+          btn.textContent = sendLeft + "s";
+        }, 1000);
+      }
+
+      function phoneOk() {
+        const phone = document.getElementById("login-phone").value.replace(/\D/g, "");
+        const phoneHint = document.getElementById("phone-hint");
+        if (!/^1[3-9]\d{9}$/.test(phone)) {
+          phoneHint.textContent = "请输入 11 位大陆手机号";
+          phoneHint.dataset.error = "true";
+          return false;
+        }
+        phoneHint.textContent = "";
+        phoneHint.dataset.error = "false";
+        return true;
+      }
+
+      function openLayer() {
+        state.method = "phone";
+        state.layerOpen = true;
+        newCaptcha();
+        apply();
+        window.setTimeout(() => document.getElementById("captcha-code").focus(), 30);
+      }
+
+      function closeLayer() {
+        state.layerOpen = false;
+        state.captcha = "";
+        state.captchaError = "";
+        apply();
+      }
+
+      function requestSend() {
+        state.method = "phone";
+        if (!phoneOk()) {
+          apply();
+          return;
+        }
+        if (sendLeft > 0) return;
+        openLayer();
+      }
+
+      function confirmCaptcha() {
+        if (state.captcha.length < 6) {
+          state.captchaError = "请输入图形验证码";
+          apply();
+          return;
+        }
+        if (state.captcha !== state.captchaAnswer) {
+          state.captchaError = "图形验证码不正确";
+          newCaptcha(true);
+          apply();
+          return;
+        }
+        if (sendLeft > 0) {
+          closeLayer();
+          return;
+        }
+        state.captchaError = "";
+        state.smsError = "";
+        state.smsSent = true;
+        state.layerOpen = false;
+        apply();
+        startCountdown();
+      }
+
+      renderQr(document.getElementById("qr-canvas"));
+      newCaptcha();
+      apply();
+
+      document.getElementById("theme-btn").addEventListener("click", () => {
+        state.theme = state.theme === "dark" ? "light" : "dark";
+        apply();
+      });
+      document.getElementById("tab-phone").addEventListener("click", () => {
+        state.method = "phone";
+        apply();
+      });
+      document.getElementById("tab-scan").addEventListener("click", () => {
+        state.method = "scan";
+        state.layerOpen = false;
+        apply();
+      });
+      document.getElementById("wechat-btn").addEventListener("click", () => {
+        state.method = "scan";
+        state.layerOpen = false;
+        apply();
+      });
+      document.querySelectorAll("[data-method]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          state.method = btn.getAttribute("data-method");
+          if (state.method === "scan") state.layerOpen = false;
+          apply();
+        });
+      });
+      document.querySelectorAll("[data-frame]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          state.frame = btn.getAttribute("data-frame");
+          apply();
+        });
+      });
+      document.querySelectorAll("[data-mode]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          state.mode = btn.getAttribute("data-mode");
+          apply();
+        });
+      });
+      document.querySelectorAll("[data-state]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          state.method = "scan";
+          state.layerOpen = false;
+          state.qr = btn.getAttribute("data-state");
+          apply();
+        });
+      });
+      document.querySelectorAll("[data-scene]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          state.method = "phone";
+          const scene = btn.getAttribute("data-scene");
+          if (scene === "captcha-empty") {
+            openLayer();
+            return;
+          }
+          if (scene === "captcha-wrong") {
+            state.layerOpen = true;
+            newCaptcha();
+            state.captcha = "000000";
+            if (state.captcha === state.captchaAnswer) state.captchaAnswer = "111111";
+            state.captchaError = "图形验证码不正确";
+            state.smsSent = false;
+            renderCaptcha(state.captchaAnswer);
+            apply();
+            return;
+          }
+          if (scene === "sms-sent") {
+            state.layerOpen = false;
+            state.captchaError = "";
+            state.smsSent = true;
+            state.smsError = "";
+            apply();
+          }
+        });
+      });
+      document.getElementById("captcha-code").addEventListener("input", (event) => {
+        state.captcha = event.target.value.replace(/\D/g, "").slice(0, 6);
+        state.captchaError = "";
+        apply();
+        if (state.captcha.length === 6) confirmCaptcha();
+      });
+      document.getElementById("otp-well").addEventListener("click", () => {
+        document.getElementById("captcha-code").focus();
+      });
+      document.getElementById("captcha-refresh").addEventListener("click", () => {
+        newCaptcha();
+        apply();
+      });
+      document.getElementById("captcha-confirm").addEventListener("click", () => {
+        confirmCaptcha();
+      });
+      document.getElementById("captcha-cancel").addEventListener("click", () => {
+        closeLayer();
+      });
+      document.getElementById("captcha-scrim").addEventListener("click", () => {
+        closeLayer();
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && state.layerOpen) closeLayer();
+      });
+      document.getElementById("login-code").addEventListener("input", (event) => {
+        state.sms = event.target.value.replace(/\D/g, "").slice(0, 6);
+        state.smsError = "";
+        apply();
+      });
+      document.getElementById("login-submit").addEventListener("click", () => {
+        state.method = "phone";
+        if (!state.smsSent) {
+          state.smsError = "请先发送短信验证码";
+          apply();
+          return;
+        }
+        if (state.sms.length < 6) {
+          state.smsError = "请输入短信验证码";
+          apply();
+          return;
+        }
+        state.smsError = "";
+        apply();
+      });
+      document.getElementById("otp-send").addEventListener("click", () => {
+        requestSend();
+      });
+    </script>
+  </body>
+</html>

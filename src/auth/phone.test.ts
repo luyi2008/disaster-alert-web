@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { normalizeMainlandPhone } from "./phone";
+import { nationalMainlandPhone, normalizeMainlandPhone } from "./phone";
+
+describe("nationalMainlandPhone", () => {
+  it("returns 11 digits without a +86 prefix", () => {
+    expect(nationalMainlandPhone("13812345678")).toBe("13812345678");
+    expect(nationalMainlandPhone("+8613812345678")).toBe("13812345678");
+  });
+});
 
 describe("normalizeMainlandPhone", () => {
   it("accepts 11-digit mainland numbers", () => {

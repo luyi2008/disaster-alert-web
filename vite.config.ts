@@ -6,6 +6,7 @@ import { rewriteLoopbackHost } from "./src/dev/rewriteLoopbackHost.ts";
 
 const apiOrigin = process.env.VITE_DEV_API_ORIGIN ?? "http://127.0.0.1:30010";
 const bffOrigin = process.env.VITE_DEV_BFF_ORIGIN ?? "http://127.0.0.1:30012";
+const captchaOrigin = process.env.VITE_CAPTCHA_ORIGIN ?? "http://127.0.0.1:43141";
 
 function firstHeader(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
@@ -41,6 +42,8 @@ export default defineConfig({
     host: true,
     port: 5173,
     proxy: {
+      "/api/code": proxyTo(captchaOrigin),
+      "/api/send-code": proxyTo(captchaOrigin),
       "/api/auth": proxyTo(bffOrigin),
       "/api/devices": proxyTo(bffOrigin),
       "/api/settings": proxyTo(bffOrigin),
