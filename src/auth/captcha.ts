@@ -3,10 +3,12 @@ import { apiUrl } from "../api";
 export class CaptchaError extends Error {
   override readonly name = "CaptchaError";
   readonly status?: number;
+  readonly code?: string;
 
-  constructor(message: string, status?: number) {
+  constructor(message: string, status?: number, code?: string) {
     super(message);
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -42,6 +44,11 @@ function pickString(record: Record<string, unknown>, keys: string[]): string | n
   return null;
 }
 
+function readErrorCode(body: unknown): string | undefined {
+  const record = asRecord(body);
+  return record ? pickString(record, ["error"]) ?? undefined : undefined;
+}
+
 function edgeErrorMessage(body: unknown, status: number, fallback: string): string {
   const record = asRecord(body);
   const code = record ? pickString(record, ["error"]) : null;
@@ -54,6 +61,8 @@ function edgeErrorMessage(body: unknown, status: number, fallback: string): stri
       return "图形验证码不正确";
     case "CAPTCHA_EXPIRED":
       return "图形验证码已过期，请换一张";
+    case "SMS_FAILED":
+      return (record && pickString(record, ["message"])) || "短信发送失败，请稍后重试";
     default:
       break;
   }
@@ -62,6 +71,9 @@ function edgeErrorMessage(body: unknown, status: number, fallback: string): stri
   }
   if (status === 401) {
     return "图形验证码已过期，请换一张";
+  }
+  if (status === 502) {
+    return (record && pickString(record, ["message"])) || "短信发送失败，请稍后重试";
   }
   if (status >= 500) {
     return "图形验证码暂不可用";
@@ -109,7 +121,11 @@ export async function fetchCaptchaChallenge(): Promise<CaptchaChallenge> {
   }
   const body = await readBody(response);
   if (!response.ok) {
-    throw new CaptchaError(edgeErrorMessage(body, response.status, "图形验证码暂不可用"), response.status);
+    throw new CaptchaError(
+      edgeErrorMessage(body, response.status, "图形验证码暂不可用"),
+      response.status,
+      readErrorCode(body),
+    );
   }
   try {
     return parseCaptchaChallenge(body);
@@ -143,5 +159,13 @@ export async function sendSmsAfterCaptcha(
   if (response.ok) {
     return { cooldown: readCooldown(body) };
   }
-  throw new CaptchaError(edgeErrorMessage(body, response.status, "图形验证码不正确"), response.status);
+  throw new CaptchaError(
+    edgeErrorMessage(body, response.status, "图形验证码不正确"),
+    response.status,
+    readErrorCode(body),
+  );
+}
+
+export function isSmsSendFailure(error: unknown): boolean {
+  return error instanceof CaptchaError && (error.code === "SMS_FAILED" || error.status === 502);
 }

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CaptchaError, fetchCaptchaChallenge, sendSmsAfterCaptcha, type CaptchaChallenge } from "../auth/captcha";
+import { CaptchaError, fetchCaptchaChallenge, isSmsSendFailure, sendSmsAfterCaptcha, type CaptchaChallenge } from "../auth/captcha";
 import { nationalMainlandPhone } from "../auth/phone";
 import { bffFetch } from "../auth/session";
 import { Button } from "@/components/ui/button";
@@ -158,6 +158,13 @@ export function LoginPage() {
       setOtpError(null);
       startCountdown(result.cooldown);
     } catch (error) {
+      if (isSmsSendFailure(error)) {
+        setCaptchaOpen(false);
+        setCaptchaError(null);
+        setStatusKind("error");
+        setFormError(captchaMessage(error, "短信发送失败，请稍后重试"));
+        return;
+      }
       setCaptchaError(captchaMessage(error, "图形验证码不正确"));
       try {
         const next = await fetchCaptchaChallenge();
