@@ -110,14 +110,11 @@ BFF 与边缘共用 `ASSERTION_SECRET`（独立随机串，勿复用 `CAPTCHA_SE
 
 `AUTH_MOCK=true` 只影响源站短信（日志里的固定码 `000000`）。图形码仍走真实边缘（本地 `npm run dev` 或 ESA）。不要在 BFF 里 stub 一张假图给生产网页。
 
-## 5. 同域与开发代理
+## 5. 生产跨域与开发代理
 
-生产两种挂法（选一种）：
+生产：浏览器直连 `CAPTCHA_BASE`（构建时变量，见 `.env.production`）下的 `/api/captcha` 与 `/api/captcha/verify`，不经站点反代。这是跨域请求，且 `credentials: "include"`，因此 ESA 必须对站点 Origin 返回明确的 `Access-Control-Allow-Origin`（不能 `*`）和 `Access-Control-Allow-Credentials`。
 
-- **路径反代**：站点域名把 `/api/captcha`、`/api/captcha/verify`（及可选 `/api/health`）转到 ESA；其余 `/api/auth`、`/api/devices` 仍到 BFF。
-- **ESA 打头**：该站由 ESA 接入，CAPTCHA 路径进边缘函数，其它回源。
-
-本仓库 Vite 必须把这几条写在通配 `/api` → Rust **之前**：
+开发：不设 `CAPTCHA_BASE`，请求仍是同源 `/api/captcha*`。本仓库 Vite 必须把这几条写在通配 `/api` → Rust **之前**：
 
 ```ts
 "/api/captcha": proxyTo("http://127.0.0.1:43141"),
@@ -132,7 +129,7 @@ BFF 与边缘共用 `ASSERTION_SECRET`（独立随机串，勿复用 `CAPTCHA_SE
 
 | 文件 | 职责 |
 | --- | --- |
-| `src/auth/captcha.ts` | `GET /api/captcha`、`POST /api/captcha/verify`；解析 Token 与 SVG；类型里没有正确答案 |
+| `src/auth/captcha.ts` | `captchaUrl()` 拼接 `CAPTCHA_BASE`；`GET /api/captcha`、`POST /api/captcha/verify`；解析 Token 与 SVG；类型里没有正确答案 |
 | `src/components/CaptchaDialog.tsx` | 弹层：记录纸里渲染 SVG、六格井、换一张、确认并发送、取消 |
 | `src/pages/LoginPage.tsx` | 非法号不请求；打开弹层；确认走 `POST /api/captcha/verify`；登录仍 `verify` |
 | `vite.config.ts` | `/api/captcha`（含 `/verify`）→ `:43141` |
@@ -187,7 +184,7 @@ mango-captcha 仓库已覆盖 Token 真假、过期、跨 Session、错误答案
 
 1. **mango-captcha**：从 `src/` 钉死 JSON 字段；配置 `ECS_ORIGIN`、两套密钥。
 2. **disaster-alert-bff**：实现 `/internal/sms/*` + Assertion；公网 `send-otp` 关闭。
-3. **disaster-alert-web**：弹层改打 `/api/captcha`、`/api/captcha/verify`；Vite / 反代分流；更新 `openapi.yaml`。
+3. **disaster-alert-web**：弹层打 `/api/captcha`、`/api/captcha/verify`；生产 `CAPTCHA_BASE` 直连 ESA，开发 Vite 同源代理；更新 `openapi.yaml`。
 
 先源站内网发送，再指 ESA `ECS_ORIGIN`，最后改网页。不要先发网页去打尚不存在的边缘路由。
 

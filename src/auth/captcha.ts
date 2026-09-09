@@ -1,4 +1,9 @@
-import { apiUrl } from "../api";
+const captchaRoot =
+  (import.meta.env.CAPTCHA_BASE as string | undefined)?.replace(/\/$/, "") ?? "";
+
+export function captchaUrl(path: string): string {
+  return `${captchaRoot}${path}`;
+}
 
 export class CaptchaError extends Error {
   override readonly name = "CaptchaError";
@@ -115,7 +120,7 @@ async function readBody(response: Response): Promise<unknown> {
 export async function fetchCaptchaChallenge(): Promise<CaptchaChallenge> {
   let response: Response;
   try {
-    response = await fetch(apiUrl("/api/captcha"), { credentials: "include" });
+    response = await fetch(captchaUrl("/api/captcha"), { credentials: "include" });
   } catch {
     throw new CaptchaError("图形验证码暂不可用");
   }
@@ -142,7 +147,7 @@ export async function sendSmsAfterCaptcha(
 ): Promise<SendSmsAfterCaptchaResult> {
   let response: Response;
   try {
-    response = await fetch(apiUrl("/api/captcha/verify"), {
+    response = await fetch(captchaUrl("/api/captcha/verify"), {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },

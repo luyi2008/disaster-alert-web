@@ -24,6 +24,7 @@ Vite 会把 `/api/captcha` 代理到 mango-captcha，把 `/api/auth`、`/api/dev
 - `VITE_DEV_API_ORIGIN`：开发时代理公开只读 API 的目标，默认 `http://127.0.0.1:30010`
 - `VITE_DEV_BFF_ORIGIN`：开发时代理 `/api/auth`、`/api/devices`、`/api/settings` 的目标，默认 `http://127.0.0.1:30012`
 - `VITE_CAPTCHA_ORIGIN`：开发时代理 `/api/captcha`（含 `/api/captcha/verify`）的目标，默认 `http://127.0.0.1:43141`
+- `CAPTCHA_BASE`：构建时图形验证码基址。生产见 `.env.production`；开发留空则走同源 `/api/captcha`（Vite 代理）
 - `VITE_API_BASE`：构建时 API 前缀。同源反代时保持为空
 
 ```bash
@@ -83,10 +84,10 @@ PR 不会部署、也不会写 `.env`。未配置上述 secrets 时，合并后�
 
 镜像内是 nginx 托管的静态资源。`/incidents/` 会回退到 `index.html`，Bark 深链刷新不会 404。
 
-站点若与 API 共用域名，由运维反代：
+站点若与 API 共用域名，由运维反代。图形验证码不走站点反代：生产构建把 `CAPTCHA_BASE`（`.env.production`）烘进产物，浏览器直连该基址下的 `/api/captcha` 与 `/api/captcha/verify`。边缘需对该站点 Origin 返回 `Access-Control-Allow-Origin`（不能 `*`）和 `Access-Control-Allow-Credentials`。
 
 ```
-/api/captcha  /api/captcha/verify  -> mango-captcha ESA（本地开发 127.0.0.1:43141）
+浏览器 → CAPTCHA_BASE/api/captcha  /api/captcha/verify  （生产 ESA；本地开发由 Vite 代理到 127.0.0.1:43141）
 /api/auth/*  /api/devices/*  /api/settings/*  -> disaster-alert-bff（默认 127.0.0.1:30012）
 /api/incidents/*  /api/status  /api/subscription-options  /api/reverse-geocode  /api/history  /health  -> disaster-alert（默认 127.0.0.1:30010）
 /  /login  /devices  /settings  /incidents/*  -> 本镜像（0.0.0.0:30011）

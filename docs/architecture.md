@@ -30,7 +30,7 @@ graph TB
     end
     Proxy["主机反向代理<br/>（HTTPS 终止，不在本仓库）"]
     BFF["disaster-alert-bff<br/>127.0.0.1:30012"]
-    Captcha["mango-captcha ESA<br/>本地 127.0.0.1:43141"]
+    Captcha["mango-captcha ESA<br/>CAPTCHA_BASE / 本地 :43141"]
     API["disaster-alert API<br/>127.0.0.1:30010<br/>（独立仓库）"]
     Tiles["basemaps.cartocdn.com<br/>地图瓦片"]
     Bark["Bark 推送服务"]
@@ -38,7 +38,7 @@ graph TB
 
     User -->|"/login /devices /settings /incidents/*"| Proxy
     Proxy --> Web
-    Proxy -->|"/api/captcha /api/captcha/verify"| Captcha
+    User -->|"CAPTCHA_BASE /api/captcha*"| Captcha
     Proxy -->|"/api/auth /api/devices /api/settings"| BFF
     Proxy -->|"公开只读 /api 与 /health"| API
     Captcha -->|"X-ESA-Assertion /internal/sms"| BFF
@@ -55,7 +55,7 @@ graph TB
 | --- | --- |
 | 同源反代 | 站点与 API 共用域名时，由主机上的反向代理分流。容器自身**不代理** `/api`，单独部署容器无法完成订阅。 |
 | 瓦片直连 | 地图瓦片由浏览器直接向 CDN 请求，不经过本站或 API。 |
-| BFF 登录 | 浏览器只带 session cookie 访问 `/api/auth`、`/api/devices`、`/api/settings` 以及设备订阅读写。登录发送短信先打 mango-captcha `GET /api/captcha` 与 `POST /api/captcha/verify`，不把 Bark token 当站点身份，也不再请求 `/api/bark-urls` 或 `/check`。 |
+| BFF 登录 | 浏览器只带 session cookie 访问 `/api/auth`、`/api/devices`、`/api/settings` 以及设备订阅读写。登录发送短信先打 mango-captcha `GET /api/captcha` 与 `POST /api/captcha/verify`：生产直连 `CAPTCHA_BASE`（`.env.production`），开发走 Vite 同源代理。不把 Bark token 当站点身份，也不再请求 `/api/bark-urls` 或 `/check`。 |
 | 闭环入口 | 详情页的唯一正常入口是 Bark 推送里的深链，路径中带通知凭据。 |
 
 ---
@@ -298,7 +298,7 @@ graph LR
 | DELETE | `/api/devices/:device_key/subscribe` | `api.ts` | 删除该设备服务端订阅 |
 | GET / POST / PATCH / DELETE | `/api/devices` | `api.ts` | 设备列表与绑定 |
 | GET | `/api/incidents/{id}/notifications/{token}` | `api.ts` | 通知详情 |
-| GET | `/api/captcha` | `auth/captcha.ts`、登录弹层 | mango-captcha 取 SVG + Token |
+| GET | `/api/captcha` | `auth/captcha.ts`、登录弹层 | mango-captcha 取 SVG + Token（生产 = `CAPTCHA_BASE` + 路径） |
 | POST | `/api/captcha/verify` | `auth/captcha.ts`、登录弹层 | 边缘验图形码后回源发短信 |
 | GET | `/health` | 仅反代/开发代理 | 进程健康检查 |
 
@@ -314,10 +314,13 @@ graph LR
     Dev -->|"Vite proxy /bark-check"| BarkCheck["bark.mangguo.cloud/check"]
     Prod["生产：VITE_API_BASE"] -->|"留空 = 同源"| Reverse["主机反向代理分流"]
     Prod -->|"设值 = 跨源"| Cross["独立 API 域名"]
+    ProdCaptcha["生产：CAPTCHA_BASE"] -->|"直连 /api/captcha*"| EsaCaptcha["mango-captcha ESA"]
     ProdEntry["生产入口页"] -->|"直连 /check"| BarkCheck
 ```
 
 `api.ts` 的 `apiUrl()` 统一加前缀并去掉尾部斜杠。`VITE_API_BASE` 是**构建时**变量，会烘进产物 —— 同一镜像不能在运行时切换 API 地址。同源反代场景保持留空即可。
+
+`auth/captcha.ts` 的 `captchaUrl()` 同样把构建时 `CAPTCHA_BASE` 接到 `/api/captcha` 路径前。生产见 `.env.production`；开发留空则相对路径，由 Vite 代理到本地 mango-captcha。
 
 ### 6.3 错误文案统一
 
@@ -438,6 +441,7 @@ Leaflet 在测试中被 `vi.mock` 替换，jsdom 无需真实地图实现。
 | 服务端订阅 hydrate 与本机会话分离 | 刷新读取权威已保存配置；登录是 BFF cookie | 未提交编辑只在内存中，刷新会丢失 |
 | shadcn + 现有 tokens | 控件成熟，视觉仍是 zinc + 蓝主色 | 页面级布局 CSS 仍要手写 |
 | 构建时注入 `VITE_API_BASE` | 同源部署下零配置 | 同一镜像无法在运行时切换 API 地址 |
+| 构建时注入 `CAPTCHA_BASE` | 生产直连 ESA，不占用站点反代 | 跨域需 ESA 配 CORS；同一镜像无法在运行时换基址 |
 | 容器固定 30011，HTTPS 交给外部反代 | 与 API 仓库部署约定一致，职责清晰 | 单独跑容器无法完成订阅（无 `/api`） |
 
 ---
