@@ -52,9 +52,10 @@ describe("parseCaptchaChallenge", () => {
 });
 
 describe("fetchCaptchaChallenge", () => {
-  it("GETs /api/code with credentials and returns the challenge", async () => {
+  it("GETs /api/captcha with credentials and returns the challenge", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      expect(String(input)).toContain("/api/code");
+      expect(String(input)).toContain("/api/captcha");
+      expect(String(input)).not.toContain("/api/captcha/verify");
       expect(init?.credentials).toBe("include");
       expect(init?.method ?? "GET").toBe("GET");
       return new Response(JSON.stringify({ captchaToken: "tok-1", svg: SAMPLE_SVG }), { status: 200 });
@@ -76,9 +77,9 @@ describe("fetchCaptchaChallenge", () => {
 });
 
 describe("sendSmsAfterCaptcha", () => {
-  it("POSTs phone, captchaToken, and captchaCode with credentials", async () => {
+  it("POSTs phone, captchaToken, and captchaCode to /api/captcha/verify with credentials", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      expect(String(input)).toContain("/api/send-code");
+      expect(String(input)).toContain("/api/captcha/verify");
       expect(init?.method).toBe("POST");
       expect(init?.credentials).toBe("include");
       expect(JSON.parse(String(init?.body))).toEqual({

@@ -25,14 +25,13 @@ tags:
   - name: Captcha
     description: |
       登录图形验证码由 mango-captcha ESA 边缘函数提供（本地默认 http://127.0.0.1:43141），
-      不是 disaster-alert。浏览器只打 GET /api/code 与 POST /api/send-code。
+      不是 disaster-alert。浏览器只打 GET /api/captcha 与 POST /api/captcha/verify。
       校验通过后边缘带 X-ESA-Assertion 回源 BFF /internal/sms/*。
       短信登录校验仍走 BFF POST /api/auth/phone-number/verify。
       JSON 字段与 mango-captcha 对齐：GET 解析 `captchaToken` + `svg`；
-      POST `/api/send-code` 发送 `{ phone, captchaToken, captchaCode }`（11 位手机号，不带 +86）。
-      登录校验仍走 BFF POST /api/auth/phone-number/verify，不打边缘 `/api/verify-code`。
+      POST `/api/captcha/verify` 发送 `{ phone, captchaToken, captchaCode }`（11 位手机号，不带 +86）。
 paths:
-  /api/code:
+  /api/captcha:
     get:
       tags: [Captcha]
       operationId: getLoginCaptcha
@@ -58,7 +57,7 @@ paths:
           description: 边缘拉图限流
         "500":
           description: 边缘配置错误
-  /api/send-code:
+  /api/captcha/verify:
     post:
       tags: [Captcha]
       operationId: sendLoginSmsAfterCaptcha
@@ -66,7 +65,7 @@ paths:
       description: |
         边缘验 CAPTCHA；失败 4xx 且不回源。通过后 POST `{ECS_ORIGIN}/internal/sms/send`。
         登录页不再调用公网 POST /api/auth/phone-number/send-otp。
-        登录校验仍走 BFF，不使用 POST /api/verify-code。
+        登录校验仍走 BFF POST /api/auth/phone-number/verify。
       requestBody:
         required: true
         content:

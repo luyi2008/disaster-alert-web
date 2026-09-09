@@ -42,8 +42,7 @@ export default defineConfig({
     host: true,
     port: 5173,
     proxy: {
-      "/api/code": proxyTo(captchaOrigin),
-      "/api/send-code": proxyTo(captchaOrigin),
+      "/api/captcha": proxyTo(captchaOrigin),
       "/api/auth": proxyTo(bffOrigin),
       "/api/devices": proxyTo(bffOrigin),
       "/api/settings": proxyTo(bffOrigin),
