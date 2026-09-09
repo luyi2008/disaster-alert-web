@@ -32,6 +32,7 @@ function proxyTo(target: string): ProxyOptions {
 }
 
 export default defineConfig({
+  envPrefix: ["VITE_", "CAPTCHA_"],
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {

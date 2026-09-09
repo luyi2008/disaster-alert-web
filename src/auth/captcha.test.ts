@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   CaptchaError,
+  captchaUrl,
   fetchCaptchaChallenge,
   parseCaptchaChallenge,
   sendSmsAfterCaptcha,
@@ -51,11 +52,17 @@ describe("parseCaptchaChallenge", () => {
   });
 });
 
+describe("captchaUrl", () => {
+  it("returns the path unchanged when CAPTCHA_BASE is unset", () => {
+    expect(captchaUrl("/api/captcha")).toBe("/api/captcha");
+    expect(captchaUrl("/api/captcha/verify")).toBe("/api/captcha/verify");
+  });
+});
+
 describe("fetchCaptchaChallenge", () => {
   it("GETs /api/captcha with credentials and returns the challenge", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      expect(String(input)).toContain("/api/captcha");
-      expect(String(input)).not.toContain("/api/captcha/verify");
+      expect(String(input)).toBe("/api/captcha");
       expect(init?.credentials).toBe("include");
       expect(init?.method ?? "GET").toBe("GET");
       return new Response(JSON.stringify({ captchaToken: "tok-1", svg: SAMPLE_SVG }), { status: 200 });
@@ -79,7 +86,7 @@ describe("fetchCaptchaChallenge", () => {
 describe("sendSmsAfterCaptcha", () => {
   it("POSTs phone, captchaToken, and captchaCode to /api/captcha/verify with credentials", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      expect(String(input)).toContain("/api/captcha/verify");
+      expect(String(input)).toBe("/api/captcha/verify");
       expect(init?.method).toBe("POST");
       expect(init?.credentials).toBe("include");
       expect(JSON.parse(String(init?.body))).toEqual({
