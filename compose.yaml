@@ -5,6 +5,7 @@ services:
     image: ${DISASTER_ALERT_WEB_IMAGE:-ghcr.io/luyi2008/disaster-alert-web:latest}
     build:
       context: .
+      dockerfile: .docker/Dockerfile
     restart: unless-stopped
     ports:
       - target: 30011
