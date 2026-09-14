@@ -1,6 +1,22 @@
+# Build output & deps
 node_modules
 dist
+dist-ssr
+
+# VCS / CI / editor / agent tooling
 .git
+.github
+.cursor
+
+# Docs (not needed to build the frontend)
+docs
+*.md
+
+# Tests (excluded from the production build context)
+**/*.test.ts
+**/*.test.tsx
+
+# Local env & secrets (keep the build-time / example files)
 .env
 .env.*
 !.env.example

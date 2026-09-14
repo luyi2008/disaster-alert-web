@@ -82,7 +82,7 @@ docker compose up -d --no-build
 
 PR 不会部署、也不会写 `.env`。未配置上述 secrets 时，合并后的 deploy job 会失败；镜像若已上传仍会留在 `ghcr.io`。
 
-镜像内是 nginx 托管的静态资源。`/incidents/` 会回退到 `index.html`，Bark 深链刷新不会 404。
+镜像内是 nginx 托管的静态资源。`/incidents/` 会回退到 `index.html`，Bark 深链刷新不会 404。构建定义放在 [`.docker/`](.docker/)（`Dockerfile` 与 `nginx.conf`）；`compose.yaml` 仍在仓库根（部署时拷到主机），构建上下文也是仓库根。
 
 站点若与 API 共用域名，由运维反代。图形验证码不走站点反代：生产构建把 `CAPTCHA_ORIGIN`（`.env.production`）烘进产物，浏览器直连该 origin 下的 `/api/captcha` 与 `/api/captcha/verify`。边缘需对该站点 Origin 返回 `Access-Control-Allow-Origin`（不能 `*`）和 `Access-Control-Allow-Credentials`。
 
