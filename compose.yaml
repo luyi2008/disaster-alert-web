@@ -1,7 +1,7 @@
 name: disaster-alert-web
 
 services:
-  disaster-alert-web:
+  main:
     image: ${DISASTER_ALERT_WEB_IMAGE:-ghcr.io/luyi2008/disaster-alert-web:latest}
     build:
       context: .
