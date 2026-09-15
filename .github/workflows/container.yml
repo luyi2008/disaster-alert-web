@@ -19,14 +19,13 @@ jobs:
       group: container-build-${{ github.ref }}
       cancel-in-progress: true
     outputs:
-      sha_short: ${{ steps.vars.outputs.sha_short }}
+      sha_short: ${{ env.SHORT_SHA }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
       - name: Compute short SHA
-        id: vars
-        run: echo "sha_short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+        run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -47,7 +46,7 @@ jobs:
           push: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
           tags: |
             ghcr.io/${{ github.repository }}:latest
-            ghcr.io/${{ github.repository }}:${{ steps.vars.outputs.sha_short }}
+            ghcr.io/${{ github.repository }}:${{ env.SHORT_SHA }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
