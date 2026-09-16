@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DevicesPage } from "./DevicesPage";
@@ -58,13 +58,13 @@ describe("DevicesPage", () => {
     expect(screen.getByText(DEVICE_TOKEN_MASKED)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "配置订阅" })).toHaveAttribute("href", `/devices/${DEVICE_KEY}/subscribe`);
     expect(screen.getByRole("link", { name: "测试通知" })).toHaveAttribute("href", `/devices/${DEVICE_KEY}/subscribe/test`);
-    expect(screen.getByRole("link", { name: "添加设备" })).toHaveAttribute("href", "/devices/add");
+    expect(screen.getByRole("button", { name: "添加设备" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "设备管理" })).toHaveAttribute("href", "/devices");
     expect(screen.queryByRole("navigation", { name: "主导航" })).toBeNull();
     expect(screen.queryByText(DEVICE_ID)).toBeNull();
   });
 
-  it("shows an empty state that points at add device", async () => {
+  it("shows the add-device form inline when the list is empty, no button needed", async () => {
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       if (String(input).includes("/api/auth/get-session")) {
         return session();
@@ -79,7 +79,131 @@ describe("DevicesPage", () => {
       </MemoryRouter>,
     );
     expect(await screen.findByText("还没有设备")).toBeInTheDocument();
-    expect(screen.getAllByRole("link", { name: "添加设备" }).length).toBeGreaterThan(0);
+    expect(screen.getByLabelText("推送令牌")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "添加设备" })).toHaveLength(1);
+  });
+
+  it("submits the inline empty-state form and refreshes the list", async () => {
+    const token = "short-apns-token";
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input).includes("/api/auth/get-session")) {
+        return session();
+      }
+      if (init?.method === "POST") {
+        return json({
+          device: {
+            id: DEVICE_ID,
+            name: "设备1",
+            deviceKey: DEVICE_KEY,
+            deviceTokenMasked: DEVICE_TOKEN_MASKED,
+            createdAt: 1,
+            updatedAt: 1,
+          },
+        });
+      }
+      if (String(input).includes("/api/devices") && !String(input).includes("/subscribe")) {
+        return json({ devices: fetchMock.mock.calls.some(([, i]) => (i as RequestInit | undefined)?.method === "POST")
+          ? [{ id: DEVICE_ID, name: "设备1", deviceKey: DEVICE_KEY, deviceTokenMasked: DEVICE_TOKEN_MASKED, createdAt: 1, updatedAt: 1 }]
+          : [] });
+      }
+      return json({});
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(
+      <MemoryRouter initialEntries={["/devices"]}>
+        <Routes>
+          <Route path="/devices" element={<DevicesPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await screen.findByLabelText("推送令牌");
+    fireEvent.change(screen.getByLabelText("推送令牌"), { target: { value: token } });
+    fireEvent.click(screen.getByRole("button", { name: "添加设备" }));
+    await waitFor(() => expect(fetchMock.mock.calls.some(([, init]) => init?.method === "POST")).toBe(true));
+    expect(await screen.findByRole("heading", { name: "设备1" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("推送令牌")).toBeNull();
+  });
+
+  it("adds a device through a dialog when the list already has devices", async () => {
+    const token = "short-apns-token";
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input).includes("/api/auth/get-session")) {
+        return session();
+      }
+      if (init?.method === "POST") {
+        return json({
+          device: {
+            id: "22222222-2222-2222-2222-222222222222",
+            name: "客厅 iPad",
+            deviceKey: "kk2",
+            deviceTokenMasked: "toke****bbbb",
+            createdAt: 1,
+            updatedAt: 1,
+          },
+        });
+      }
+      if (String(input).includes("/api/devices") && !String(input).includes("/subscribe")) {
+        return json({
+          devices: [{
+            id: DEVICE_ID,
+            name: "设备1",
+            deviceKey: DEVICE_KEY,
+            deviceTokenMasked: DEVICE_TOKEN_MASKED,
+            createdAt: 1,
+            updatedAt: 1,
+          }],
+        });
+      }
+      return json({});
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(
+      <MemoryRouter initialEntries={["/devices"]}>
+        <Routes>
+          <Route path="/devices" element={<DevicesPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "添加设备" }));
+    const dialog = await screen.findByRole("dialog");
+    const field = within(dialog).getByLabelText("推送令牌");
+    fireEvent.change(field, { target: { value: token } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "添加设备" }));
+    await waitFor(() => expect(fetchMock.mock.calls.some(([, init]) => init?.method === "POST")).toBe(true));
+    const post = fetchMock.mock.calls.find(([, init]) => init?.method === "POST");
+    expect(JSON.parse(String(post?.[1]?.body))).toEqual({ device_token: token });
+    await waitFor(() => expect(screen.queryByLabelText("推送令牌")).toBeNull());
+  });
+
+  it("does not add a device when the add-device dialog is cancelled", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+      if (String(input).includes("/api/auth/get-session")) {
+        return session();
+      }
+      return json({
+        devices: [{
+          id: DEVICE_ID,
+          name: "设备1",
+          deviceKey: DEVICE_KEY,
+          deviceTokenMasked: DEVICE_TOKEN_MASKED,
+          createdAt: 1,
+          updatedAt: 1,
+        }],
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(
+      <MemoryRouter initialEntries={["/devices"]}>
+        <Routes>
+          <Route path="/devices" element={<DevicesPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "添加设备" }));
+    await screen.findByLabelText("推送令牌");
+    fireEvent.click(screen.getByRole("button", { name: "取消" }));
+    await waitFor(() => expect(screen.queryByLabelText("推送令牌")).not.toBeInTheDocument());
+    expect(fetchMock.mock.calls.every(([, requestInit]) => (requestInit as RequestInit | undefined)?.method !== "POST")).toBe(true);
   });
 
   it("renames a device through a dialog instead of window.prompt", async () => {

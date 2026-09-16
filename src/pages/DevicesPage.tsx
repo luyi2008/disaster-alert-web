@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { deleteDevice, fetchDevices, renameDevice, type DeviceRecord } from "../api";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "../components/ConfirmDialog";
@@ -7,6 +7,8 @@ import { RenameDialog } from "../components/RenameDialog";
 import { AppShell } from "../components/AppShell";
 import { DeviceCard, EmptyState, LoadingState } from "../components/DeviceCard";
 import { StatusMessage } from "../components/Field";
+import { AddDeviceDialog } from "../devices/AddDeviceDialog";
+import { AddDeviceForm } from "../devices/AddDeviceForm";
 import "../styles/base.css";
 import "../styles/ds.css";
 
@@ -16,6 +18,7 @@ export function DevicesPage() {
   const [error, setError] = useState<string | null>(null);
   const [renameTarget, setRenameTarget] = useState<DeviceRecord | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeviceRecord | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
 
   async function refresh() {
     const result = await fetchDevices();
@@ -71,20 +74,18 @@ export function DevicesPage() {
         title="设备"
         description="每台设备使用自己的推送 token、地点和规则。"
         action={
-          <Button asChild>
-            <Link to="/devices/add">添加设备</Link>
-          </Button>
+          devices && devices.length > 0 ? (
+            <Button onClick={() => setAddOpen(true)}>添加设备</Button>
+          ) : null
         }
       >
         {error ? <StatusMessage kind="error">{error}</StatusMessage> : null}
         {devices === null ? (
           <LoadingState label="正在加载…" />
         ) : devices.length === 0 ? (
-          <EmptyState
-            title="还没有设备"
-            body="输入推送令牌添加后才能配置订阅。最长 128 位，不能为 deleted。"
-            action={{ href: "/devices/add", label: "添加设备" }}
-          />
+          <EmptyState title="还没有设备" body="直接在下方添加第一台设备。最长 128 位，不能为 deleted。">
+            <AddDeviceForm onSuccess={() => void refresh()} />
+          </EmptyState>
         ) : (
           <div className="device-grid">
             {devices.map((device) => (
@@ -121,6 +122,7 @@ export function DevicesPage() {
         }}
         onConfirm={() => void submitDelete()}
       />
+      <AddDeviceDialog open={addOpen} onOpenChange={setAddOpen} onAdded={() => void refresh()} />
     </>
   );
 }
