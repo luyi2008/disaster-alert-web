@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { deleteDevice, fetchDevices, renameDevice, type DeviceRecord } from "../api";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { RenameDialog } from "../components/RenameDialog";
 import { AppShell } from "../components/AppShell";
-import { DeviceCard, EmptyState, LoadingState } from "../components/DeviceCard";
+import { DeviceCard, LoadingState } from "../components/DeviceCard";
 import { StatusMessage } from "../components/Field";
 import { AddDeviceDialog } from "../devices/AddDeviceDialog";
 import { AddDeviceForm } from "../devices/AddDeviceForm";
@@ -83,9 +84,17 @@ export function DevicesPage() {
         {devices === null ? (
           <LoadingState label="正在加载…" />
         ) : devices.length === 0 ? (
-          <EmptyState title="还没有设备" body="直接在下方添加第一台设备。最长 128 位，不能为 deleted。">
-            <AddDeviceForm onSuccess={() => void refresh()} />
-          </EmptyState>
+          <Card>
+            <CardContent className="flex flex-col gap-4">
+              <div>
+                <h2 className="text-lg font-semibold">还没有设备</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  直接在下方添加第一台设备。最长 128 位，不能为 deleted。
+                </p>
+              </div>
+              <AddDeviceForm onSuccess={() => void refresh()} />
+            </CardContent>
+          </Card>
         ) : (
           <div className="device-grid">
             {devices.map((device) => (

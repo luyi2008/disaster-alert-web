@@ -1,9 +1,7 @@
-import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Pencil, Unlink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardFooter, CardHeader } from "@/components/ui/card";
-import { Empty, EmptyContent, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { deviceRouteKey, type DeviceRecord } from "../api";
 
@@ -65,24 +63,6 @@ export function DeviceCard({
         </Button>
       </CardFooter>
     </Card>
-  );
-}
-
-export function EmptyState({
-  title,
-  body,
-  children,
-}: {
-  title: string;
-  body: string;
-  children?: ReactNode;
-}) {
-  return (
-    <Empty>
-      <EmptyTitle>{title}</EmptyTitle>
-      <EmptyDescription>{body}</EmptyDescription>
-      {children ? <EmptyContent>{children}</EmptyContent> : null}
-    </Empty>
   );
 }
 
