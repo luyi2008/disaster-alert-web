@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Pencil, Unlink } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -70,23 +71,17 @@ export function DeviceCard({
 export function EmptyState({
   title,
   body,
-  action,
+  children,
 }: {
   title: string;
   body: string;
-  action?: { href: string; label: string };
+  children?: ReactNode;
 }) {
   return (
     <Empty>
       <EmptyTitle>{title}</EmptyTitle>
       <EmptyDescription>{body}</EmptyDescription>
-      {action ? (
-        <EmptyContent>
-          <Button asChild>
-            <Link to={action.href}>{action.label}</Link>
-          </Button>
-        </EmptyContent>
-      ) : null}
+      {children ? <EmptyContent>{children}</EmptyContent> : null}
     </Empty>
   );
 }
