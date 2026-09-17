@@ -1,31 +1,47 @@
 # 灾害预警网页
 
-[disaster-alert](https://github.com/luyi2008/disaster-alert) 的订阅页和通知详情页。本仓库只包含前端，不运行灾害数据源或 Bark 推送。
+[disaster-alert](https://github.com/luyi2008/disaster-alert) 的订阅页和通知详情页前端。本仓库只包含前端代码，不运行灾害数据源、不做 Bark 推送，也不存设备/账号凭据；服务端完全独立发版，两边不需要对齐 git tag。
 
-打开站点先进入 `/`：已登录则去设备列表，未登录则去 `/login`。用手机号 OTP 或微信 mock 登录后，在 `/devices` 输入 22 位 Bark token 绑定设备，再进入该设备的订阅页。通知详情仍由 Bark 深链打开 `/incidents/...`，不要求登录。
+## 路由与鉴权
 
-服务端完全独立发版，两边不需要对齐 git tag。
+- `/` — 已登录跳转 `/devices`，未登录跳转 `/login`
+- `/login` — 手机号 OTP 或微信 mock 登录
+- `/devices` — 绑定 Bark 设备（输入 22 位 token），需登录
+- `/devices/:id/subscribe` — 该设备的订阅页，需登录
+- `/incidents/:incidentId/notifications/:token` — 通知详情页，由 Bark 深链打开，**不要求登录**（凭据在路径 token 中）
 
 ## 本地开发
 
-先在 API 仓库启动 `disaster-alert`（默认 `http://127.0.0.1:30010`），在 BFF 仓库启动 `disaster-alert-bff`（默认 `http://127.0.0.1:30012`，开发可 `AUTH_MOCK=true`），再启动 [mango-captcha](https://github.com/luyi2008/mango-captcha) 边缘函数（默认 `http://127.0.0.1:43141`），然后：
+需要先启动三个依赖服务：
+
+| 服务 | 仓库 | 默认地址 |
+| --- | --- | --- |
+| API | [disaster-alert](https://github.com/luyi2008/disaster-alert) | `http://127.0.0.1:30010` |
+| BFF | disaster-alert-bff | `http://127.0.0.1:30012`（开发可 `AUTH_MOCK=true`） |
+| 图形验证码 | [mango-captcha](https://github.com/luyi2008/mango-captcha) 边缘函数 | `http://127.0.0.1:43141` |
 
 ```bash
 npm install
 npm run dev
 ```
 
-Vite 监听本机所有地址（`localhost` 和 `127.0.0.1` 都能打开）。BFF 默认只信任 Origin `http://127.0.0.1:5173`；开发代理会把 `localhost` / `[::1]` 改写成该值。若用局域网 IP 打开页面，把该 Origin 加进 BFF 的 `TRUSTED_ORIGINS`。
+Vite 监听本机所有地址（`localhost` 和 `127.0.0.1` 都能打开）。BFF 默认只信任 Origin `http://127.0.0.1:5173`；开发代理会把 `localhost` / `[::1]` 改写成该值。若用局域网 IP 打开页面，需把该 Origin 加进 BFF 的 `TRUSTED_ORIGINS`。
 
-Vite 会把 `/api/captcha` 代理到 mango-captcha，把 `/api/auth`、`/api/devices`、`/api/settings` 代理到 BFF，其余 `/api` 与 `/health` 代理到 API。
+### 代理路由
 
-可选环境变量：
+- `/api/captcha` → mango-captcha
+- `/api/auth`、`/api/devices`、`/api/settings` → BFF
+- 其余 `/api` 与 `/health` → API
 
-- `VITE_DEV_API_ORIGIN`：开发时代理公开只读 API 的目标，默认 `http://127.0.0.1:30010`
-- `VITE_DEV_BFF_ORIGIN`：开发时代理 `/api/auth`、`/api/devices`、`/api/settings` 的目标，默认 `http://127.0.0.1:30012`
-- `VITE_CAPTCHA_ORIGIN`：开发时代理 `/api/captcha`（含 `/api/captcha/verify`）的目标，默认 `http://127.0.0.1:43141`
-- `CAPTCHA_ORIGIN`：构建时图形验证码的 origin（scheme + host）。生产见 `.env.production`；开发留空则走同源 `/api/captcha`（Vite 代理）。与 `VITE_CAPTCHA_ORIGIN` 不同：后者只是开发代理的目标地址
-- `VITE_API_BASE`：构建时 API 前缀。同源反代时保持为空
+### 环境变量
+
+| 变量 | 作用 | 默认值 |
+| --- | --- | --- |
+| `VITE_DEV_API_ORIGIN` | 开发时代理公开只读 API 的目标 | `http://127.0.0.1:30010` |
+| `VITE_DEV_BFF_ORIGIN` | 开发时代理 `/api/auth`、`/api/devices`、`/api/settings` 的目标 | `http://127.0.0.1:30012` |
+| `VITE_CAPTCHA_ORIGIN` | 开发时代理 `/api/captcha`（含 `/api/captcha/verify`）的目标 | `http://127.0.0.1:43141` |
+| `CAPTCHA_ORIGIN` | 构建时图形验证码的 origin（scheme + host），生产见 `.env.production`；与 `VITE_CAPTCHA_ORIGIN` 不同，后者只是开发代理目标 | 留空则走同源 `/api/captcha`（Vite 代理） |
+| `VITE_API_BASE` | 构建时 API 前缀 | 同源反代时留空 |
 
 ```bash
 npm test
@@ -34,7 +50,10 @@ npm run build
 
 ## 部署
 
-本仓库推荐用 Docker Compose 跑静态站点。镜像内是 nginx，容器始终监听 `0.0.0.0:30011`。GitHub Actions 在 PR 上只构建镜像、不上传；合并进 `main` 或手动 `workflow_dispatch` 后，把镜像上传到 GitHub Container Registry（`ghcr.io`，不是 Docker Hub），再 SSH 到与 [disaster-alert](https://github.com/luyi2008/disaster-alert) 相同的运行环境（本项目实例是阿里云 ECS）拉取并重启容器。不引用、不构建 `disaster-alert`。
+镜像内是 nginx 托管的静态站点，容器始终监听 `0.0.0.0:30011`。不引用、不构建 `disaster-alert`。
+
+- PR：只构建镜像，不上传、不部署
+- 合并进 `main` 或手动 `workflow_dispatch`：构建镜像、上传到 GitHub Container Registry（`ghcr.io`，不是 Docker Hub），再 SSH 到与 [disaster-alert](https://github.com/luyi2008/disaster-alert) 相同的运行环境（本项目实例是阿里云 ECS）拉取并重启容器
 
 ### Docker Compose
 
@@ -59,7 +78,7 @@ docker compose up -d --no-build
 
 触发规则与 API 仓库一致：PR 只构建、不推送、不部署；推到 `main` 或在 `main` 上手动运行 workflow 才会上传镜像并部署。
 
-`main` 上的 [container workflow](.github/workflows/container.yml) 会：
+`main` 上的 [container workflow](.github/workflows/container.yml) 依次执行：
 
 1. 构建镜像并上传到 `ghcr.io/<owner>/<repo>:latest`（同时打提交 SHA 标签；不是 Docker Hub）
 2. 把当前提交的 `compose.yaml` 拷到主机上的部署目录
@@ -73,18 +92,22 @@ docker compose up -d --no-build
 | `DEPLOY_HOST` | 与 API 相同的 ECS 公网 IP 或 SSH 主机名 |
 | `DEPLOY_USER` | SSH 用户 |
 | `DEPLOY_SSH_KEY` | 该用户的私钥（仅用于部署） |
-| `DEPLOY_PATH` | 主机上放置本仓库 `compose.yaml` 与 `.env` 的目录（不要与 API 的目录混用） |
+| `DEPLOY_PATH` | 主机上放置本仓库 `compose.yaml` 与 `.env` 的目录（不能与 API 的部署目录相同，否则会互相覆盖 `compose.yaml`） |
 | `DEPLOY_ENV_FILE` | 可选。整份生产 `.env` 文本，结构见 [.env.example](.env.example) |
 
-`DEPLOY_PATH` 必须和 API 仓库分开，否则会互相覆盖 `compose.yaml`。SSH 登录信息可以与 `disaster-alert` 相同。
-
-首次在 ECS 上准备一次即可：安装 Docker 与 Compose 插件、把部署公钥写入 `authorized_keys`、创建可写的 `DEPLOY_PATH`。容器和主机发布端口默认都是 `0.0.0.0:30011`。对外 HTTPS 仍由主机上的反向代理处理（配置不在本仓库）。
+SSH 登录信息可以与 `disaster-alert` 相同。首次在 ECS 上需准备：安装 Docker 与 Compose 插件、把部署公钥写入 `authorized_keys`、创建可写的 `DEPLOY_PATH`。容器和主机发布端口默认都是 `0.0.0.0:30011`，对外 HTTPS 由主机上的反向代理处理（配置不在本仓库）。
 
 PR 不会部署、也不会写 `.env`。未配置上述 secrets 时，合并后的 deploy job 会失败；镜像若已上传仍会留在 `ghcr.io`。
 
-镜像内是 nginx 托管的静态资源。`/incidents/` 会回退到 `index.html`，Bark 深链刷新不会 404。构建定义放在 [`.docker/`](.docker/)（`Dockerfile` 与 `nginx.conf`）；`compose.yaml` 仍在仓库根（部署时拷到主机），构建上下文也是仓库根。
+### 静态资源与路由
 
-站点若与 API 共用域名，由运维反代。图形验证码不走站点反代：生产构建把 `CAPTCHA_ORIGIN`（`.env.production`）烘进产物，浏览器直连该 origin 下的 `/api/captcha` 与 `/api/captcha/verify`。边缘需对该站点 Origin 返回 `Access-Control-Allow-Origin`（不能 `*`）和 `Access-Control-Allow-Credentials`。
+- 构建定义在 [`.docker/`](.docker/)（`Dockerfile` 与 `nginx.conf`）；`compose.yaml` 在仓库根（部署时拷到主机），构建上下文也是仓库根
+- `/incidents/` 会回退到 `index.html`，Bark 深链刷新不会 404
+- 站点若与 API 共用域名，由运维反代
+
+### 图形验证码 origin
+
+图形验证码不走站点反代：生产构建把 `CAPTCHA_ORIGIN`（`.env.production`）烘进产物，浏览器直连该 origin 下的 `/api/captcha` 与 `/api/captcha/verify`。边缘需对该站点 Origin 返回 `Access-Control-Allow-Origin`（不能 `*`）和 `Access-Control-Allow-Credentials`。
 
 ```
 浏览器 → CAPTCHA_ORIGIN/api/captcha  /api/captcha/verify  （生产 ESA；本地开发由 Vite 代理到 127.0.0.1:43141）
@@ -93,12 +116,14 @@ PR 不会部署、也不会写 `.env`。未配置上述 secrets 时，合并后�
 /  /login  /devices  /settings  /incidents/*  -> 本镜像（0.0.0.0:30011）
 ```
 
+### 隐私注意事项
+
 反代、CDN 和日志不要记录 `/incidents/` 的完整 URL（路径里含通知凭据）。
 
-契约快照见 [docs/openapi.yaml](docs/openapi.yaml)。API 变更后请人工同步，不要在 CI 里拉取服务端仓库。
+## 相关文档
 
-整体架构、模块划分、数据流与部署拓扑，见 [docs/architecture.md](docs/architecture.md)。
-
-账号登录设计见 [docs/superpowers/specs/2026-09-01-account-login-design.md](docs/superpowers/specs/2026-09-01-account-login-design.md)。登录图形验证码见 [docs/superpowers/specs/2026-09-08-login-captcha-tech.md](docs/superpowers/specs/2026-09-08-login-captcha-tech.md)（浏览器经 mango-captcha ESA，源站只信 Assertion）。
-
-订阅页的 DOM 工作区如何拆分、卸载和查询节点，见 [docs/subscribe-frontend.md](docs/subscribe-frontend.md)。
+- [docs/openapi.yaml](docs/openapi.yaml) — API 契约快照，变更后需人工同步（CI 不拉取服务端仓库）
+- [docs/architecture.md](docs/architecture.md) — 整体架构、模块划分、数据流与部署拓扑
+- [docs/subscribe-frontend.md](docs/subscribe-frontend.md) — 订阅页的模块拆分
+- [docs/superpowers/specs/2026-09-01-account-login-design.md](docs/superpowers/specs/2026-09-01-account-login-design.md) — 账号登录设计
+- [docs/superpowers/specs/2026-09-08-login-captcha-tech.md](docs/superpowers/specs/2026-09-08-login-captcha-tech.md) — 登录图形验证码（浏览器经 mango-captcha ESA，源站只信 Assertion）
