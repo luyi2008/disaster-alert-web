@@ -105,6 +105,8 @@ export type StatusData = {
 
 const apiRoot = (import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/$/, "") ?? "";
 
+export const API_PREFIX_SUBSCRIPTION = "/api/subscription";
+
 export function apiUrl(path: string): string {
   return `${apiRoot}${path}`;
 }
@@ -116,7 +118,7 @@ export async function fetchJson<T>(path: string, init?: RequestInit): Promise<Ap
 }
 
 export async function fetchStatus(): Promise<StatusData> {
-  const body = await fetchJson<StatusData>("/api/status");
+  const body = await fetchJson<StatusData>(`${API_PREFIX_SUBSCRIPTION}/status`);
   if (!body.success || !body.data) {
     throw new Error(body.message || "运行状态暂时无法获取");
   }
@@ -128,7 +130,9 @@ export async function fetchIncidentDetail(
   token: string,
 ): Promise<{ status: number; body: ApiEnvelope<IncidentDetail> }> {
   const response = await fetch(
-    apiUrl(`/api/incidents/${encodeURIComponent(incidentId)}/notifications/${encodeURIComponent(token)}`),
+    apiUrl(
+      `${API_PREFIX_SUBSCRIPTION}/incidents/${encodeURIComponent(incidentId)}/notifications/${encodeURIComponent(token)}`,
+    ),
   );
   const body = (await response.json()) as ApiEnvelope<IncidentDetail>;
   return { status: response.status, body };

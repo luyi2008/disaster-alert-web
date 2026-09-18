@@ -12,7 +12,7 @@
 | `LocationPanel.tsx` | Leaflet 地图与监测地点 |
 | `AlertRulesPanel.tsx` | 灾害类别、来源、烈度规则 |
 | `alertLogic.ts` | 规则 sanitize / 校验 |
-| `statusSources.ts` | `/api/status` 已连接数据源 |
+| `statusSources.ts` | `/api/subscription/status` 已连接数据源 |
 | `notify.ts` | sonner 提示 |
 | `draft.ts` | 服务端订阅映射为草稿 |
 | `geo.ts` | 坐标与地点校验 |

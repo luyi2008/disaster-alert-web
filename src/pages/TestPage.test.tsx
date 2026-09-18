@@ -109,7 +109,7 @@ function stubApis(options: {
         }],
       });
     }
-    if (url.includes("/api/subscription-options")) {
+    if (url.includes("/api/subscription/subscription-options")) {
       return jsonResponse(warningBands(options.bands ?? [
         { min: 1, max: 1, interruption_level: "passive" },
         { min: 2, max: 2, interruption_level: "active" },
@@ -126,7 +126,7 @@ function stubApis(options: {
         status === 401 ? "未登录" : "ok",
       );
     }
-    if (url.includes("/api/history")) {
+    if (url.includes("/api/subscription/history")) {
       const status = options.historyStatus ?? 200;
       return jsonResponse(options.history ?? historyRecords(), status);
     }

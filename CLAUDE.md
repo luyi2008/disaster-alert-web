@@ -69,7 +69,7 @@ Standard React, shares no code with the subscribe workspace except `src/api.ts`.
 
 All API responses share the envelope `{ success: boolean, message: string, data?: T }`. `src/subscribe/http.ts`'s `parseApiResponse` is the single place that normalizes failures: non-JSON responses degrade to a failure envelope instead of throwing, `cleanApiMessage` strips HTML-looking messages (so a gateway error page never gets shown verbatim), and `httpFailureMessage` maps status codes to Chinese user-facing copy.
 
-`GET /api/subscription-options` is a key architectural choice: disaster types, source groups, and default rules are served by the backend, not hardcoded in the frontend — the frontend only renders and does client-side numeric-range validation (e.g. `min_magnitude` 0–10). Don't hardcode disaster-type/source lists in new code; fetch and render what the backend provides.
+`GET /api/subscription/subscription-options` is a key architectural choice: disaster types, source groups, and default rules are served by the backend, not hardcoded in the frontend — the frontend only renders and does client-side numeric-range validation (e.g. `min_magnitude` 0–10). Don't hardcode disaster-type/source lists in new code; fetch and render what the backend provides.
 
 Contract snapshot: `docs/openapi.yaml`, maintained by hand — update it when you change how the frontend calls the API.
 
