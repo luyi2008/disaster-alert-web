@@ -94,7 +94,7 @@ describe("BFF device client", () => {
     vi.stubGlobal("fetch", fetchMock);
     await saveDeviceSubscription(DEVICE.deviceKey, { targets: [], alerts: [] });
     const [url, init] = fetchMock.mock.calls[0]!;
-    expect(String(url)).toContain(`/api/devices/${DEVICE.deviceKey}/subscribe`);
+    expect(String(url)).toContain(`/api/subscription/${DEVICE.deviceKey}/subscribe`);
     expect(String(url)).not.toContain(`/api/devices/${DEVICE.id}/`);
     expect(init?.method).toBe("POST");
     expect(JSON.parse(String(init?.body))).toEqual({ targets: [], alerts: [] });
@@ -109,7 +109,7 @@ describe("BFF device client", () => {
     vi.stubGlobal("fetch", fetchMock);
     await deleteDeviceSubscription(DEVICE.deviceKey);
     const [url, init] = fetchMock.mock.calls[0]!;
-    expect(String(url)).toContain(`/api/devices/${DEVICE.deviceKey}/subscribe`);
+    expect(String(url)).toContain(`/api/subscription/${DEVICE.deviceKey}/subscribe`);
     expect(String(url)).not.toContain(`/api/devices/${DEVICE.id}/`);
     expect(init?.method).toBe("DELETE");
   });

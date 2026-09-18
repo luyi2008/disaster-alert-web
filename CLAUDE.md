@@ -57,7 +57,7 @@ This page used to be built by mounting imperative DOM (`innerHTML` + `mountSubsc
 
 Coordinates are stored as `toFixed(4)` **strings** (not numbers) to preserve user input verbatim and avoid float-display jitter.
 
-Submission is **overwrite, not incremental**: `POST /api/devices/:device_key/subscribe` replaces the whole subscription (`{ targets, alerts }` only, no `destination`). Unsaved edits live only in page memory — no localStorage draft persistence (a previous `disaster_subscription_draft_v3`/`v2` localStorage key exists in some browsers from an old build but is intentionally never read or migrated). Server response failure modes are deliberately distinguished: HTTP 502 → actionable "check your Bark key" error; `data.saved !== true` (subscription persisted, but the Bark confirmation push failed and will retry) → `warning` toast, not `error`, so users aren't told to retry a submission that already succeeded.
+Submission is **overwrite, not incremental**: `POST /api/subscription/:device_key/subscribe` replaces the whole subscription (`{ targets, alerts }` only, no `destination`). Unsaved edits live only in page memory — no localStorage draft persistence (a previous `disaster_subscription_draft_v3`/`v2` localStorage key exists in some browsers from an old build but is intentionally never read or migrated). Server response failure modes are deliberately distinguished: HTTP 502 → actionable "check your Bark key" error; `data.saved !== true` (subscription persisted, but the Bark confirmation push failed and will retry) → `warning` toast, not `error`, so users aren't told to retry a submission that already succeeded.
 
 ### Incident detail page (`/incidents/:incidentId/notifications/:token`)
 
