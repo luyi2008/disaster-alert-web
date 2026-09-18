@@ -120,10 +120,10 @@ function stubSubscribeFetches() {
         subscriptions: [savedRow()],
       });
     }
-    if (url.includes("/api/subscription/subscription-options")) {
+    if (url.includes("/api/subscription-options")) {
       return jsonResponse({ categories: [simpleCategory] });
     }
-    if (url.includes("/api/subscription/status")) {
+    if (url.includes("/api/status")) {
       return jsonResponse({
         instance_terms_accepted: true,
         total_subscriptions: 0,
@@ -208,10 +208,10 @@ describe("SubscribeWorkspace", () => {
     vi.stubGlobal("fetch", vi.fn((input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes("/devices/") && url.includes("/subscription")) return subscriptionsResponse;
-      if (url.includes("/api/subscription/subscription-options")) {
+      if (url.includes("/api/subscription-options")) {
         return Promise.resolve(jsonResponse({ categories: [simpleCategory] }));
       }
-      if (url.includes("/api/subscription/status")) {
+      if (url.includes("/api/status")) {
         return Promise.resolve(jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 }));
       }
       return Promise.resolve(jsonResponse({}));
@@ -240,8 +240,8 @@ describe("SubscribeWorkspace", () => {
       if (url.includes("/devices/") && url.endsWith("/subscription")) {
         return new Response(JSON.stringify({ success: false, message: "没有订阅" }), { status: 200 });
       }
-      if (url.includes("/api/subscription/subscription-options")) return jsonResponse({ categories: [simpleCategory] });
-      if (url.includes("/api/subscription/status")) return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
+      if (url.includes("/api/subscription-options")) return jsonResponse({ categories: [simpleCategory] });
+      if (url.includes("/api/status")) return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
       return jsonResponse({});
     }));
     renderWorkspace();
@@ -264,10 +264,10 @@ describe("SubscribeWorkspace", () => {
           }])],
         });
       }
-      if (url.includes("/api/subscription/subscription-options")) {
+      if (url.includes("/api/subscription-options")) {
         return jsonResponse({ categories: [simpleCategory, weatherCategory, typhoonCategory] });
       }
-      if (url.includes("/api/subscription/status")) return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
+      if (url.includes("/api/status")) return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
       return jsonResponse({});
     }));
     renderWorkspace();
@@ -288,14 +288,14 @@ describe("SubscribeWorkspace", () => {
       if (url.includes("/devices/") && url.endsWith("/subscription")) {
         return new Response(JSON.stringify({ success: false, message: "未登录" }), { status: 401 });
       }
-      if (url.includes("/api/subscription/status")) return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
+      if (url.includes("/api/status")) return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
       return jsonResponse({});
     }));
     renderWorkspace({ onUnauthorized });
     await waitFor(() => expect(onUnauthorized).toHaveBeenCalledOnce());
   });
 
-  it("lists connected /api/subscription/status sources after the alert-type heading", async () => {
+  it("lists connected /api/status sources after the alert-type heading", async () => {
     function channel(connected: boolean) {
       return {
         connected,
@@ -309,7 +309,7 @@ describe("SubscribeWorkspace", () => {
     }
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
-      if (url.includes("/api/subscription/subscription-options")) {
+      if (url.includes("/api/subscription-options")) {
         return jsonResponse({
           categories: [{
             ...simpleCategory,
@@ -325,7 +325,7 @@ describe("SubscribeWorkspace", () => {
           }],
         });
       }
-      if (url.includes("/api/subscription/status")) {
+      if (url.includes("/api/status")) {
         return jsonResponse({
           instance_terms_accepted: true,
           total_subscriptions: 3,
@@ -353,10 +353,10 @@ describe("SubscribeWorkspace", () => {
       if (url.includes("/devices/") && url.endsWith("/subscription")) {
         return jsonResponse({ subscriptions: [savedRow()] });
       }
-      if (url.includes("/api/subscription/subscription-options")) {
+      if (url.includes("/api/subscription-options")) {
         return jsonResponse({ categories: [simpleCategory] });
       }
-      if (url.includes("/api/subscription/status")) {
+      if (url.includes("/api/status")) {
         return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
       }
       if (url.includes("/subscribe") && init?.method === "POST") {

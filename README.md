@@ -112,7 +112,7 @@ PR 不会部署、也不会写 `.env`。未配置上述 secrets 时，合并后�
 ```
 浏览器 → CAPTCHA_ORIGIN/api/captcha  /api/captcha/verify  （生产 ESA；本地开发由 Vite 代理到 127.0.0.1:43141）
 /api/auth/*  /api/devices/*  /api/settings/*  -> disaster-alert-bff（默认 127.0.0.1:30012）
-/api/subscription/*  /health  -> disaster-alert（默认 127.0.0.1:30010）
+/api/incidents/*  /api/status  /api/subscription-options  /api/reverse-geocode  /api/history  /health  -> disaster-alert（默认 127.0.0.1:30010）
 /  /login  /devices  /settings  /incidents/*  -> 本镜像（0.0.0.0:30011）
 ```
 

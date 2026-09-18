@@ -1,5 +1,5 @@
 import type { ApiEnvelope } from "../api";
-import { API_PREFIX_SUBSCRIPTION, apiUrl } from "../api";
+import { apiUrl } from "../api";
 import { bffFetch } from "../auth/session";
 import { parseApiResponse } from "../subscribe/http";
 
@@ -47,7 +47,7 @@ async function requestEnvelope<T>(path: string, init?: RequestInit, viaBff = fal
 }
 
 export async function fetchSubscriptionOptions(): Promise<unknown> {
-  const { body } = await requestEnvelope<unknown>(`${API_PREFIX_SUBSCRIPTION}/subscription-options`);
+  const { body } = await requestEnvelope<unknown>("/api/subscription-options");
   if (!body.success) {
     throw new Error(body.message || "无法获取订阅选项");
   }
@@ -55,7 +55,7 @@ export async function fetchSubscriptionOptions(): Promise<unknown> {
 }
 
 export async function fetchHistoryCatalog(source = "major"): Promise<SimulateCallResult<HistoryCatalog>> {
-  return requestEnvelope<HistoryCatalog>(`${API_PREFIX_SUBSCRIPTION}/history?source=${encodeURIComponent(source)}`);
+  return requestEnvelope<HistoryCatalog>(`/api/history?source=${encodeURIComponent(source)}`);
 }
 
 export async function simulateNotifyLevel(

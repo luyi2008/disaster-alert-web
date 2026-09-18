@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Field } from "../components/Field";
 import { cn } from "@/lib/utils";
-import { API_PREFIX_SUBSCRIPTION } from "../api";
 import {
   cloneTarget,
   createTarget,
@@ -129,7 +128,7 @@ export function LocationPanel({
   ): Promise<void> {
     try {
       const query = new URLSearchParams({ latitude: String(coordinates.latitude), longitude: String(coordinates.longitude) });
-      const res = await fetch(`${api}${API_PREFIX_SUBSCRIPTION}/reverse-geocode?${query}`, { signal: job.controller.signal });
+      const res = await fetch(`${api}/api/reverse-geocode?${query}`, { signal: job.controller.signal });
       const json = await parseApiResponse(res);
       const target = workingTargetById(targetId);
       if (!target || geocodeJobs.current.get(targetId) !== job) return;

@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import {
-  API_PREFIX_SUBSCRIPTION,
   deleteDeviceSubscription,
   fetchDeviceSubscription,
   saveDeviceSubscription,
@@ -81,7 +80,7 @@ export function SubscribeWorkspace({
         } else if (saved.status !== 200) {
           notify(saved.body.message || "无法加载已保存的订阅", "error");
         }
-        const res = await fetch(`${api}${API_PREFIX_SUBSCRIPTION}/subscription-options`);
+        const res = await fetch(`${api}/api/subscription-options`);
         const json = await parseApiResponse(res);
         if (cancelled || current !== generation) return;
         const data = json.data as { categories?: CategoryOption[] } | undefined;

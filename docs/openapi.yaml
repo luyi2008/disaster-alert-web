@@ -115,7 +115,7 @@ paths:
           description: 边缘配置错误
         "502":
           description: 回源发短信失败
-  /api/subscription/subscribe:
+  /api/subscribe:
     post:
       tags: [Subscriptions]
       operationId: subscribe
@@ -191,7 +191,7 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
-  /api/subscription/unsubscribe:
+  /api/unsubscribe:
     delete:
       tags: [Subscriptions]
       operationId: unsubscribe
@@ -221,7 +221,7 @@ paths:
           $ref: "#/components/responses/InternalServerError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
-  /api/subscription/subscriptions:
+  /api/subscriptions:
     get:
       tags: [Subscriptions]
       operationId: listSubscriptions
@@ -248,7 +248,7 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "500":
           $ref: "#/components/responses/InternalServerError"
-  /api/subscription/bark-urls:
+  /api/bark-urls:
     get:
       tags: [Metadata]
       operationId: listBarkUrls
@@ -260,7 +260,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/BarkUrlsApiResponse"
-  /api/subscription/subscription-options:
+  /api/subscription-options:
     get:
       tags: [Metadata]
       operationId: getSubscriptionOptions
@@ -272,7 +272,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SubscriptionOptionsApiResponse"
-  /api/subscription/reverse-geocode:
+  /api/reverse-geocode:
     get:
       tags: [Metadata]
       operationId: reverseGeocode
@@ -305,7 +305,7 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
-  /api/subscription/incidents/{incident_id}/notifications/{token}:
+  /api/incidents/{incident_id}/notifications/{token}:
     get:
       tags: [Notifications]
       operationId: getIncidentNotification
@@ -351,7 +351,7 @@ paths:
           $ref: "#/components/responses/InternalServerError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
-  /api/subscription/status:
+  /api/status:
     get:
       tags: [Operations]
       operationId: getStatus
@@ -379,7 +379,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/EmptySuccessResponse"
-  /api/subscription/simulate:
+  /api/simulate:
     post:
       tags: [Testing]
       operationId: simulateAlert
@@ -456,7 +456,7 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "500":
           $ref: "#/components/responses/InternalServerError"
-  /api/subscription/history:
+  /api/history:
     get:
       tags: [Testing]
       operationId: listHistory
