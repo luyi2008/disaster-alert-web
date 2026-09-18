@@ -23,4 +23,4 @@
 
 Leaflet 仍在 `useEffect` 里创建，卸载时 `map.remove()`，逆地理编码 abort。
 
-不要把未提交的表单草稿写入 localStorage；刷新时通过 `GET /api/devices/:device_key/subscription` hydrate。登录身份是 BFF cookie。401 回 `/login`，设备 404 回 `/devices`。
+不要把未提交的表单草稿写入 localStorage；刷新时通过 `GET /api/subscription/:device_key/subscription` hydrate。登录身份是 BFF cookie。401 回 `/login`，设备 404 回 `/devices`。

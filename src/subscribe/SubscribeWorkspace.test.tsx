@@ -115,7 +115,7 @@ function savedRow(alerts: unknown[] = [simpleAlert]) {
 function stubSubscribeFetches() {
   return vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
     const url = String(input);
-    if (url.includes("/devices/") && url.endsWith("/subscription")) {
+    if (url.includes("/api/subscription/") && url.endsWith("/subscription")) {
       return jsonResponse({
         subscriptions: [savedRow()],
       });
@@ -194,7 +194,7 @@ describe("SubscribeWorkspace", () => {
       expect(subscribeCall[1]?.credentials).toBe("include");
     });
     const hydrateCall = fetchMock.mock.calls.find(([input]) => (
-      String(input).includes(`/api/devices/${KEY}/subscription`)
+      String(input).includes(`/api/subscription/${KEY}/subscription`)
     ));
     expect(hydrateCall).toBeDefined();
     expect(new Headers((hydrateCall?.[1] as RequestInit | undefined)?.headers).get("Authorization")).toBeNull();
@@ -207,7 +207,7 @@ describe("SubscribeWorkspace", () => {
     });
     vi.stubGlobal("fetch", vi.fn((input: RequestInfo | URL) => {
       const url = String(input);
-      if (url.includes("/devices/") && url.includes("/subscription")) return subscriptionsResponse;
+      if (url.includes("/api/subscription/") && url.endsWith("/subscription")) return subscriptionsResponse;
       if (url.includes("/api/subscription/subscription-options")) {
         return Promise.resolve(jsonResponse({ categories: [simpleCategory] }));
       }
@@ -237,7 +237,7 @@ describe("SubscribeWorkspace", () => {
   it("does not treat 200 success:false as a load error", async () => {
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
-      if (url.includes("/devices/") && url.endsWith("/subscription")) {
+      if (url.includes("/api/subscription/") && url.endsWith("/subscription")) {
         return new Response(JSON.stringify({ success: false, message: "没有订阅" }), { status: 200 });
       }
       if (url.includes("/api/subscription/subscription-options")) return jsonResponse({ categories: [simpleCategory] });
@@ -255,7 +255,7 @@ describe("SubscribeWorkspace", () => {
   it("enables only the categories present in the saved subscription alerts", async () => {
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
-      if (url.includes("/devices/") && url.endsWith("/subscription")) {
+      if (url.includes("/api/subscription/") && url.endsWith("/subscription")) {
         return jsonResponse({
           subscriptions: [savedRow([{
             category: "typhoon",
@@ -285,7 +285,7 @@ describe("SubscribeWorkspace", () => {
     const onUnauthorized = vi.fn();
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
-      if (url.includes("/devices/") && url.endsWith("/subscription")) {
+      if (url.includes("/api/subscription/") && url.endsWith("/subscription")) {
         return new Response(JSON.stringify({ success: false, message: "未登录" }), { status: 401 });
       }
       if (url.includes("/api/subscription/status")) return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
@@ -350,7 +350,7 @@ describe("SubscribeWorkspace", () => {
     const onUnauthorized = vi.fn();
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
-      if (url.includes("/devices/") && url.endsWith("/subscription")) {
+      if (url.includes("/api/subscription/") && url.endsWith("/subscription")) {
         return jsonResponse({ subscriptions: [savedRow()] });
       }
       if (url.includes("/api/subscription/subscription-options")) {

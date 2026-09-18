@@ -106,7 +106,7 @@ describe("SubscribePage", () => {
       if (url.includes("/api/subscription/status")) {
         return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
       }
-      if (url.includes("/devices/") && url.endsWith("/subscription")) {
+      if (url.includes("/api/subscription/") && url.endsWith("/subscription")) {
         return new Response(JSON.stringify({ success: false, message: "没有订阅" }), { status: 200 });
       }
       if (url.includes("/api/subscription/subscription-options")) {
@@ -138,7 +138,7 @@ describe("SubscribePage", () => {
     expect(screen.queryByRole("heading", { name: "灾害预警" })).toBeNull();
     await vi.waitFor(() => {
       const hydrateCall = fetchMock.mock.calls.find(([input]) => String(input).endsWith("/subscription"));
-      expect(String(hydrateCall?.[0])).toContain(`/api/devices/${DEVICE_KEY}/subscription`);
+      expect(String(hydrateCall?.[0])).toContain(`/api/subscription/${DEVICE_KEY}/subscription`);
       expect(String(hydrateCall?.[0])).not.toContain(`/api/devices/${DEVICE_ID}/`);
     });
   });
