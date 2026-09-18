@@ -213,11 +213,11 @@ describe("TestPage", () => {
     fireEvent.click(buttons[1]);
     await waitFor(() => {
       const simulateCall = fetchMock.mock.calls.find(([input, init]) => (
-        String(input).includes(`/api/devices/${DEVICE_KEY}/simulate?notify_level=active`)
+        String(input).includes(`/api/subscription/${DEVICE_KEY}/simulate?notify_level=active`)
         && (init as RequestInit | undefined)?.method === "POST"
       ));
       expect(simulateCall).toBeTruthy();
-      expect(String(simulateCall?.[0])).not.toContain(`/api/devices/${DEVICE_ID}/`);
+      expect(String(simulateCall?.[0])).not.toContain(`/api/subscription/${DEVICE_ID}/`);
       expect(simulateCall?.[1]?.credentials).toBe("include");
       expect(new Headers(simulateCall?.[1]?.headers).get("Authorization")).toBeNull();
     });
@@ -235,8 +235,8 @@ describe("TestPage", () => {
     await waitFor(() => {
       const simulateCall = fetchMock.mock.calls.find(([input, init]) => {
         const url = String(input);
-        return url.includes(`/api/devices/${DEVICE_KEY}/simulate?`)
-          && !url.includes(`/api/devices/${DEVICE_ID}/`)
+        return url.includes(`/api/subscription/${DEVICE_KEY}/simulate?`)
+          && !url.includes(`/api/subscription/${DEVICE_ID}/`)
           && url.includes("source=major")
           && url.includes("key=wenchuan-2008")
           && (init as RequestInit | undefined)?.method === "POST";
