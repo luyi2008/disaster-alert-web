@@ -202,7 +202,7 @@ export async function saveDeviceSubscription(
   deviceKey: string,
   payload: { targets: unknown; alerts: unknown },
 ): Promise<{ status: number; body: ApiEnvelope<{ saved?: boolean }> }> {
-  return bffEnvelope(`/api/devices/${encodeURIComponent(deviceKey)}/subscribe`, {
+  return bffEnvelope(`${API_PREFIX_SUBSCRIPTION}/${encodeURIComponent(deviceKey)}/subscribe`, {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -211,5 +211,5 @@ export async function saveDeviceSubscription(
 export async function deleteDeviceSubscription(
   deviceKey: string,
 ): Promise<{ status: number; body: ApiEnvelope<unknown> }> {
-  return bffEnvelope(`/api/devices/${encodeURIComponent(deviceKey)}/subscribe`, { method: "DELETE" });
+  return bffEnvelope(`${API_PREFIX_SUBSCRIPTION}/${encodeURIComponent(deviceKey)}/subscribe`, { method: "DELETE" });
 }

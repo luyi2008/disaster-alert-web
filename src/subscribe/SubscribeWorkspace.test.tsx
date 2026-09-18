@@ -182,7 +182,7 @@ describe("SubscribeWorkspace", () => {
     fireEvent.submit(document.querySelector("#subscribe-form") as HTMLFormElement);
     await waitFor(() => {
       const subscribeCall = fetchMock.mock.calls.find(([input, init]) => (
-        String(input).includes(`/api/devices/${KEY}/subscribe`) && (init as RequestInit | undefined)?.method === "POST"
+        String(input).includes(`/api/subscription/${KEY}/subscribe`) && (init as RequestInit | undefined)?.method === "POST"
       ));
       if (!subscribeCall) {
         throw new Error("missing subscribe request");
@@ -386,7 +386,7 @@ describe("SubscribeWorkspace", () => {
     fireEvent.click(await screen.findByRole("button", { name: "确认取消" }));
     await waitFor(() => {
       expect(fetchMock.mock.calls.some(([input, init]) => (
-        String(input).includes(`/api/devices/${KEY}/subscribe`) && init?.method === "DELETE"
+        String(input).includes(`/api/subscription/${KEY}/subscribe`) && init?.method === "DELETE"
       ))).toBe(true);
     });
   });

@@ -214,7 +214,7 @@ stateDiagram-v2
 
 订阅页用当前设备 `deviceKey` 请求 `GET /api/subscription/:device_key/subscription`（携带 BFF cookie，由 BFF 转发到主 API），再由 `selectSavedSubscription` 取第一条记录。`draftFromSavedSubscription` 把该记录映射为表单草稿；灾种选项随后加载并与映射结果合并。HTTP 200 且 `success: false` 表示该设备没有订阅，页面从空配置开始。401 回 `/login`；设备不存在回 `/devices`。
 
-表单编辑只保存在当前页面的内存中，提交时才通过 `POST /api/devices/:device_key/subscribe` 覆盖订阅（body 只有 `targets` 与 `alerts`，不含 `destination`）；刷新或离开页面会丢弃未提交修改。加载已保存订阅失败时会提示错误，但不会阻止用户继续编辑并保存。浏览器里遗留的 `disaster_subscription_draft_v3` 或 v2 键不会被读取，也不会被删除。
+表单编辑只保存在当前页面的内存中，提交时才通过 `POST /api/subscription/:device_key/subscribe` 覆盖订阅（body 只有 `targets` 与 `alerts`，不含 `destination`）；刷新或离开页面会丢弃未提交修改。加载已保存订阅失败时会提示错误，但不会阻止用户继续编辑并保存。浏览器里遗留的 `disaster_subscription_draft_v3` 或 v2 键不会被读取，也不会被删除。
 
 登录身份是 BFF HttpOnly cookie，不再使用 `disaster_bark_key`。Bark token 只在 `/devices` 绑定时提交一次。
 
@@ -235,7 +235,7 @@ sequenceDiagram
     A->>A: 配置加载完成？
     A->>AL: commitBands / validateAlertRules
     A->>A: 至少一个地点 + validateLocations
-    A->>BFF: POST /api/devices/:device_key/subscribe（{ targets, alerts }）
+    A->>BFF: POST /api/subscription/:device_key/subscribe（{ targets, alerts }）
     BFF->>API: 带服务凭证覆盖订阅
     alt data.saved === true
         API-->>A: 已保存，Bark 确认已发送
@@ -294,8 +294,8 @@ graph LR
 | GET | `/api/subscription/subscription-options` | `SubscribeWorkspace.tsx` | 灾种、来源分组、默认规则 |
 | GET | `/api/subscription/reverse-geocode` | `LocationPanel.tsx` | 坐标 → 省/市/区 |
 | GET | `/api/subscription/:device_key/subscription` | `api.ts` | 读取该设备已保存订阅 |
-| POST | `/api/devices/:device_key/subscribe` | `api.ts` | 覆盖保存订阅 |
-| DELETE | `/api/devices/:device_key/subscribe` | `api.ts` | 删除该设备服务端订阅 |
+| POST | `/api/subscription/:device_key/subscribe` | `api.ts` | 覆盖保存订阅 |
+| DELETE | `/api/subscription/:device_key/subscribe` | `api.ts` | 删除该设备服务端订阅 |
 | GET / POST / PATCH / DELETE | `/api/devices` | `api.ts` | 设备列表与绑定 |
 | GET | `/api/subscription/incidents/{id}/notifications/{token}` | `api.ts` | 通知详情 |
 | GET | `/api/captcha` | `auth/captcha.ts`、登录弹层 | mango-captcha 取 SVG + Token（生产 = `CAPTCHA_ORIGIN` + 路径） |
