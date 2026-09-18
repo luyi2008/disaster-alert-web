@@ -55,7 +55,7 @@ graph TB
 | --- | --- |
 | 同源反代 | 站点与 API 共用域名时，由主机上的反向代理分流。容器自身**不代理** `/api`，单独部署容器无法完成订阅。 |
 | 瓦片直连 | 地图瓦片由浏览器直接向 CDN 请求，不经过本站或 API。 |
-| BFF 登录 | 浏览器只带 session cookie 访问 `/api/auth`、`/api/devices`、`/api/settings` 以及设备订阅读写。登录发送短信先打 mango-captcha `GET /api/captcha` 与 `POST /api/captcha/verify`：生产直连 `CAPTCHA_ORIGIN`（`.env.production`），开发走 Vite 同源代理。不把 Bark token 当站点身份，也不再请求 `/api/bark-urls` 或 `/check`。 |
+| BFF 登录 | 浏览器只带 session cookie 访问 `/api/auth`、`/api/devices`、`/api/settings` 以及设备订阅读写。登录发送短信先打 mango-captcha `GET /api/captcha` 与 `POST /api/captcha/verify`：生产直连 `CAPTCHA_ORIGIN`（`.env.production`），开发走 Vite 同源代理。不把 Bark token 当站点身份，也不再请求 `/api/subscription/bark-urls` 或 `/check`。 |
 | 闭环入口 | 详情页的唯一正常入口是 Bark 推送里的深链，路径中带通知凭据。 |
 
 ---
@@ -162,7 +162,7 @@ graph TB
 | `LocationPanel.tsx` | Leaflet 地图与监测地点 |
 | `AlertRulesPanel.tsx` | 灾害类别、来源、烈度规则 |
 | `alertLogic.ts` | 规则 sanitize / 校验 |
-| `statusSources.ts` | `/api/status` 已连接数据源标签 |
+| `statusSources.ts` | `/api/subscription/status` 已连接数据源标签 |
 | `notify.ts` | sonner 提示 |
 | `draft.ts` | 已保存订阅到表单草稿的映射 |
 | `geo.ts` | 坐标解析与地点校验 |
@@ -203,7 +203,7 @@ stateDiagram-v2
 
 进入 `editing` 时把目标深拷贝到 `editingTarget`，「放弃」即丢弃副本，实现无损回滚。坐标统一以 `toFixed(4)` 的**字符串**形式存储 —— 保留用户输入原样、避免浮点显示抖动，也让重复坐标判定有确定的精度基准。
 
-**逆地理编码**：坐标变更后 350ms 防抖，调 `/api/reverse-geocode` 回填省/市/区。这里有一处容易被忽略的正确性设计 —— 每个任务记录发起时的 `coordinateRevision` 和 `regionRevision`，回填前比对：
+**逆地理编码**：坐标变更后 350ms 防抖，调 `/api/subscription/reverse-geocode` 回填省/市/区。这里有一处容易被忽略的正确性设计 —— 每个任务记录发起时的 `coordinateRevision` 和 `regionRevision`，回填前比对：
 
 - 坐标又变了 → 丢弃（结果已过期）
 - 用户手工改过省市区 → 丢弃（不覆盖人工输入）
@@ -239,7 +239,7 @@ sequenceDiagram
     BFF->>API: 带服务凭证覆盖订阅
     alt data.saved === true
         API-->>A: 已保存，Bark 确认已发送
-        A->>API: 刷新 /api/status
+        A->>API: 刷新 /api/subscription/status
     else 502 或 saved 非 true
         API-->>A: Bark 不可达，后台重试
         A->>U: warning 提示（非 error）
@@ -259,7 +259,7 @@ sequenceDiagram
 ```mermaid
 graph LR
     Route["路由参数<br/>incidentId + token"] --> Hook["useIncidentDetail"]
-    Hook -->|"GET /api/incidents/{id}/notifications/{token}"| API["API"]
+    Hook -->|"GET /api/subscription/incidents/{id}/notifications/{token}"| API["API"]
     Hook --> St{"HTTP 状态"}
     St -->|404| NF["not_found（不可重试）"]
     St -->|503| UA["unavailable（可重试）"]
@@ -290,19 +290,19 @@ graph LR
 
 | 方法 | 路径 | 调用方 | 用途 |
 | --- | --- | --- | --- |
-| GET | `/api/status` | `statusSources.ts`、`api.ts` | 数据源健康、订阅数、队列深度、`instance_terms_accepted` |
-| GET | `/api/subscription-options` | `SubscribeWorkspace.tsx` | 灾种、来源分组、默认规则 |
-| GET | `/api/reverse-geocode` | `LocationPanel.tsx` | 坐标 → 省/市/区 |
+| GET | `/api/subscription/status` | `statusSources.ts`、`api.ts` | 数据源健康、订阅数、队列深度、`instance_terms_accepted` |
+| GET | `/api/subscription/subscription-options` | `SubscribeWorkspace.tsx` | 灾种、来源分组、默认规则 |
+| GET | `/api/subscription/reverse-geocode` | `LocationPanel.tsx` | 坐标 → 省/市/区 |
 | GET | `/api/devices/:device_key/subscription` | `api.ts` | 读取该设备已保存订阅 |
 | POST | `/api/devices/:device_key/subscribe` | `api.ts` | 覆盖保存订阅 |
 | DELETE | `/api/devices/:device_key/subscribe` | `api.ts` | 删除该设备服务端订阅 |
 | GET / POST / PATCH / DELETE | `/api/devices` | `api.ts` | 设备列表与绑定 |
-| GET | `/api/incidents/{id}/notifications/{token}` | `api.ts` | 通知详情 |
+| GET | `/api/subscription/incidents/{id}/notifications/{token}` | `api.ts` | 通知详情 |
 | GET | `/api/captcha` | `auth/captcha.ts`、登录弹层 | mango-captcha 取 SVG + Token（生产 = `CAPTCHA_ORIGIN` + 路径） |
 | POST | `/api/captcha/verify` | `auth/captcha.ts`、登录弹层 | 边缘验图形码后回源发短信 |
 | GET | `/health` | 仅反代/开发代理 | 进程健康检查 |
 
-`/api/subscription-options` 是一个重要的架构选择：**灾种、来源列表和默认规则由服务端下发，不在前端硬编码**。后端新增数据源或灾种，前端无需改代码。前端只保留渲染逻辑和各灾种的数值范围校验（如 `min_magnitude` 0–10、`min_severity` 1–4）。
+`/api/subscription/subscription-options` 是一个重要的架构选择：**灾种、来源列表和默认规则由服务端下发，不在前端硬编码**。后端新增数据源或灾种，前端无需改代码。前端只保留渲染逻辑和各灾种的数值范围校验（如 `min_magnitude` 0–10、`min_severity` 1–4）。
 
 ### 6.2 API 基址解析
 
@@ -462,7 +462,7 @@ Leaflet 在测试中被 `vi.mock` 替换，jsdom 无需真实地图实现。
 
 `docs/openapi.yaml` 是人工维护的快照，CI 明确不拉取服务端仓库。后端改了字段，前端在运行时才会发现。
 
-建议：至少为 `/api/subscription-options` 和 `/api/incidents/...` 的响应加运行时形状校验，把静默的 `undefined` 渲染转成明确的降级提示。或从 OpenAPI 生成类型，让快照与类型不同步时构建失败。
+建议：至少为 `/api/subscription/subscription-options` 和 `/api/subscription/incidents/...` 的响应加运行时形状校验，把静默的 `undefined` 渲染转成明确的降级提示。或从 OpenAPI 生成类型，让快照与类型不同步时构建失败。
 
 **3. Leaflet 生命周期仍是命令式的**
 
