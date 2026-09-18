@@ -116,7 +116,7 @@ function stubApis(options: {
         { min: 3, max: 7, interruption_level: "critical" },
       ]));
     }
-    if (url.includes("/devices/") && url.endsWith("/subscription")) {
+    if (url.includes("/api/subscription/") && url.endsWith("/subscription")) {
       const status = options.subscriptionsStatus ?? 200;
       const success = options.subscriptionsSuccess ?? status < 400;
       return envelopeResponse(
@@ -178,7 +178,7 @@ describe("TestPage", () => {
     expect(screen.queryByText(/\/api\/history/)).toBeNull();
     const hydrateCall = fetchMock.mock.calls.find(([input]) => String(input).endsWith("/subscription"));
     expect(hydrateCall).toBeTruthy();
-    expect(String(hydrateCall?.[0])).toContain(`/api/devices/${DEVICE_KEY}/subscription`);
+    expect(String(hydrateCall?.[0])).toContain(`/api/subscription/${DEVICE_KEY}/subscription`);
     expect(String(hydrateCall?.[0])).not.toContain(`/api/devices/${DEVICE_ID}/`);
     expect(new Headers(hydrateCall?.[1]?.headers).get("Authorization")).toBeNull();
     await screen.findByText("bark.example");

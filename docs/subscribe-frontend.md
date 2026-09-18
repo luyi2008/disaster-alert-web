@@ -29,4 +29,4 @@
 ## 不要做的
 
 - 不要把未提交的表单草稿写入 localStorage。
-- 登录身份是 BFF cookie。订阅读写走 `/api/devices/:device_key/subscription` 与 `/api/devices/:device_key/subscribe`。401 回 `/login`，设备 404 回 `/devices`。
+- 登录身份是 BFF cookie。订阅读取走 `/api/subscription/:device_key/subscription`（BFF 转发到主 API），写入走 `/api/devices/:device_key/subscribe`。401 回 `/login`，设备 404 回 `/devices`。
