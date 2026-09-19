@@ -219,7 +219,10 @@ describe("TestPage", () => {
       expect(simulateCall).toBeTruthy();
       expect(String(simulateCall?.[0])).not.toContain(`/api/subscription/${DEVICE_ID}/`);
       expect(String(simulateCall?.[0])).not.toContain("?");
-      expect(JSON.parse(String(simulateCall?.[1]?.body))).toEqual({ notify_level: "active" });
+      expect(JSON.parse(String(simulateCall?.[1]?.body))).toEqual({
+        notify_level: "active",
+        device_ID_list: [DEVICE_KEY],
+      });
       expect(simulateCall?.[1]?.credentials).toBe("include");
       expect(new Headers(simulateCall?.[1]?.headers).get("Authorization")).toBeNull();
     });
@@ -243,7 +246,11 @@ describe("TestPage", () => {
           && (init as RequestInit | undefined)?.method === "POST";
       });
       expect(simulateCall).toBeTruthy();
-      expect(JSON.parse(String(simulateCall?.[1]?.body))).toEqual({ source: "major", key: "wenchuan-2008" });
+      expect(JSON.parse(String(simulateCall?.[1]?.body))).toEqual({
+        source: "major",
+        key: "wenchuan-2008",
+        device_ID_list: [DEVICE_KEY],
+      });
     });
   });
 
