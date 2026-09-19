@@ -1,5 +1,6 @@
 import type { ApiEnvelope } from "../api";
 import { API_PREFIX_SUBSCRIPTION, apiUrl } from "../api";
+import { bffFetch } from "../auth/session";
 import { parseApiResponse } from "../subscribe/http";
 
 export type SimulateResult = {
@@ -39,8 +40,8 @@ export type SimulateCallResult<T> = {
   body: ApiEnvelope<T>;
 };
 
-async function requestEnvelope<T>(path: string, init?: RequestInit): Promise<SimulateCallResult<T>> {
-  const response = await fetch(apiUrl(path), init);
+async function requestEnvelope<T>(path: string, init?: RequestInit, viaBff = false): Promise<SimulateCallResult<T>> {
+  const response = viaBff ? await bffFetch(path, init) : await fetch(apiUrl(path), init);
   const body = await parseApiResponse(response) as ApiEnvelope<T>;
   return { status: response.status, body };
 }
@@ -57,21 +58,14 @@ export async function fetchHistoryCatalog(source = "major"): Promise<SimulateCal
   return requestEnvelope<HistoryCatalog>(`${API_PREFIX_SUBSCRIPTION}/history?source=${encodeURIComponent(source)}`);
 }
 
-function simulateInit(deviceKey: string): RequestInit {
-  return {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${deviceKey}` },
-    body: "{}",
-  };
-}
-
 export async function simulateNotifyLevel(
   deviceKey: string,
   level: string,
 ): Promise<SimulateCallResult<SimulateResult>> {
   return requestEnvelope<SimulateResult>(
-    `${API_PREFIX_SUBSCRIPTION}/simulate?notify_level=${encodeURIComponent(level)}`,
-    simulateInit(deviceKey),
+    `${API_PREFIX_SUBSCRIPTION}/${encodeURIComponent(deviceKey)}/simulate?notify_level=${encodeURIComponent(level)}`,
+    { method: "POST", body: "{}" },
+    true,
   );
 }
 
@@ -82,7 +76,8 @@ export async function simulateHistoryReplay(
 ): Promise<SimulateCallResult<SimulateResult>> {
   const query = new URLSearchParams({ source, key });
   return requestEnvelope<SimulateResult>(
-    `${API_PREFIX_SUBSCRIPTION}/simulate?${query}`,
-    simulateInit(deviceKey),
+    `${API_PREFIX_SUBSCRIPTION}/${encodeURIComponent(deviceKey)}/simulate?${query}`,
+    { method: "POST", body: "{}" },
+    true,
   );
 }
