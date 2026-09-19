@@ -63,8 +63,8 @@ export async function simulateNotifyLevel(
   level: string,
 ): Promise<SimulateCallResult<SimulateResult>> {
   return requestEnvelope<SimulateResult>(
-    `${API_PREFIX_SUBSCRIPTION}/${encodeURIComponent(deviceKey)}/simulate?notify_level=${encodeURIComponent(level)}`,
-    { method: "POST", body: "{}" },
+    `${API_PREFIX_SUBSCRIPTION}/${encodeURIComponent(deviceKey)}/simulate`,
+    { method: "POST", body: JSON.stringify({ notify_level: level }) },
     true,
   );
 }
@@ -74,10 +74,9 @@ export async function simulateHistoryReplay(
   source: string,
   key: string,
 ): Promise<SimulateCallResult<SimulateResult>> {
-  const query = new URLSearchParams({ source, key });
   return requestEnvelope<SimulateResult>(
-    `${API_PREFIX_SUBSCRIPTION}/${encodeURIComponent(deviceKey)}/simulate?${query}`,
-    { method: "POST", body: "{}" },
+    `${API_PREFIX_SUBSCRIPTION}/${encodeURIComponent(deviceKey)}/simulate`,
+    { method: "POST", body: JSON.stringify({ source, key }) },
     true,
   );
 }
