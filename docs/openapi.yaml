@@ -790,6 +790,13 @@ components:
           type: string
           examples: [yibin-gaoxian-2026, wenchuan-2008, tangshan-1976]
           description: 历史目录条目 id。
+        device_ID_list:
+          type: array
+          items:
+            type: string
+          description: 目标设备的 Bark Key 列表，当前前端固定传入路径中的单个 device_key。
+          examples:
+            - [exampleKeyA, exampleKeyB]
     SimulateApiResponse:
       type: object
       additionalProperties: false
