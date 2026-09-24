@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { RequireSession } from "./auth/RequireSession";
 import { AddDevicePage } from "./pages/AddDevicePage";
 import { DevicesPage } from "./pages/DevicesPage";
+import { EventsPage } from "./pages/EventsPage";
 import { HomeRedirect } from "./pages/HomeRedirect";
 import { IncidentPage } from "./pages/IncidentPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/incidents/:incidentId/notifications/:token" element={<IncidentPage />} />
         <Route path="/devices" element={<RequireSession><DevicesPage /></RequireSession>} />
+        <Route path="/events" element={<RequireSession><EventsPage /></RequireSession>} />
         <Route path="/devices/add" element={<RequireSession><AddDevicePage /></RequireSession>} />
         <Route path="/devices/:id/subscribe" element={<RequireSession><SubscribePage /></RequireSession>} />
         <Route path="/devices/:id/subscribe/test" element={<RequireSession><TestPage /></RequireSession>} />

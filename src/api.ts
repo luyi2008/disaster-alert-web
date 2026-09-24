@@ -10,6 +10,7 @@ export type ApiEnvelope<T> = {
 
 export type PublicEvent = {
   category: string;
+  channel?: string;
   source: string;
   event_id: string;
   revision: string;
@@ -103,6 +104,29 @@ export type StatusData = {
   total_subscriptions: number;
 };
 
+export type IncidentListItem = {
+  incident_id: string;
+  category: string;
+  first_seen_at_ms: number;
+  updated_at_ms: number;
+  has_matched_subscribers: boolean;
+  latest: PublicEvent[];
+  timeline: IncidentReportSummary[];
+};
+
+export type IncidentEventsData = {
+  events: IncidentListItem[];
+  has_more: boolean;
+};
+
+export type IncidentEventsQuery = {
+  category?: string;
+  limit?: number;
+  beforeMs?: number;
+  matchedOnly?: boolean;
+  finalReportOnly?: boolean;
+};
+
 const apiRoot = (import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/$/, "") ?? "";
 
 export const API_PREFIX_SUBSCRIPTION = "/api/subscription";
@@ -190,6 +214,26 @@ export async function renameDevice(
 
 export async function deleteDevice(id: string): Promise<{ status: number; body: ApiEnvelope<unknown> }> {
   return bffEnvelope(`/api/devices/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
+export async function fetchIncidentEvents(
+  query: IncidentEventsQuery = {},
+): Promise<{ status: number; body: ApiEnvelope<IncidentEventsData> }> {
+  const params = new URLSearchParams();
+  params.set("limit", String(query.limit ?? 20));
+  if (query.category) {
+    params.set("category", query.category);
+  }
+  if (query.beforeMs !== undefined) {
+    params.set("before_ms", String(query.beforeMs));
+  }
+  if (query.matchedOnly) {
+    params.set("matched_only", "true");
+  }
+  if (query.finalReportOnly) {
+    params.set("final_report_only", "true");
+  }
+  return bffEnvelope(`${API_PREFIX_SUBSCRIPTION}/events?${params.toString()}`);
 }
 
 export async function fetchDeviceSubscription(
