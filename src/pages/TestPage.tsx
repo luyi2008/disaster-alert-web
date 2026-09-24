@@ -199,6 +199,8 @@ export function TestPage() {
       return;
     }
     let cancelled = false;
+    setHistoryLoading(true);
+    setHistoryError(null);
     fetchHistoryCatalog()
       .then(({ status, body }) => {
         if (cancelled) {
@@ -257,10 +259,7 @@ export function TestPage() {
   };
 
   return (
-    <AppShell
-      title="测试通知"
-      description={device ? `向「${device.name}」发送测试推送。` : "向当前设备发送测试推送。"}
-    >
+    <AppShell title="测试通知">
       <div className="test-page">
       <Card className="test-sheet max-w-none gap-0 py-0 shadow-none">
       <CardContent className="test-sheet-body p-5">
@@ -324,27 +323,10 @@ export function TestPage() {
 
         <section className="test-block" aria-labelledby="test-priority-heading">
           <h2 id="test-priority-heading">通知级别</h2>
-          <Tabs
-            value={tab}
-            onValueChange={(value) => {
-              const next = value as TabId;
-              setTab(next);
-              if (next === "history") {
-                setHistoryLoading(true);
-                setHistoryError(null);
-              }
-            }}
-          >
+          <Tabs value={tab} onValueChange={(value) => setTab(value as TabId)}>
             <TabsList aria-label="测试方式">
               <TabsTrigger value="levels">烈度试推</TabsTrigger>
-              <TabsTrigger
-                value="history"
-                onClick={() => {
-                  setTab("history");
-                  setHistoryLoading(true);
-                  setHistoryError(null);
-                }}
-              >
+              <TabsTrigger value="history" onClick={() => setTab("history")}>
                 历史回放
               </TabsTrigger>
             </TabsList>
