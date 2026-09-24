@@ -31,13 +31,7 @@ Proxy routing: `/api/captcha` → captcha origin, `/api/auth` + `/api/devices` +
 
 ## Branch conventions for agents
 
-- Never commit or push directly to `main`. Every change goes on its own task branch — normally the branch the invoking session/harness assigns you (e.g. `claude/<random-slug>`); use that branch exactly as given, don't rename or recreate it.
-- **Naming, when you must pick a branch name yourself** (no branch was assigned): `<type>/<short-kebab-case-description>`, where `<type>` is one of `feat`, `fix`, `chore`, `docs`, `refactor`, `test` — the same prefixes already used in this repo's commit messages (`git log` history mixes plain and conventional-commit-style subjects, but branch/PR-worthy work has historically used these, e.g. `feat/account-login`). Keep the description short and specific to the task (`fix/history-loading-stuck`, not `fix/bug` or `fix/updates`). Don't reuse an old branch name for unrelated work.
-- One branch = one task. Don't land unrelated fixes on a branch you were given for something else; if the ask changes mid-task, confirm before repurposing the branch.
-- Push with `git push -u origin <branch-name>` to your own branch only. Never force-push a branch you didn't create in this task, and never rewrite history (`rebase -i`, `--amend`, force-push) on a branch someone else may also be working on.
-- If the PR for your assigned branch has already been merged, don't keep stacking commits on that merged history — restart the branch from the current `main` (`git fetch origin main && git checkout -B <branch-name> origin/main`, keeping any unmerged commits by rebasing them onto the new base) and treat further work as a new PR.
-- Don't open a pull request unless explicitly asked to. When asked, check for `.github/pull_request_template.md` (or similar) and follow its structure; this repo's deploy pipeline (`push` to `main`) is what actually ships to production, so merging is a deliberate, human-gated step, not something to do implicitly.
-- CI only builds images on PRs (`push: false`, see Deployment below) — pushing to `main` triggers a real build-and-deploy, so treat merges to `main` as a production release, not routine housekeeping.
+See `.claude/rules/git.md` — covers branch naming, one-branch-per-task, force-push/history-rewrite limits, restarting a branch whose PR already merged, and when (not) to open a PR.
 
 ## Architecture
 
