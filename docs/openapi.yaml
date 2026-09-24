@@ -248,6 +248,59 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "500":
           $ref: "#/components/responses/InternalServerError"
+  /api/subscription/events:
+    get:
+      tags: [Subscriptions]
+      operationId: listIncidentEvents
+      summary: 分页获取地震信息列表（含当前用户订阅匹配状态）
+      description: |
+        按 updated_at_ms 倒序返回地震信息卡片，供地震信息列表页做无限滚动加载。
+        需要登录态（Better Auth session cookie）；`has_matched_subscribers` 按当前用户名下设备的订阅规则计算。
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [earthquake_warning, earthquake_report, weather_warning, tsunami, typhoon]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+        - name: before_ms
+          in: query
+          description: 游标：只返回 updated_at_ms 小于该值的记录；首屏省略
+          schema:
+            type: integer
+        - name: matched_only
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: final_report_only
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: 地震信息列表
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncidentEventsApiResponse"
+        "401":
+          description: 未登录或会话已过期
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
   /api/subscription/bark-urls:
     get:
       tags: [Metadata]
@@ -1130,6 +1183,9 @@ components:
         category:
           type: string
           enum: [earthquake_warning, earthquake_report, weather_warning, tsunami, typhoon]
+        channel:
+          type: string
+          description: 信源展示名（如 fan_studio），部分历史事件可能缺省
         source:
           type: string
         event_id:
@@ -1262,6 +1318,60 @@ components:
           type: boolean
         cancel:
           type: boolean
+    IncidentEventsApiResponse:
+      type: object
+      additionalProperties: false
+      required: [success, message, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/IncidentEventsData"
+    IncidentEventsData:
+      type: object
+      additionalProperties: false
+      required: [events, has_more]
+      properties:
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/IncidentListItem"
+        has_more:
+          type: boolean
+    IncidentListItem:
+      type: object
+      additionalProperties: false
+      required:
+        - incident_id
+        - category
+        - first_seen_at_ms
+        - updated_at_ms
+        - has_matched_subscribers
+        - latest
+        - timeline
+      properties:
+        incident_id:
+          type: string
+        category:
+          type: string
+          enum: [earthquake_warning, earthquake_report, weather_warning, tsunami, typhoon]
+        first_seen_at_ms:
+          type: integer
+        updated_at_ms:
+          type: integer
+        has_matched_subscribers:
+          type: boolean
+        latest:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicEvent"
+        timeline:
+          type: array
+          items:
+            $ref: "#/components/schemas/IncidentReportSummary"
     StatusApiResponse:
       type: object
       additionalProperties: false

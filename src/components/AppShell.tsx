@@ -71,6 +71,9 @@ export function AppShell({
           <Button asChild variant="ghost" size="sm">
             <NavLink to="/devices">设备管理</NavLink>
           </Button>
+          <Button asChild variant="ghost" size="sm">
+            <NavLink to="/events">地震信息</NavLink>
+          </Button>
           <ThemeToggle />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
