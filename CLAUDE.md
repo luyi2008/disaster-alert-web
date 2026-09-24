@@ -29,6 +29,15 @@ The dev server proxies API calls to sibling backend repos that must be running l
 
 Proxy routing: `/api/captcha` → captcha origin, `/api/auth` + `/api/devices` + `/api/settings` → BFF, everything else under `/api` + `/health` → API.
 
+## Branch conventions for agents
+
+- Never commit or push directly to `main`. Every change goes on its own task branch — normally the branch the invoking session/harness assigns you (e.g. `claude/<task-slug>`); if none is assigned, create one named after the task (`fix/...`, `feat/...`).
+- One branch = one task. Don't land unrelated fixes on a branch you were given for something else; if the ask changes mid-task, confirm before repurposing the branch.
+- Push with `git push -u origin <branch-name>` to your own branch only. Never force-push a branch you didn't create in this task, and never rewrite history (`rebase -i`, `--amend`, force-push) on a branch someone else may also be working on.
+- If the PR for your assigned branch has already been merged, don't keep stacking commits on that merged history — restart the branch from the current `main` (`git fetch origin main && git checkout -B <branch-name> origin/main`, keeping any unmerged commits by rebasing them onto the new base) and treat further work as a new PR.
+- Don't open a pull request unless explicitly asked to. When asked, check for `.github/pull_request_template.md` (or similar) and follow its structure; this repo's deploy pipeline (`push` to `main`) is what actually ships to production, so merging is a deliberate, human-gated step, not something to do implicitly.
+- CI only builds images on PRs (`push: false`, see Deployment below) — pushing to `main` triggers a real build-and-deploy, so treat merges to `main` as a production release, not routine housekeeping.
+
 ## Architecture
 
 ### Tech stack
