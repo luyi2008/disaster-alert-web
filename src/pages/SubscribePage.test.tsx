@@ -69,9 +69,6 @@ describe("SubscribePage", () => {
       if (url.endsWith("/api/devices") || url === "/api/devices") {
         return jsonResponse({ devices: [] });
       }
-      if (url.includes("/api/subscription/status")) {
-        return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
-      }
       return jsonResponse({});
     }));
     render(
@@ -102,9 +99,6 @@ describe("SubscribePage", () => {
             updatedAt: 1,
           }],
         });
-      }
-      if (url.includes("/api/subscription/status")) {
-        return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
       }
       if (url.includes("/api/subscription/") && url.endsWith("/subscription")) {
         return new Response(JSON.stringify({ success: false, message: "没有订阅" }), { status: 200 });

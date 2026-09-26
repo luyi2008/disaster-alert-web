@@ -124,10 +124,7 @@ function stubSubscribeFetches() {
       return jsonResponse({ categories: [simpleCategory] });
     }
     if (url.includes("/api/subscription/status")) {
-      return jsonResponse({
-        instance_terms_accepted: true,
-        total_subscriptions: 0,
-      });
+      return jsonResponse({ total_subscriptions: 0 });
     }
     if (url.includes("/subscribe") && !url.includes("subscription-options")) {
       return jsonResponse({ saved: true });
@@ -137,7 +134,6 @@ function stubSubscribeFetches() {
 }
 
 function renderWorkspace(options: {
-  instanceTermsAccepted?: boolean;
   onUnauthorized?: () => void;
   onMissingDevice?: () => void;
 } = {}) {
@@ -146,7 +142,6 @@ function renderWorkspace(options: {
       <Toaster />
       <SubscribeWorkspace
         api=""
-        instanceTermsAccepted={options.instanceTermsAccepted ?? true}
         deviceKey={KEY}
         onUnauthorized={options.onUnauthorized}
         onMissingDevice={options.onMissingDevice}
@@ -212,7 +207,7 @@ describe("SubscribeWorkspace", () => {
         return Promise.resolve(jsonResponse({ categories: [simpleCategory] }));
       }
       if (url.includes("/api/subscription/status")) {
-        return Promise.resolve(jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 }));
+        return Promise.resolve(jsonResponse({ total_subscriptions: 0 }));
       }
       return Promise.resolve(jsonResponse({}));
     }));
@@ -241,7 +236,7 @@ describe("SubscribeWorkspace", () => {
         return new Response(JSON.stringify({ success: false, message: "没有订阅" }), { status: 200 });
       }
       if (url.includes("/api/subscription/subscription-options")) return jsonResponse({ categories: [simpleCategory] });
-      if (url.includes("/api/subscription/status")) return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
+      if (url.includes("/api/subscription/status")) return jsonResponse({ total_subscriptions: 0 });
       return jsonResponse({});
     }));
     renderWorkspace();
@@ -267,7 +262,7 @@ describe("SubscribeWorkspace", () => {
       if (url.includes("/api/subscription/subscription-options")) {
         return jsonResponse({ categories: [simpleCategory, weatherCategory, typhoonCategory] });
       }
-      if (url.includes("/api/subscription/status")) return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
+      if (url.includes("/api/subscription/status")) return jsonResponse({ total_subscriptions: 0 });
       return jsonResponse({});
     }));
     renderWorkspace();
@@ -288,7 +283,7 @@ describe("SubscribeWorkspace", () => {
       if (url.includes("/api/subscription/") && url.endsWith("/subscription")) {
         return new Response(JSON.stringify({ success: false, message: "未登录" }), { status: 401 });
       }
-      if (url.includes("/api/subscription/status")) return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
+      if (url.includes("/api/subscription/status")) return jsonResponse({ total_subscriptions: 0 });
       return jsonResponse({});
     }));
     renderWorkspace({ onUnauthorized });
@@ -327,7 +322,6 @@ describe("SubscribeWorkspace", () => {
       }
       if (url.includes("/api/subscription/status")) {
         return jsonResponse({
-          instance_terms_accepted: true,
           total_subscriptions: 3,
           wolfx: channel(true),
           fanstudio: channel(true),
@@ -357,7 +351,7 @@ describe("SubscribeWorkspace", () => {
         return jsonResponse({ categories: [simpleCategory] });
       }
       if (url.includes("/api/subscription/status")) {
-        return jsonResponse({ instance_terms_accepted: true, total_subscriptions: 0 });
+        return jsonResponse({ total_subscriptions: 0 });
       }
       if (url.includes("/subscribe") && init?.method === "POST") {
         return new Response(JSON.stringify({ success: false, message: "Bark 拒绝" }), { status: 502 });

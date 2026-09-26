@@ -104,7 +104,7 @@ graph TB
 
     subgraph SubPage["SubscribePage —— React 工作区"]
         direction TB
-        S1["session / 设备归属 / TermsDialog"]
+        S1["session / 设备归属"]
         S2["SubscribeWorkspace"]
         S3["LocationPanel + AlertRulesPanel"]
         S1 --> S2 --> S3
@@ -290,7 +290,7 @@ graph LR
 
 | 方法 | 路径 | 调用方 | 用途 |
 | --- | --- | --- | --- |
-| GET | `/api/subscription/status` | `statusSources.ts`、`api.ts` | 数据源健康、订阅数、队列深度、`instance_terms_accepted` |
+| GET | `/api/subscription/status` | `statusSources.ts` | 数据源健康、订阅数、队列深度 |
 | GET | `/api/subscription/subscription-options` | `SubscribeWorkspace.tsx` | 灾种、来源分组、默认规则 |
 | GET | `/api/subscription/reverse-geocode` | `LocationPanel.tsx` | 坐标 → 省/市/区 |
 | GET | `/api/subscription/:device_key/subscription` | `api.ts` | 读取该设备已保存订阅 |
@@ -352,7 +352,7 @@ graph LR
 ### 7.2 无障碍与动效
 
 - 语义化标签、`aria-labelledby` / `aria-label` / `aria-hidden` 覆盖主要区域。
-- 确认/改名弹窗是 Radix Dialog / AlertDialog（键盘、焦点、点击外部）。责任声明 `TermsDialog` 禁止 Esc / 点遮罩关闭，必须点「已知悉」。
+- 确认/改名弹窗是 Radix Dialog / AlertDialog（键盘、焦点、点击外部）。
 - Tailwind / `tw-animate-css` 尊重 `prefers-reduced-motion`。
 - 暗色模式继续跟系统 `prefers-color-scheme`，不引入 class 开关。
 
@@ -423,7 +423,7 @@ graph TB
 - `SubscribePage.test.tsx` — 设备缺失回列表；账号壳与返回设备。
 - `DevicesPage.test.tsx` — 改名 Dialog、解绑 AlertDialog；取消不发请求。
 - `LoginPage.test.tsx` / `AddDevicePage.test.tsx` / `SettingsPage.test.tsx` — 账号流。
-- `TestPage.test.tsx` / `IncidentPage.test.tsx` / `TermsDialog.test.tsx` — 测试页、详情、责任声明。
+- `TestPage.test.tsx` / `IncidentPage.test.tsx` — 测试页、详情。
 
 Leaflet 在测试中被 `vi.mock` 替换，jsdom 无需真实地图实现。
 
