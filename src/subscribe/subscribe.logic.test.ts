@@ -92,6 +92,18 @@ describe("saved subscription mapping", () => {
     expect(draft.bark_url).toBe("https://bark.mangguo.cloud");
   });
 
+  it("drops weather, tsunami, and typhoon alerts from a saved subscription", () => {
+    const draft = draftFromSavedSubscription(sampleRow({
+      alerts: [
+        { category: "earthquake_report", sources: { mode: "all" }, min_magnitude: 4 },
+        { category: "weather_warning", sources: { mode: "all" } },
+        { category: "tsunami", sources: { mode: "all" } },
+        { category: "typhoon", sources: { mode: "all" } },
+      ],
+    }));
+    expect(Object.keys(draft.alerts_by_category)).toEqual(["earthquake_report"]);
+  });
+
   it("keeps the destination base_url from the saved row", () => {
     const draft = draftFromSavedSubscription(sampleRow());
     expect(draft.bark_url).toBe("https://bark.mangguo.cloud");

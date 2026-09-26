@@ -1,18 +1,8 @@
-import type { AlertEntry, SubscriptionDraft, SubscriptionTarget } from "../subscribe/types";
+import { isEarthquakeAlertCategory, type AlertEntry, type SubscriptionDraft, type SubscriptionTarget } from "../subscribe/types";
 
 const CATEGORY_LABELS: Record<string, string> = {
   earthquake_warning: "地震预警",
   earthquake_report: "地震速报",
-  weather_warning: "气象预警",
-  tsunami: "海啸预警",
-  typhoon: "台风信息",
-};
-
-const SEVERITY_LABELS: Record<number, string> = {
-  1: "蓝色",
-  2: "黄色",
-  3: "橙色",
-  4: "红色",
 };
 
 export function categoryLabel(category: string): string {
@@ -68,7 +58,7 @@ export function formatBarkHost(url: string): string {
   }
 }
 
-export type RuleCardTone = "warn" | "primary" | "yellow" | "quiet";
+export type RuleCardTone = "warn" | "primary" | "quiet";
 
 export type AlertRuleCard = {
   category: string;
@@ -89,16 +79,6 @@ function notifyLevelTone(id: string): RuleCardTone {
   }
 }
 
-function severityTone(severity: number): RuleCardTone {
-  if (severity >= 4) {
-    return "warn";
-  }
-  if (severity >= 2) {
-    return "yellow";
-  }
-  return "primary";
-}
-
 function categoryTone(category: string, entry: AlertEntry): RuleCardTone {
   if (!entry.enabled) {
     return "quiet";
@@ -117,18 +97,13 @@ function categoryTone(category: string, entry: AlertEntry): RuleCardTone {
       }
       return "quiet";
     }
-    case "weather_warning":
-    case "tsunami":
-      return "yellow";
-    case "typhoon":
-      return "primary";
     default:
       return "quiet";
   }
 }
 
 export function alertRuleCards(draft: SubscriptionDraft): AlertRuleCard[] {
-  return Object.entries(draft.alerts_by_category).map(([category, entry]) => {
+  return Object.entries(draft.alerts_by_category).filter(([category]) => isEarthquakeAlertCategory(category)).map(([category, entry]) => {
     const title = categoryLabel(entry.rule.category || category);
     const tone = categoryTone(category, entry);
     if (!entry.enabled) {
@@ -158,19 +133,6 @@ export function alertRuleCards(draft: SubscriptionDraft): AlertRuleCard[] {
     if (entry.rule.min_magnitude != null && String(entry.rule.min_magnitude) !== "") {
       const magnitude = Number(entry.rule.min_magnitude);
       metric = `M ≥ ${Number.isFinite(magnitude) ? magnitude.toFixed(1) : entry.rule.min_magnitude}`;
-    }
-
-    if (entry.rule.min_severity != null && String(entry.rule.min_severity) !== "") {
-      const severity = Number(entry.rule.min_severity);
-      const severityLabel = Number.isFinite(severity) ? SEVERITY_LABELS[severity] : "";
-      if (severityLabel) {
-        badge = { label: severityLabel, tone: Number.isFinite(severity) ? severityTone(severity) : "quiet" };
-      }
-    }
-
-    const radius = entry.rule.fallback_radius_km ?? entry.rule.max_center_distance_km;
-    if (radius != null && String(radius) !== "") {
-      metric = `${radius}km`;
     }
 
     return { category, title, tone, badge, metric };
@@ -217,20 +179,11 @@ export function formatAlertEntry(category: string, entry: AlertEntry): string {
   if (entry.rule.min_magnitude != null && String(entry.rule.min_magnitude) !== "") {
     details.push(`最低震级 ${entry.rule.min_magnitude}`);
   }
-  if (entry.rule.min_severity != null && String(entry.rule.min_severity) !== "") {
-    const severity = Number(entry.rule.min_severity);
-    const severityLabel = Number.isFinite(severity) ? SEVERITY_LABELS[severity] : "";
-    details.push(severityLabel ? `最低 ${severityLabel}` : `最低严重度 ${entry.rule.min_severity}`);
-  }
-  if (entry.rule.fallback_radius_km != null && String(entry.rule.fallback_radius_km) !== "") {
-    details.push(`回退半径 ${entry.rule.fallback_radius_km} km`);
-  }
-  if (entry.rule.max_center_distance_km != null && String(entry.rule.max_center_distance_km) !== "") {
-    details.push(`中心距离 ${entry.rule.max_center_distance_km} km`);
-  }
   return details.length ? `${name}：${details.join(" · ")}` : `${name}：已启用`;
 }
 
 export function formatAlertSummaries(draft: SubscriptionDraft): string[] {
-  return Object.entries(draft.alerts_by_category).map(([category, entry]) => formatAlertEntry(category, entry));
+  return Object.entries(draft.alerts_by_category)
+    .filter(([category]) => isEarthquakeAlertCategory(category))
+    .map(([category, entry]) => formatAlertEntry(category, entry));
 }

@@ -5,6 +5,7 @@ info:
   description: |
     灾害预警 Bark 订阅系统的 JSON HTTP API。
     网页界面由独立仓库 disaster-alert-web 提供。
+    本快照只保留网页实际订阅和展示的地震预警（earthquake_warning）与地震速报（earthquake_report）。
   license:
     name: Apache License 2.0
     identifier: Apache-2.0
@@ -260,7 +261,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [earthquake_warning, earthquake_report, weather_warning, tsunami, typhoon]
+            enum: [earthquake_warning, earthquake_report]
         - name: limit
           in: query
           schema:
@@ -709,17 +710,11 @@ components:
       oneOf:
         - $ref: "#/components/schemas/EarthquakeWarningRule"
         - $ref: "#/components/schemas/EarthquakeReportRule"
-        - $ref: "#/components/schemas/WeatherWarningRule"
-        - $ref: "#/components/schemas/TsunamiRule"
-        - $ref: "#/components/schemas/TyphoonRule"
       discriminator:
         propertyName: category
         mapping:
           earthquake_warning: "#/components/schemas/EarthquakeWarningRule"
           earthquake_report: "#/components/schemas/EarthquakeReportRule"
-          weather_warning: "#/components/schemas/WeatherWarningRule"
-          tsunami: "#/components/schemas/TsunamiRule"
-          typhoon: "#/components/schemas/TyphoonRule"
     EarthquakeWarningRule:
       type: object
       additionalProperties: false
@@ -768,54 +763,6 @@ components:
           format: double
           minimum: 0
           maximum: 10
-    WeatherWarningRule:
-      type: object
-      additionalProperties: false
-      required: [category, sources, min_severity, fallback_radius_km]
-      properties:
-        category:
-          type: string
-          const: weather_warning
-        sources:
-          $ref: "#/components/schemas/SourceSelection"
-        min_severity:
-          type: integer
-          minimum: 1
-          maximum: 4
-        fallback_radius_km:
-          type: number
-          format: double
-          minimum: 1
-          maximum: 2000
-    TsunamiRule:
-      type: object
-      additionalProperties: false
-      required: [category, sources, min_severity]
-      properties:
-        category:
-          type: string
-          const: tsunami
-        sources:
-          $ref: "#/components/schemas/SourceSelection"
-        min_severity:
-          type: integer
-          minimum: 1
-          maximum: 4
-    TyphoonRule:
-      type: object
-      additionalProperties: false
-      required: [category, sources, max_center_distance_km]
-      properties:
-        category:
-          type: string
-          const: typhoon
-        sources:
-          $ref: "#/components/schemas/SourceSelection"
-        max_center_distance_km:
-          type: number
-          format: double
-          minimum: 1
-          maximum: 3000
     ErrorResponse:
       type: object
       additionalProperties: false
@@ -1056,7 +1003,7 @@ components:
       properties:
         id:
           type: string
-          enum: [earthquake_warning, earthquake_report, weather_warning, tsunami, typhoon]
+          enum: [earthquake_warning, earthquake_report]
         label:
           type: string
         source_groups:
@@ -1181,7 +1128,7 @@ components:
       properties:
         category:
           type: string
-          enum: [earthquake_warning, earthquake_report, weather_warning, tsunami, typhoon]
+          enum: [earthquake_warning, earthquake_report]
         channel:
           type: string
           description: 信源展示名（如 wolfx），部分历史事件可能缺省
@@ -1268,7 +1215,7 @@ components:
           type: string
         category:
           type: string
-          enum: [earthquake_warning, earthquake_report, weather_warning, tsunami, typhoon]
+          enum: [earthquake_warning, earthquake_report]
         updated_at_ms:
           type: integer
         latest_by_source:
@@ -1294,7 +1241,7 @@ components:
       properties:
         category:
           type: string
-          enum: [earthquake_warning, earthquake_report, weather_warning, tsunami, typhoon]
+          enum: [earthquake_warning, earthquake_report]
         source:
           type: string
         report_num:
@@ -1356,7 +1303,7 @@ components:
           type: string
         category:
           type: string
-          enum: [earthquake_warning, earthquake_report, weather_warning, tsunami, typhoon]
+          enum: [earthquake_warning, earthquake_report]
         first_seen_at_ms:
           type: integer
         updated_at_ms:

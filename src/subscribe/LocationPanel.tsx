@@ -492,7 +492,7 @@ export function LocationPanel({
                   }} />
                 </Field>
               </div>
-              <small className="region-editor-note">填写行政区可提高气象预警覆盖，并用于海啸区域匹配。</small>
+              <small className="region-editor-note">行政区会显示在通知详情的关注地点里，可不填。</small>
             </div>
           </div>
         </div>

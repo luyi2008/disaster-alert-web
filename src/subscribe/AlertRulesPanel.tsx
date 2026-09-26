@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Activity, CloudRain, Tornado, WavesHorizontal } from "lucide-react";
+import { Activity } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -29,19 +29,9 @@ import {
 } from "./alertLogic";
 import type { CategoryOption, SubscriptionDraft } from "./types";
 
-const LEVEL_OPTIONS = [
-  [1, "蓝色/信息"],
-  [2, "黄色"],
-  [3, "橙色"],
-  [4, "红色"],
-] as const;
-
 const CATEGORY_ICONS = {
   earthquake_warning: Activity,
   earthquake_report: Activity,
-  weather_warning: CloudRain,
-  tsunami: WavesHorizontal,
-  typhoon: Tornado,
 } as const;
 
 function CategoryIcon({ categoryId, active }: { categoryId: string; active: boolean }) {
@@ -373,64 +363,15 @@ function ThresholdFields({
 }) {
   const alert = alertEntry(draft, categoryId)?.rule;
   if (!alert) return null;
-  if (categoryId === "earthquake_report") {
-    return (
-      <div className="rule-section">
-        <div className="rule-section-header"><span className="rule-section-title">匹配规则</span></div>
-        <div className="rule-grid">
-          <Field label="最低震级" htmlFor={`${categoryId}-min-magnitude`} hint="仅筛选地震信息，不影响地震预警。">
-            <Input id={`${categoryId}-min-magnitude`} data-rule="min_magnitude" type="number" min={0} max={10} step="0.1" value={String(alert.min_magnitude ?? "")} disabled={disabled} onChange={(event) => onChange("min_magnitude", event.target.value)} />
-          </Field>
-        </div>
+  if (categoryId !== "earthquake_report") return null;
+  return (
+    <div className="rule-section">
+      <div className="rule-section-header"><span className="rule-section-title">匹配规则</span></div>
+      <div className="rule-grid">
+        <Field label="最低震级" htmlFor={`${categoryId}-min-magnitude`} hint="仅筛选地震信息，不影响地震预警。">
+          <Input id={`${categoryId}-min-magnitude`} data-rule="min_magnitude" type="number" min={0} max={10} step="0.1" value={String(alert.min_magnitude ?? "")} disabled={disabled} onChange={(event) => onChange("min_magnitude", event.target.value)} />
+        </Field>
       </div>
-    );
-  }
-  if (categoryId === "weather_warning") {
-    return (
-      <div className="rule-section">
-        <div className="rule-section-header"><span className="rule-section-title">匹配规则</span></div>
-        <div className="rule-grid">
-          <Field label="最低严重度" htmlFor={`${categoryId}-min-severity`} hint="低于此级别的气象预警不推送。">
-            <NativeSelect id={`${categoryId}-min-severity`} data-rule="min_severity" disabled={disabled} value={String(alert.min_severity ?? "")} onChange={(event) => onChange("min_severity", event.target.value)}>
-              {LEVEL_OPTIONS.map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </NativeSelect>
-          </Field>
-          <Field label="坐标回退半径" htmlFor={`${categoryId}-fallback-radius`} hint="行政区未命中时，按地点周边公里数匹配。">
-            <Input id={`${categoryId}-fallback-radius`} data-rule="fallback_radius_km" type="number" min={1} max={2000} step={1} value={String(alert.fallback_radius_km ?? "")} disabled={disabled} onChange={(event) => onChange("fallback_radius_km", event.target.value)} />
-          </Field>
-        </div>
-      </div>
-    );
-  }
-  if (categoryId === "tsunami") {
-    return (
-      <div className="rule-section">
-        <div className="rule-section-header"><span className="rule-section-title">匹配规则</span></div>
-        <div className="rule-grid">
-          <Field label="最低严重度" htmlFor={`${categoryId}-min-severity`} hint="结合监测地点的行政区进行匹配。">
-            <NativeSelect id={`${categoryId}-min-severity`} data-rule="min_severity" disabled={disabled} value={String(alert.min_severity ?? "")} onChange={(event) => onChange("min_severity", event.target.value)}>
-              {LEVEL_OPTIONS.map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </NativeSelect>
-          </Field>
-        </div>
-      </div>
-    );
-  }
-  if (categoryId === "typhoon") {
-    return (
-      <div className="rule-section">
-        <div className="rule-section-header"><span className="rule-section-title">匹配规则</span></div>
-        <div className="rule-grid">
-          <Field label="中心最大距离" htmlFor={`${categoryId}-max-center`} hint="台风中心距离任一监测地点不超过此公里数。">
-            <Input id={`${categoryId}-max-center`} data-rule="max_center_distance_km" type="number" min={1} max={3000} step={1} value={String(alert.max_center_distance_km ?? "")} disabled={disabled} onChange={(event) => onChange("max_center_distance_km", event.target.value)} />
-          </Field>
-        </div>
-      </div>
-    );
-  }
-  return null;
+    </div>
+  );
 }

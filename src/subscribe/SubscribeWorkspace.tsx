@@ -14,6 +14,7 @@ import {
   alertRuleForPayload,
   cloneJson,
   commitBands,
+  earthquakeCategoryOptions,
   enabledAlertRules,
   sanitizeAlertRule,
   validateAlertRules,
@@ -84,10 +85,14 @@ export function SubscribeWorkspace({
         if (cancelled || current !== generation) return;
         const data = json.data as { categories?: CategoryOption[] } | undefined;
         if (!res.ok || !json.success || !Array.isArray(data?.categories)) {
-          throw new Error(json.message || "无法获取灾害来源");
+          throw new Error(json.message || "无法获取地震订阅选项");
+        }
+        const categories = earthquakeCategoryOptions(data.categories);
+        if (!categories.length) {
+          throw new Error("无法获取地震订阅选项");
         }
         nextDraft.alerts_by_category = mergeAlertsByCategory(
-          data.categories,
+          categories,
           nextDraft.alerts_by_category && typeof nextDraft.alerts_by_category === "object"
             ? nextDraft.alerts_by_category
             : {},
@@ -96,7 +101,7 @@ export function SubscribeWorkspace({
         );
         delete nextDraft.legacy_alerts;
         delete nextDraft.legacy_disabled_alerts;
-        setCategories(data.categories);
+        setCategories(categories);
         setDraft(nextDraft);
         setConfigurationReady(true);
       } catch (error) {

@@ -160,7 +160,7 @@ graph TB
 | --- | --- |
 | `SubscribeWorkspace.tsx` | hydrate、保存、取消订阅、重置规则 |
 | `LocationPanel.tsx` | Leaflet 地图与监测地点 |
-| `AlertRulesPanel.tsx` | 灾害类别、来源、烈度规则 |
+| `AlertRulesPanel.tsx` | 地震预警与地震速报的来源、烈度或震级规则 |
 | `alertLogic.ts` | 规则 sanitize / 校验 |
 | `statusSources.ts` | `/api/subscription/status` 已连接数据源标签 |
 | `notify.ts` | sonner 提示 |
@@ -302,7 +302,7 @@ graph LR
 | POST | `/api/captcha/verify` | `auth/captcha.ts`、登录弹层 | 边缘验图形码后回源发短信 |
 | GET | `/health` | 仅反代/开发代理 | 进程健康检查 |
 
-`/api/subscription/subscription-options` 是一个重要的架构选择：**灾种、来源列表和默认规则由服务端下发，不在前端硬编码**。后端新增数据源或灾种，前端无需改代码。前端只保留渲染逻辑和各灾种的数值范围校验（如 `min_magnitude` 0–10、`min_severity` 1–4）。
+`/api/subscription/subscription-options` 仍由服务端下发来源分组和默认规则。前端只接受 `earthquake_warning`（地震预警）和 `earthquake_report`（地震速报）；气象预警、海啸预警和台风信息即使出现在响应里也会被丢掉，保存时不会写回。数值校验只保留地震速报的 `min_magnitude`（0–10）和地震预警烈度分段。
 
 ### 6.2 API 基址解析
 
