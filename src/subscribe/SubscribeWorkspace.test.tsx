@@ -324,15 +324,16 @@ describe("SubscribeWorkspace", () => {
         return jsonResponse({
           total_subscriptions: 3,
           wolfx: channel(true),
-          fanstudio: channel(true),
           huania: channel(false),
         });
       }
       return jsonResponse({});
     }));
     renderWorkspace();
-    const sources = await screen.findByText("Wolfx ｜ FAN Studio");
-    expect(sources).toHaveAttribute("id", "alert-type-sources");
+    await waitFor(() => {
+      expect(document.querySelector("#alert-type-sources")?.textContent).toBe("Wolfx");
+    });
+    const sources = document.querySelector("#alert-type-sources") as HTMLElement;
     expect(sources).not.toHaveAttribute("hidden");
     expect(sources.textContent).not.toContain("Huania");
     expect(document.querySelector("#status-shell")).toBeNull();
