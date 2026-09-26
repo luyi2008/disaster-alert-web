@@ -74,7 +74,7 @@ export function AddDeviceForm({
           onChange={(event) => setName(event.target.value)}
         />
       </Field>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-2">
         {onCancel ? (
           <Button type="button" variant="outline" onClick={onCancel}>
             {cancelLabel}

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -38,7 +39,7 @@ import "../styles/test.css";
 type TabId = "levels" | "history";
 
 type ActionStatus = {
-  kind: "success" | "error";
+  kind: "success";
   text: string;
 };
 
@@ -114,7 +115,6 @@ export function TestPage() {
   const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [historySource, setHistorySource] = useState("major");
   const [historyLoading, setHistoryLoading] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [tab, setTab] = useState<TabId>("levels");
   const [pendingAction, setPendingAction] = useState<string | null>(null);
@@ -180,13 +180,13 @@ export function TestPage() {
             setBarkUrl(mapped.bark_url || "");
           }
         } else if (saved.status !== 200) {
-          setLoadError(saved.body.message || "无法加载已保存的订阅");
+          toast.error(saved.body.message || "无法加载已保存的订阅", { richColors: true });
         }
       })
       .catch((error: { message?: string }) => {
         if (!cancelled) {
           setLevels(notifyLevelsFromOptions(null));
-          setLoadError(error?.message || "无法加载订阅选项");
+          toast.error(error?.message || "无法加载订阅选项", { richColors: true });
         }
       });
     return () => {
@@ -206,7 +206,9 @@ export function TestPage() {
         }
         if (status >= 400 || !body.success || !body.data) {
           setHistory([]);
-          setHistoryError(body.message || "无法读取历史目录");
+          const message = body.message || "无法读取历史目录";
+          setHistoryError(message);
+          toast.error(message, { richColors: true });
           return;
         }
         setHistorySource(body.data.source || "major");
@@ -215,7 +217,9 @@ export function TestPage() {
       .catch((error: { message?: string }) => {
         if (!cancelled) {
           setHistory([]);
-          setHistoryError(error?.message || "无法读取历史目录");
+          const message = error?.message || "无法读取历史目录";
+          setHistoryError(message);
+          toast.error(message, { richColors: true });
         }
       })
       .finally(() => {
@@ -245,12 +249,15 @@ export function TestPage() {
         return;
       }
       const text = resultMessage(status, body.message, body.data);
-      setActionStatus({ kind: status < 400 && body.success ? "success" : "error", text });
+      if (status < 400 && body.success) {
+        setActionStatus({ kind: "success", text });
+      } else {
+        setActionStatus(null);
+        toast.error(text, { richColors: true });
+      }
     } catch (error) {
-      setActionStatus({
-        kind: "error",
-        text: error instanceof Error && error.message ? error.message : "测试推送失败",
-      });
+      setActionStatus(null);
+      toast.error(error instanceof Error && error.message ? error.message : "测试推送失败", { richColors: true });
     } finally {
       setPendingAction(null);
     }
@@ -259,7 +266,6 @@ export function TestPage() {
   return (
     <AppShell
       title="测试通知"
-      description={device ? `向「${device.name}」发送测试推送。` : "向当前设备发送测试推送。"}
     >
       <div className="test-page">
       <Card className="test-sheet max-w-none gap-0 py-0 shadow-none">
@@ -349,11 +355,6 @@ export function TestPage() {
               </TabsTrigger>
             </TabsList>
             <TabsContent value="levels">
-              {loadError ? (
-                <Alert variant="destructive" className="mb-3" role="status">
-                  <AlertDescription>{loadError}</AlertDescription>
-                </Alert>
-              ) : null}
               <ul className="test-level-list">
                 {levels.map((level) => (
                   <li key={level.id}>
@@ -383,11 +384,6 @@ export function TestPage() {
               </ul>
             </TabsContent>
             <TabsContent value="history">
-              {historyError ? (
-                <Alert variant="destructive" className="mb-3" role="status">
-                  <AlertDescription>{historyError}</AlertDescription>
-                </Alert>
-              ) : null}
               {historyLoading ? <p className="test-note">正在读取历史目录…</p> : null}
               {!historyLoading && !historyError && history.length === 0 ? (
                 <p className="test-note">历史目录为空。</p>
@@ -437,12 +433,8 @@ export function TestPage() {
             </TabsContent>
           </Tabs>
 
-        {actionStatus ? (
-          <Alert
-            className="mt-3"
-            variant={actionStatus.kind === "error" ? "destructive" : "success"}
-            role="status"
-          >
+        {actionStatus?.kind === "success" ? (
+          <Alert className="mt-3" variant="success" role="status">
             <AlertDescription>{actionStatus.text}</AlertDescription>
           </Alert>
         ) : null}
