@@ -352,6 +352,7 @@
     .subscribe-workspace .form-actions button,
     .subscribe-workspace .form-actions a {
       width: auto;
+      justify-self: start;
     }
     .subscribe-workspace .form-actions-note { color: var(--muted-foreground); font-size: 13px; line-height: 1.45; }
     .subscribe-workspace footer {
