@@ -99,11 +99,6 @@ export type IncidentDetail = {
   incident: IncidentView | null;
 };
 
-export type StatusData = {
-  instance_terms_accepted: boolean;
-  total_subscriptions: number;
-};
-
 export type IncidentListItem = {
   incident_id: string;
   category: string;
@@ -139,14 +134,6 @@ export async function fetchJson<T>(path: string, init?: RequestInit): Promise<Ap
   const response = await fetch(apiUrl(path), init);
   const body = (await response.json()) as ApiEnvelope<T>;
   return body;
-}
-
-export async function fetchStatus(): Promise<StatusData> {
-  const body = await fetchJson<StatusData>(`${API_PREFIX_SUBSCRIPTION}/status`);
-  if (!body.success || !body.data) {
-    throw new Error(body.message || "运行状态暂时无法获取");
-  }
-  return body.data;
 }
 
 export async function fetchIncidentDetail(

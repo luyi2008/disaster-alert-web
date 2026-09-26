@@ -122,7 +122,6 @@ paths:
       summary: 创建或覆盖订阅
       description: |
         创建订阅并向 Bark 目标发送确认通知。
-        仅在实例设置 `INSTANCE_TERMS_ACCEPTED=true` 时可用。
       requestBody:
         required: true
         content:
@@ -1387,11 +1386,8 @@ components:
     Status:
       type: object
       additionalProperties: false
-      required: [instance_terms_accepted, total_subscriptions, wolfx, fanstudio, huania, durable, ready_queues]
+      required: [total_subscriptions, wolfx, fanstudio, huania, durable, ready_queues]
       properties:
-        instance_terms_accepted:
-          type: boolean
-          description: 实例是否已设置 `INSTANCE_TERMS_ACCEPTED=true`。
         total_subscriptions:
           type: integer
           minimum: 0

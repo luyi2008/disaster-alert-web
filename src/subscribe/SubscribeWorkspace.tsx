@@ -29,13 +29,11 @@ import type { CategoryOption, SubscriptionDraft } from "./types";
 
 export function SubscribeWorkspace({
   api,
-  instanceTermsAccepted,
   deviceKey,
   onUnauthorized,
   onMissingDevice,
 }: {
   api: string;
-  instanceTermsAccepted: boolean;
   deviceKey: string;
   onUnauthorized?: () => void;
   onMissingDevice?: () => void;
@@ -119,10 +117,6 @@ export function SubscribeWorkspace({
 
   async function onSave(event: FormEvent): Promise<void> {
     event.preventDefault();
-    if (!instanceTermsAccepted) {
-      notify("当前实例尚未确认部署责任，不能新增或保存订阅", "error");
-      return;
-    }
     if (!configurationReady) {
       notify("订阅配置尚未加载完成", "error");
       return;
@@ -245,17 +239,13 @@ export function SubscribeWorkspace({
         <Button asChild variant="outline">
             <Link to="/devices">返回设备</Link>
           </Button>
-          <div id="draft-status" className="form-actions-note">
-            {instanceTermsAccepted ? "" : "当前实例未确认部署责任，不能新增或保存订阅；仍可取消已有订阅。"}
-          </div>
           <Button id="unsubscribe" type="button" variant="outline" disabled={inFlight} onClick={() => setUnsubscribeOpen(true)}>
             取消订阅
           </Button>
           <Button
             id="submit"
             type="submit"
-            disabled={inFlight || !configurationReady || !instanceTermsAccepted}
-            title={instanceTermsAccepted ? "" : "实例部署者确认责任声明后才能保存订阅"}
+            disabled={inFlight || !configurationReady}
           >
             保存订阅
           </Button>
