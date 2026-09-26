@@ -1,4 +1,12 @@
-import type { AlertEntry, AlertRuleDraft, CategoryOption, IntensityBand, NotifyLevel, SubscriptionDraft } from "./types";
+import {
+  isEarthquakeAlertCategory,
+  type AlertEntry,
+  type AlertRuleDraft,
+  type CategoryOption,
+  type IntensityBand,
+  type NotifyLevel,
+  type SubscriptionDraft,
+} from "./types";
 
 export const notifyLevelOrder: NotifyLevel[] = ["passive", "active", "critical"];
 
@@ -19,21 +27,19 @@ export function alertEntry(draft: SubscriptionDraft, category: string): AlertEnt
   return draft.alerts_by_category[category] || null;
 }
 
+export function earthquakeCategoryOptions(categories: CategoryOption[]): CategoryOption[] {
+  return categories.filter((category) => isEarthquakeAlertCategory(category.id));
+}
+
 export function enabledAlertRules(draft: SubscriptionDraft): AlertRuleDraft[] {
-  return Object.values(draft.alerts_by_category)
-    .filter((entry) => entry.enabled)
-    .map((entry) => entry.rule);
+  return Object.entries(draft.alerts_by_category)
+    .filter(([category, entry]) => isEarthquakeAlertCategory(category) && entry.enabled)
+    .map(([, entry]) => entry.rule);
 }
 
 export function alertRuleForPayload(rule: AlertRuleDraft): AlertRuleDraft {
   const result = cloneJson(rule);
   if (result.category === "earthquake_report") result.min_magnitude = Number(result.min_magnitude);
-  if (result.category === "weather_warning") {
-    result.min_severity = Number(result.min_severity);
-    result.fallback_radius_km = Number(result.fallback_radius_km);
-  }
-  if (result.category === "tsunami") result.min_severity = Number(result.min_severity);
-  if (result.category === "typhoon") result.max_center_distance_km = Number(result.max_center_distance_km);
   return result;
 }
 
@@ -107,32 +113,19 @@ export function sanitizeAlertRule(category: CategoryOption, candidate: AlertRule
       ids: [...new Set(selection.ids.filter((id) => typeof id === "string" && knownSources.has(id)))],
     };
   }
-  const numberInRange = (value: unknown, defaultValue: number | string | undefined, min: number, max: number, integer = false) => {
+  const numberInRange = (value: unknown, defaultValue: number | string | undefined, min: number, max: number) => {
     if ((typeof value !== "number" && typeof value !== "string")
       || (typeof value === "string" && !value.trim())) return defaultValue;
     const number = Number(value);
-    return Number.isFinite(number) && number >= min && number <= max && (!integer || Number.isInteger(number))
-      ? number
-      : defaultValue;
+    return Number.isFinite(number) && number >= min && number <= max ? number : defaultValue;
   };
   if (category.id === "earthquake_warning") {
     fallback.estimated_intensity_bands = normalizeBands(candidate.estimated_intensity_bands)
       .map((band) => ({ min: band.min, max: band.max, interruption_level: band.level }));
   } else if (category.id === "earthquake_report") {
     fallback.min_magnitude = numberInRange(candidate.min_magnitude, fallback.min_magnitude, 0, 10);
-  } else if (category.id === "weather_warning") {
-    fallback.min_severity = numberInRange(candidate.min_severity, fallback.min_severity, 1, 4, true);
-    fallback.fallback_radius_km = numberInRange(candidate.fallback_radius_km, fallback.fallback_radius_km, 1, 2000);
-  } else if (category.id === "tsunami") {
-    fallback.min_severity = numberInRange(candidate.min_severity, fallback.min_severity, 1, 4, true);
-  } else if (category.id === "typhoon") {
-    fallback.max_center_distance_km = numberInRange(candidate.max_center_distance_km, fallback.max_center_distance_km, 1, 3000);
   }
   return fallback;
-}
-
-export function severityLabel(value: unknown): string {
-  return ({ 1: "蓝色/信息", 2: "黄色", 3: "橙色", 4: "红色" } as Record<number, string>)[Number(value)] || `级别 ${value}`;
 }
 
 export function categoryRuleSummary(draft: SubscriptionDraft, category: string): string {
@@ -140,9 +133,6 @@ export function categoryRuleSummary(draft: SubscriptionDraft, category: string):
   if (!alert) return "";
   if (category === "earthquake_warning") return `${(alert.estimated_intensity_bands || []).length} 段烈度规则`;
   if (category === "earthquake_report") return `M ≥ ${Number(alert.min_magnitude).toFixed(1)}`;
-  if (category === "weather_warning") return `≥ ${severityLabel(alert.min_severity)} · 回退 ${Number(alert.fallback_radius_km)} km`;
-  if (category === "tsunami") return `≥ ${severityLabel(alert.min_severity)}`;
-  if (category === "typhoon") return `中心 ${Number(alert.max_center_distance_km)} km 内`;
   return "";
 }
 
@@ -194,15 +184,7 @@ export function validateAlertRules(draft: SubscriptionDraft, categories: Categor
   if (!alerts.length) return "请至少启用一种灾害类别";
   const numeric = (value: unknown) => String(value ?? "").trim() ? Number(value) : Number.NaN;
   const magnitude = numeric(alertEntry(draft, "earthquake_report")?.rule.min_magnitude);
-  const weatherRadius = numeric(alertEntry(draft, "weather_warning")?.rule.fallback_radius_km);
-  const typhoonRadius = numeric(alertEntry(draft, "typhoon")?.rule.max_center_distance_km);
-  const weatherLevel = numeric(alertEntry(draft, "weather_warning")?.rule.min_severity);
-  const tsunamiLevel = numeric(alertEntry(draft, "tsunami")?.rule.min_severity);
   if (alertEntry(draft, "earthquake_report")?.enabled && (!Number.isFinite(magnitude) || magnitude < 0 || magnitude > 10)) return "最低震级必须在 0 到 10 之间";
-  if (alertEntry(draft, "weather_warning")?.enabled && (!Number.isFinite(weatherRadius) || weatherRadius < 1 || weatherRadius > 2000)) return "气象预警回退半径必须在 1 到 2000 公里之间";
-  if (alertEntry(draft, "typhoon")?.enabled && (!Number.isFinite(typhoonRadius) || typhoonRadius < 1 || typhoonRadius > 3000)) return "台风中心最大距离必须在 1 到 3000 公里之间";
-  if (alertEntry(draft, "weather_warning")?.enabled && ![1, 2, 3, 4].includes(weatherLevel)) return "气象预警最低级别必须在 1 到 4 之间";
-  if (alertEntry(draft, "tsunami")?.enabled && ![1, 2, 3, 4].includes(tsunamiLevel)) return "海啸预警最低级别必须在 1 到 4 之间";
   for (const category of categories) {
     const entry = alertEntry(draft, category.id);
     if (entry?.enabled && entry.rule.sources?.mode === "include" && !entry.rule.sources.ids?.length) return `${category.label}请至少启用一个来源`;

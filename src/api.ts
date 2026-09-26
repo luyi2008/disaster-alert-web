@@ -56,9 +56,6 @@ export type AlertRule = {
     interruption_level: string;
   }>;
   min_magnitude?: number;
-  min_severity?: number;
-  fallback_radius_km?: number;
-  max_center_distance_km?: number;
 };
 
 export type IncidentReportSummary = {

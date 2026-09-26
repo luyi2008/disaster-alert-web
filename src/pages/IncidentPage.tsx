@@ -16,6 +16,7 @@ import type {
   NotificationSnapshot,
   PublicEvent,
 } from "../api";
+import { isEarthquakeAlertCategory } from "../subscribe/types";
 import "../styles/base.css";
 import "../styles/detail.css";
 import "leaflet/dist/leaflet.css";
@@ -26,14 +27,8 @@ function categoryLabel(category: string): string {
       return "地震预警";
     case "earthquake_report":
       return "地震速报";
-    case "weather_warning":
-      return "气象预警";
-    case "tsunami":
-      return "海啸预警";
-    case "typhoon":
-      return "台风信息";
     default:
-      return category;
+      return "地震";
   }
 }
 
@@ -201,15 +196,6 @@ function ruleRows(rule: AlertRule): Array<[string, string]> {
   if (rule.min_magnitude != null) {
     rows.push(["最低震级", `M${rule.min_magnitude.toFixed(1)}`]);
   }
-  if (rule.min_severity != null) {
-    rows.push(["最低严重度", String(rule.min_severity)]);
-  }
-  if (rule.fallback_radius_km != null) {
-    rows.push(["回退半径", `${rule.fallback_radius_km} km`]);
-  }
-  if (rule.max_center_distance_km != null) {
-    rows.push(["最大中心距离", `${rule.max_center_distance_km} km`]);
-  }
   return rows;
 }
 
@@ -247,6 +233,15 @@ export function IncidentPage() {
   }
   if (status === "error" || !detail) {
     return <MessagePage title="灾害详情加载失败" message={message} canRetry />;
+  }
+  if (!isEarthquakeAlertCategory(detail.snapshot.event.category)) {
+    return (
+      <MessagePage
+        title="无法展示这条通知"
+        message="本站只展示地震预警和地震速报。"
+        canRetry={false}
+      />
+    );
   }
 
   return <IncidentLoaded snapshot={detail.snapshot} incident={detail.incident} />;

@@ -1,6 +1,6 @@
 # 订阅页前端
 
-`/devices/:id/subscribe` 是 React 工作区。`SubscribePage` 负责登录校验、设备归属、责任声明弹窗和 `AppShell`；`SubscribeWorkspace` 负责地点、预警规则、保存和取消订阅。
+`/devices/:id/subscribe` 是 React 工作区。`SubscribePage` 负责登录校验、设备归属、责任声明弹窗和 `AppShell`；`SubscribeWorkspace` 负责地点、预警规则、保存和取消订阅。预警规则只保留地震预警和地震速报。
 
 首页 `/` 按 session 跳到 `/devices` 或 `/login`。登录页是手机 OTP 与微信 mock。Bark token 只在设备列表里绑定。通知详情页 `/incidents/...` 不登录。
 

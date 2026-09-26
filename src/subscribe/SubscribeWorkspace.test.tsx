@@ -71,28 +71,37 @@ const simpleCategory = {
   },
 };
 
-const typhoonCategory = {
-  id: "typhoon",
-  label: "台风信息",
-  source_groups: [{ id: "all", label: "全部", sources: [{ id: "nmc", label: "中央气象台" }] }],
+const warningCategory = {
+  id: "earthquake_warning",
+  label: "地震预警",
+  source_groups: [{ id: "all", label: "全部", sources: [{ id: "wolfx", label: "Wolfx" }] }],
   default_alert: {
-    category: "typhoon",
+    category: "earthquake_warning",
     sources: { mode: "all" },
-    max_center_distance_km: 500,
+    estimated_intensity_bands: [{ min: 3, max: 7, interruption_level: "critical" }],
   },
 };
 
-const weatherCategory = {
-  id: "weather_warning",
-  label: "气象预警",
-  source_groups: [{ id: "all", label: "全部", sources: [{ id: "nmc", label: "中央气象台" }] }],
-  default_alert: {
-    category: "weather_warning",
-    sources: { mode: "all" },
-    min_severity: 2,
-    fallback_radius_km: 50,
+const removedCategories = [
+  {
+    id: "weather_warning",
+    label: "气象预警",
+    source_groups: [{ id: "all", label: "全部", sources: [{ id: "nmc", label: "中央气象台" }] }],
+    default_alert: { category: "weather_warning", sources: { mode: "all" } },
   },
-};
+  {
+    id: "tsunami",
+    label: "海啸预警",
+    source_groups: [{ id: "all", label: "全部", sources: [{ id: "nta", label: "海啸中心" }] }],
+    default_alert: { category: "tsunami", sources: { mode: "all" } },
+  },
+  {
+    id: "typhoon",
+    label: "台风信息",
+    source_groups: [{ id: "all", label: "全部", sources: [{ id: "nmc", label: "中央气象台" }] }],
+    default_alert: { category: "typhoon", sources: { mode: "all" } },
+  },
+];
 
 const simpleAlert = {
   category: "earthquake_report",
@@ -247,33 +256,54 @@ describe("SubscribeWorkspace", () => {
     expect(toggle).toHaveAttribute("data-state", "checked");
   });
 
-  it("enables only the categories present in the saved subscription alerts", async () => {
-    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+  it("keeps only earthquake categories when options still include removed alert types", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes("/api/subscription/") && url.endsWith("/subscription")) {
         return jsonResponse({
-          subscriptions: [savedRow([{
-            category: "typhoon",
-            sources: { mode: "all" },
-            max_center_distance_km: 300,
-          }])],
+          subscriptions: [savedRow([
+            {
+              category: "earthquake_warning",
+              sources: { mode: "all" },
+              estimated_intensity_bands: [{ min: 3, max: 7, interruption_level: "critical" }],
+            },
+            { category: "typhoon", sources: { mode: "all" } },
+            { category: "weather_warning", sources: { mode: "all" } },
+            { category: "tsunami", sources: { mode: "all" } },
+          ])],
         });
       }
       if (url.includes("/api/subscription/subscription-options")) {
-        return jsonResponse({ categories: [simpleCategory, weatherCategory, typhoonCategory] });
+        return jsonResponse({ categories: [warningCategory, simpleCategory, ...removedCategories] });
       }
       if (url.includes("/api/subscription/status")) return jsonResponse({ total_subscriptions: 0 });
+      if (url.includes("/subscribe")) return jsonResponse({ saved: true });
       return jsonResponse({});
-    }));
+    });
+    vi.stubGlobal("fetch", fetchMock);
     renderWorkspace();
     await waitFor(() => expect(screen.getByRole("button", { name: "保存订阅" })).toBeEnabled());
     const checked = (category: string) => (
       document.querySelector(`.category-toggle[data-category='${category}']`)?.getAttribute("data-state") === "checked"
     );
-    expect(checked("typhoon")).toBe(true);
+    expect(checked("earthquake_warning")).toBe(true);
     expect(checked("earthquake_report")).toBe(false);
-    expect(checked("weather_warning")).toBe(false);
-    expect(screen.getByText(/中心 300 km 内/)).toBeInTheDocument();
+    expect(document.querySelector(".category-toggle[data-category='typhoon']")).toBeNull();
+    expect(document.querySelector(".category-toggle[data-category='weather_warning']")).toBeNull();
+    expect(document.querySelector(".category-toggle[data-category='tsunami']")).toBeNull();
+    expect(screen.queryByText("台风信息")).not.toBeInTheDocument();
+    expect(screen.queryByText("气象预警")).not.toBeInTheDocument();
+    expect(screen.queryByText("海啸预警")).not.toBeInTheDocument();
+    expect(screen.getByText(/1 段烈度规则/)).toBeInTheDocument();
+    fireEvent.submit(document.querySelector("#subscribe-form") as HTMLFormElement);
+    await waitFor(() => {
+      const subscribeCall = fetchMock.mock.calls.find(([input, requestInit]) => (
+        String(input).includes(`/api/subscription/${KEY}/subscribe`) && (requestInit as RequestInit | undefined)?.method === "POST"
+      ));
+      if (!subscribeCall) throw new Error("missing subscribe request");
+      const body = JSON.parse(String((subscribeCall[1] as RequestInit).body));
+      expect(body.alerts.map((alert: { category: string }) => alert.category)).toEqual(["earthquake_warning"]);
+    });
   });
 
   it("calls onUnauthorized when the subscription GET returns 401", async () => {

@@ -10,7 +10,7 @@
 | --- | --- |
 | `SubscribeWorkspace.tsx` | 装配：hydrate、保存、取消订阅、重置规则 |
 | `LocationPanel.tsx` | Leaflet 地图与监测地点 |
-| `AlertRulesPanel.tsx` | 灾害类别、来源、烈度规则 |
+| `AlertRulesPanel.tsx` | 地震预警与地震速报的来源、烈度或震级规则 |
 | `alertLogic.ts` | 规则 sanitize / 校验 |
 | `statusSources.ts` | `/api/subscription/status` 已连接数据源 |
 | `notify.ts` | sonner 提示 |

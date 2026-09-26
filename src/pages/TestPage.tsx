@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Activity, BarChart3, Cloud, CloudRain, MapPin, Server, Tornado, Waves } from "lucide-react";
+import { Activity, BarChart3, Cloud, MapPin, Server } from "lucide-react";
 import { fetchDeviceSubscription, fetchDevices, matchDevice, type DeviceRecord } from "../api";
 import { AppShell } from "../components/AppShell";
 import { LegalFooter } from "../components/LegalFooter";
@@ -61,13 +61,7 @@ function RuleGlyph({ category }: { category: string }) {
   if (category === "earthquake_report") {
     return <BarChart3 {...common} />;
   }
-  if (category === "weather_warning") {
-    return <CloudRain {...common} />;
-  }
-  if (category === "tsunami") {
-    return <Waves {...common} />;
-  }
-  return <Tornado {...common} />;
+  return <Activity {...common} />;
 }
 
 function RuleCard({ card }: { card: AlertRuleCard }) {

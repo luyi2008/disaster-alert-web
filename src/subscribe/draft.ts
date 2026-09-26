@@ -1,5 +1,5 @@
 import { cloneTarget, createTarget, validCoordinate } from "./geo";
-import type { AlertEntry, AlertRuleDraft, SavedSubscription, SubscriptionDraft } from "./types";
+import { isEarthquakeAlertCategory, type AlertEntry, type AlertRuleDraft, type SavedSubscription, type SubscriptionDraft } from "./types";
 
 export function createEmptyDraft(): SubscriptionDraft {
   return {
@@ -62,7 +62,7 @@ export function draftFromSavedSubscription(row: SavedSubscription): Subscription
   const alerts = Array.isArray(row.alerts) ? row.alerts : [];
   draft.alerts_by_category = {};
   for (const alert of alerts) {
-    if (!alert || typeof alert !== "object" || typeof alert.category !== "string" || !alert.category) {
+    if (!alert || typeof alert !== "object" || typeof alert.category !== "string" || !isEarthquakeAlertCategory(alert.category)) {
       continue;
     }
     draft.alerts_by_category[alert.category] = {

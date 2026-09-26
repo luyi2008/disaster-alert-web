@@ -27,6 +27,14 @@ export type SourceSelection = {
   ids?: string[];
 };
 
+export const EARTHQUAKE_ALERT_CATEGORIES = ["earthquake_warning", "earthquake_report"] as const;
+
+export type EarthquakeAlertCategory = (typeof EARTHQUAKE_ALERT_CATEGORIES)[number];
+
+export function isEarthquakeAlertCategory(category: string): category is EarthquakeAlertCategory {
+  return (EARTHQUAKE_ALERT_CATEGORIES as readonly string[]).includes(category);
+}
+
 export type IntensityBand = {
   min: number | string;
   max: number | string;
@@ -40,9 +48,6 @@ export type AlertRuleDraft = {
   sources?: SourceSelection;
   estimated_intensity_bands?: IntensityBand[];
   min_magnitude?: number | string;
-  min_severity?: number | string;
-  fallback_radius_km?: number | string;
-  max_center_distance_km?: number | string;
 };
 
 export type SavedDestination = {

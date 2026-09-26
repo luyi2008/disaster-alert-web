@@ -85,4 +85,48 @@ describe("IncidentPage", () => {
     expect(screen.getByText("可能受影响区域")).toBeInTheDocument();
     expect(screen.getByText("3-7: 紧急")).toBeInTheDocument();
   });
+
+  it("does not render weather, tsunami, or typhoon notifications", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        status: 200,
+        json: async () => ({
+          success: true,
+          message: "灾害详情获取成功",
+          data: {
+            snapshot: {
+              incident_id: "aaaaaaaaaaaaaaaaaaaaaa",
+              issued_at_ms: 0,
+              event: { ...eventFixture("台风登陆"), category: "typhoon" },
+              target: {
+                label: "沿海",
+                latitude: 24.4,
+                longitude: 118.1,
+                province: "福建省",
+                city: "厦门市",
+                district: "",
+              },
+              timing: null,
+              interruption_level: "active",
+              matched_rule: { category: "typhoon", sources: { mode: "all" } },
+            },
+            incident: null,
+          },
+        }),
+      })),
+    );
+
+    render(
+      <MemoryRouter initialEntries={["/incidents/aaaaaaaaaaaaaaaaaaaaaa/notifications/token"]}>
+        <Routes>
+          <Route path="/incidents/:incidentId/notifications/:token" element={<IncidentPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole("heading", { level: 1, name: "无法展示这条通知" })).toBeInTheDocument();
+    expect(screen.getByText("本站只展示地震预警和地震速报。")).toBeInTheDocument();
+    expect(screen.queryByText("台风登陆")).not.toBeInTheDocument();
+  });
 });
