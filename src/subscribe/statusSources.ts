@@ -7,13 +7,11 @@ type StatusSource = {
 
 type StatusPayload = {
   wolfx?: StatusSource;
-  fanstudio?: StatusSource;
   huania?: StatusSource;
 };
 
 const SOURCE_LABELS: Array<{ key: keyof StatusPayload; label: string }> = [
   { key: "wolfx", label: "Wolfx" },
-  { key: "fanstudio", label: "FAN Studio" },
   { key: "huania", label: "Huania" },
 ];
 

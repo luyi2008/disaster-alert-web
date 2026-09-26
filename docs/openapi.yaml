@@ -1184,7 +1184,7 @@ components:
           enum: [earthquake_warning, earthquake_report, weather_warning, tsunami, typhoon]
         channel:
           type: string
-          description: 信源展示名（如 fan_studio），部分历史事件可能缺省
+          description: 信源展示名（如 wolfx），部分历史事件可能缺省
         source:
           type: string
         event_id:
@@ -1386,14 +1386,12 @@ components:
     Status:
       type: object
       additionalProperties: false
-      required: [total_subscriptions, wolfx, fanstudio, huania, durable, ready_queues]
+      required: [total_subscriptions, wolfx, huania, durable, ready_queues]
       properties:
         total_subscriptions:
           type: integer
           minimum: 0
         wolfx:
-          $ref: "#/components/schemas/ChannelStatus"
-        fanstudio:
           $ref: "#/components/schemas/ChannelStatus"
         huania:
           $ref: "#/components/schemas/ChannelStatus"

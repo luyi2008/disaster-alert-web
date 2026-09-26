@@ -34,7 +34,7 @@ graph TB
     API["disaster-alert API<br/>127.0.0.1:30010<br/>（独立仓库）"]
     Tiles["basemaps.cartocdn.com<br/>地图瓦片"]
     Bark["Bark 推送服务"]
-    Sources["Wolfx / FAN Studio / Huania<br/>灾害数据源"]
+    Sources["Wolfx / Huania<br/>灾害数据源"]
 
     User -->|"/login /devices /settings /incidents/*"| Proxy
     Proxy --> Web
