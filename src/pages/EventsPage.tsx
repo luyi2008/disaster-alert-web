@@ -56,13 +56,13 @@ export function EventsPage() {
         setItems(data?.events ?? []);
         setHasMore(data?.has_more ?? false);
         if (!data) {
-          toast.error(result.body.message || "无法加载地震信息");
+          toast.error(result.body.message || "无法加载地震信息", { richColors: true });
         }
       })
       .catch(() => {
         if (!cancelled) {
           setItems([]);
-          toast.error("无法加载地震信息，请稍后重试");
+          toast.error("无法加载地震信息，请稍后重试", { richColors: true });
         }
       });
     return () => {

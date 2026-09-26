@@ -172,8 +172,10 @@ describe("EventsPage", () => {
     );
     renderPage();
     const message = "服务暂时不可用，请稍后重试";
-    const toast = await screen.findByText(message);
-    expect(toast.closest("[data-sonner-toast]")).not.toBeNull();
+    const toastEl = await screen.findByText(message);
+    const toastNode = toastEl.closest("[data-sonner-toast]");
+    expect(toastNode).toHaveAttribute("data-type", "error");
+    expect(toastNode).toHaveAttribute("data-rich-colors", "true");
     expect(document.querySelector("[data-slot=alert]")).toBeNull();
     expect(await screen.findByText("没有符合条件的地震信息")).toBeInTheDocument();
   });
@@ -192,7 +194,9 @@ describe("EventsPage", () => {
     renderPage();
     const message = "无法加载地震信息，请稍后重试";
     const toastEl = await screen.findByText(message);
-    expect(toastEl.closest("[data-sonner-toast]")).not.toBeNull();
+    const toastNode = toastEl.closest("[data-sonner-toast]");
+    expect(toastNode).toHaveAttribute("data-type", "error");
+    expect(toastNode).toHaveAttribute("data-rich-colors", "true");
     expect(document.querySelector("[data-slot=alert]")).toBeNull();
   });
 
