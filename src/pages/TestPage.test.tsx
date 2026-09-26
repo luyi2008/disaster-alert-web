@@ -204,9 +204,9 @@ describe("TestPage", () => {
     });
     renderTestPage();
 
-    expect(screen.getByText("模拟接口只认本实例已保存的订阅，请先回到订阅页保存。")).toBeInTheDocument();
+    expect(await screen.findByText("请先回到订阅页保存监测地点和规则，再发送测试。")).toBeInTheDocument();
     expect(screen.getByText("尚未配置规则")).toBeInTheDocument();
-    expect(screen.getByText("模拟接口只认本实例已保存的订阅，请先回到订阅页保存。")).toBeInTheDocument();
+    expect(screen.queryByText(/模拟接口/)).toBeNull();
   });
 
   it("toasts a missing options response instead of an inline alert", async () => {
