@@ -325,7 +325,7 @@ export function TestPage() {
         </section>
 
         {!hasDraftContent ? (
-          <p className="test-note">模拟接口只认本实例已保存的订阅，请先回到订阅页保存。</p>
+          <p className="test-note">请先回到订阅页保存监测地点和规则，再发送测试。</p>
         ) : null}
 
         <section className="test-block" aria-labelledby="test-priority-heading">
