@@ -1,6 +1,8 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { toast } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 import { formatDraftUpdatedAt } from "../simulate/subscriptionPreview";
 import { TestPage } from "./TestPage";
 
@@ -91,6 +93,7 @@ function stubApis(options: {
   subscriptions?: unknown;
   subscriptionsSuccess?: boolean;
   subscriptionsStatus?: number;
+  optionsStatus?: number;
 }) {
   const fetchMock = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
     const url = String(input);
@@ -110,6 +113,9 @@ function stubApis(options: {
       });
     }
     if (url.includes("/api/subscription/subscription-options")) {
+      if (options.optionsStatus) {
+        return new Response("<html>missing</html>", { status: options.optionsStatus });
+      }
       return jsonResponse(warningBands(options.bands ?? [
         { min: 1, max: 1, interruption_level: "passive" },
         { min: 2, max: 2, interruption_level: "active" },
@@ -148,6 +154,7 @@ function stubApis(options: {
 function renderTestPage() {
   return render(
     <MemoryRouter initialEntries={[`/devices/${DEVICE_KEY}/subscribe/test`]}>
+      <Toaster />
       <Routes>
         <Route path="/login" element={<div>login</div>} />
         <Route path="/devices" element={<div>devices</div>} />
@@ -159,6 +166,7 @@ function renderTestPage() {
 
 describe("TestPage", () => {
   afterEach(() => {
+    toast.dismiss();
     vi.unstubAllGlobals();
   });
 
@@ -167,6 +175,7 @@ describe("TestPage", () => {
     renderTestPage();
 
     expect(await screen.findByRole("heading", { name: "测试通知" })).toBeInTheDocument();
+    expect(screen.queryByText(/发送测试推送/)).toBeNull();
     expect(screen.getByRole("link", { name: "灾害预警" })).toHaveAttribute("href", "/devices");
     expect(screen.getByRole("link", { name: "返回设备" })).toHaveAttribute("href", "/devices");
     expect(await screen.findAllByText("设备1")).not.toHaveLength(0);
@@ -198,6 +207,17 @@ describe("TestPage", () => {
     expect(screen.getByText("模拟接口只认本实例已保存的订阅，请先回到订阅页保存。")).toBeInTheDocument();
     expect(screen.getByText("尚未配置规则")).toBeInTheDocument();
     expect(screen.getByText("模拟接口只认本实例已保存的订阅，请先回到订阅页保存。")).toBeInTheDocument();
+  });
+
+  it("toasts a missing options response instead of an inline alert", async () => {
+    stubApis({ optionsStatus: 404 });
+    renderTestPage();
+    const message = "请求的服务不存在";
+    const toastEl = await screen.findByText(message);
+    const toastNode = toastEl.closest("[data-sonner-toast]");
+    expect(toastNode).toHaveAttribute("data-type", "error");
+    expect(toastNode).toHaveAttribute("data-rich-colors", "true");
+    expect(document.querySelector("[data-slot=alert]")).toBeNull();
   });
 
   it("goes to login when subscription GET returns 401", async () => {

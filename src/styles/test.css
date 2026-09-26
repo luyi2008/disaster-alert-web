@@ -9,6 +9,10 @@
   padding: 0;
 }
 
+.test-page .legal-footer {
+  margin-top: 32px;
+}
+
 .test-sheet {
   flex: 1;
   display: flex;
@@ -203,6 +207,18 @@
   border-radius: var(--radius);
   overflow: hidden;
   background: var(--card);
+}
+
+.test-level-list [data-slot="card"],
+.test-history-list [data-slot="card"] {
+  border-width: 0 0 1px;
+  border-radius: 0;
+  background: transparent;
+}
+
+.test-level-list > li:last-child [data-slot="card"],
+.test-history-list > li:last-child [data-slot="card"] {
+  border-bottom-width: 0;
 }
 
 .test-card {
