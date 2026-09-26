@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { fetchIncidentEvents, type IncidentListItem } from "../api";
 import { AppShell } from "../components/AppShell";
 import { EventCard } from "../components/EventCard";
 import { LoadingState } from "../components/DeviceCard";
-import { StatusMessage } from "../components/Field";
 import "../styles/base.css";
 import "../styles/ds.css";
 
@@ -23,7 +23,6 @@ export function EventsPage() {
   const navigate = useNavigate();
   const [filter, setFilter] = useState<FilterKey>("all");
   const [items, setItems] = useState<IncidentListItem[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const loadingRef = useRef(false);
@@ -49,7 +48,6 @@ export function EventsPage() {
   useEffect(() => {
     let cancelled = false;
     setItems(null);
-    setError(null);
     setHasMore(false);
     load(filter)
       .then((result) => {
@@ -58,13 +56,13 @@ export function EventsPage() {
         setItems(data?.events ?? []);
         setHasMore(data?.has_more ?? false);
         if (!data) {
-          setError(result.body.message || "无法加载地震信息");
+          toast.error(result.body.message || "无法加载地震信息");
         }
       })
       .catch(() => {
         if (!cancelled) {
           setItems([]);
-          setError("无法加载地震信息，请稍后重试");
+          toast.error("无法加载地震信息，请稍后重试");
         }
       });
     return () => {
@@ -127,8 +125,6 @@ export function EventsPage() {
           </button>
         ))}
       </div>
-
-      {error ? <StatusMessage kind="error">{error}</StatusMessage> : null}
 
       <div className="mt-5">
         {items === null ? (

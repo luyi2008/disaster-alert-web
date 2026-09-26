@@ -1,10 +1,13 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { toast } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 import type { IncidentListItem } from "../api";
 import { EventsPage } from "./EventsPage";
 
 afterEach(() => {
+  toast.dismiss();
   vi.unstubAllGlobals();
 });
 
@@ -52,6 +55,7 @@ function makeItem(overrides: Partial<IncidentListItem> & { incident_id: string; 
 function renderPage() {
   render(
     <MemoryRouter initialEntries={["/events"]}>
+      <Toaster />
       <Routes>
         <Route path="/events" element={<EventsPage />} />
         <Route path="/login" element={<div>login page</div>} />
@@ -153,6 +157,43 @@ describe("EventsPage", () => {
       expect(fetchMock.mock.calls.some(([input]) => String(input).includes("before_ms=1000"))).toBe(true),
     );
     await screen.findByText("没有更多了");
+  });
+
+  it("toasts a service outage instead of leaving an inline alert", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        if (String(input).includes("/api/auth/get-session")) return session();
+        if (String(input).includes("/api/subscription/events")) {
+          return new Response("<html>bad gateway</html>", { status: 502 });
+        }
+        return envelope({});
+      }),
+    );
+    renderPage();
+    const message = "服务暂时不可用，请稍后重试";
+    const toast = await screen.findByText(message);
+    expect(toast.closest("[data-sonner-toast]")).not.toBeNull();
+    expect(document.querySelector("[data-slot=alert]")).toBeNull();
+    expect(await screen.findByText("没有符合条件的地震信息")).toBeInTheDocument();
+  });
+
+  it("toasts when the events request cannot be completed", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        if (String(input).includes("/api/auth/get-session")) return session();
+        if (String(input).includes("/api/subscription/events")) {
+          throw new Error("network");
+        }
+        return envelope({});
+      }),
+    );
+    renderPage();
+    const message = "无法加载地震信息，请稍后重试";
+    const toastEl = await screen.findByText(message);
+    expect(toastEl.closest("[data-sonner-toast]")).not.toBeNull();
+    expect(document.querySelector("[data-slot=alert]")).toBeNull();
   });
 
   it("redirects to /login on a 401 response", async () => {
