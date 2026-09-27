@@ -32,7 +32,9 @@ function formatDepthKm(depthKm: number): string {
   return String(Math.round(depthKm));
 }
 
-function reportKindLabel(category: string): string {
+function statusLabel(cancelled: boolean, finalReport: boolean, category: string): string {
+  if (cancelled) return "已取消";
+  if (finalReport) return "正式报告";
   return category === "earthquake_warning" ? "预警" : "速报";
 }
 
@@ -93,7 +95,7 @@ export function EventCard({ item }: { item: IncidentListItem }) {
                 color: cancelled ? "var(--destructive)" : finalReport ? "var(--ok)" : "var(--info)",
               }}
             >
-              {cancelled ? "已取消" : finalReport ? "正式报告" : reportKindLabel(primary.category)}
+              {statusLabel(cancelled, finalReport, primary.category)}
             </span>
             <span className="rounded-full bg-secondary px-2.5 py-0.5 text-[11.5px] font-semibold text-secondary-foreground">
               {channel}
