@@ -41,7 +41,7 @@ export function EventCard({ item }: { item: IncidentListItem }) {
   const training = item.latest.some((event) => event.training);
   const finalReport = item.latest.some((event) => event.final_report);
   const color = cancelled ? "var(--quiet)" : levelColor(primary.level);
-  const channel = primary.channel || primary.source;
+  const channel = primary.source || primary.channel;
 
   return (
     <div
