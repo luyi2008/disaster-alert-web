@@ -1,6 +1,6 @@
 import { Bell, Clock, FlaskConical, Gauge, MapPin } from "lucide-react";
 import type { IncidentListItem, PublicEvent } from "../api";
-import { formatRelativeTime } from "../lib/time";
+import { formatAbsoluteTime } from "../lib/time";
 
 const LEVEL_COLORS = ["var(--quiet)", "var(--ok)", "var(--yellow)", "var(--warn)", "var(--destructive)"];
 
@@ -20,6 +20,16 @@ function formatRegion(event: PublicEvent): string {
     return event.affected_regions.join(" · ");
   }
   return formatCoordinate(event.latitude, event.longitude);
+}
+
+function formatEventTime(occurredAt: string, updatedAtMs: number): string {
+  const occurred = occurredAt.trim();
+  if (occurred) return occurred;
+  return formatAbsoluteTime(updatedAtMs);
+}
+
+function formatDepthKm(depthKm: number): string {
+  return String(Math.round(depthKm));
 }
 
 export function EventCard({ item }: { item: IncidentListItem }) {
@@ -60,14 +70,14 @@ export function EventCard({ item }: { item: IncidentListItem }) {
               <MapPin className="size-3.5" aria-hidden="true" />
               {formatRegion(primary)}
             </span>
-            <span className="inline-flex items-center gap-1" title={primary.occurred_at}>
+            <span className="inline-flex items-center gap-1">
               <Clock className="size-3.5" aria-hidden="true" />
-              {formatRelativeTime(item.updated_at_ms)}
+              {formatEventTime(primary.occurred_at, item.updated_at_ms)}
             </span>
             {primary.depth_km !== null ? (
               <span className="inline-flex items-center gap-1">
                 <Gauge className="size-3.5" aria-hidden="true" />
-                震源深度 {primary.depth_km} km
+                震源深度 {formatDepthKm(primary.depth_km)} km
               </span>
             ) : null}
           </div>

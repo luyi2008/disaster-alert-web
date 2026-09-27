@@ -74,6 +74,9 @@ describe("EventsPage", () => {
     );
     renderPage();
     expect(await screen.findByText("地震信息 Türkiye")).toBeInTheDocument();
+    expect(screen.getByText("2026-09-24 15:40:58")).toBeInTheDocument();
+    expect(screen.getByText("震源深度 10 km")).toBeInTheDocument();
+    expect(screen.queryByText(/小时前/)).toBeNull();
     expect(screen.getByText("速报")).toBeInTheDocument();
     expect(screen.getByText("没有更多了")).toBeInTheDocument();
   });
