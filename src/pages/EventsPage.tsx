@@ -31,7 +31,6 @@ export function EventsPage() {
   const load = useCallback(
     (activeFilter: FilterKey, beforeMs?: number) =>
       fetchIncidentEvents({
-        category: "earthquake_report",
         limit: PAGE_SIZE,
         beforeMs,
         matchedOnly: activeFilter === "matched",
