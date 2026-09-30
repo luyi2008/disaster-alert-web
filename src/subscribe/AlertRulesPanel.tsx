@@ -3,9 +3,7 @@ import { Activity } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
 import { X } from "lucide-react";
@@ -21,10 +19,6 @@ import {
   levelLabel,
   normalizeBands,
   notifyLevelOrder,
-  setSelectedSources,
-  sourceEnabled,
-  sourceIds,
-  sourceIdsFor,
   validateBands,
 } from "./alertLogic";
 import type { CategoryOption, SubscriptionDraft } from "./types";
@@ -113,13 +107,6 @@ export function AlertRulesPanel({
         {categories.map((category) => {
           const entry = alertEntry(draft, category.id);
           const disabled = !entry?.enabled;
-          const sourceCount = category.source_groups.reduce((total, group) => total + group.sources.length, 0);
-          const enabledCount = category.source_groups.reduce(
-            (total, group) => total + group.sources.filter((source) => sourceEnabled(draft, category.id, source.id)).length,
-            0,
-          );
-          const sourceMode = entry?.rule.sources?.mode;
-          const sourceSummary = sourceMode === "all" ? `全部 ${sourceCount} 个来源` : `已选 ${enabledCount}/${sourceCount} 个来源`;
           const ruleSummary = categoryRuleSummary(draft, category.id);
           const selected = openCategory === category.id;
           return (
@@ -138,7 +125,7 @@ export function AlertRulesPanel({
                   <CategoryIcon categoryId={category.id} active={selected} />
                   <span className="category-copy">
                     <span className="category-title">{category.label}</span>
-                    <span className="category-meta">{`${sourceSummary}${ruleSummary ? ` · ${ruleSummary}` : ""}`}</span>
+                    <span className="category-meta">{ruleSummary}</span>
                   </span>
                 </AccordionTrigger>
                 <Switch
@@ -164,56 +151,6 @@ export function AlertRulesPanel({
               </div>
               <AccordionContent>
                 <div className="disaster-detail">
-                    <div className="source-overview">
-                      {category.source_groups.map((group) => (
-                        <div key={group.id} className="source-section" data-source-group={group.id}>
-                          <div className="source-section-header">
-                            <span className="source-section-title">{category.source_groups.length === 1 ? "数据来源" : group.label}</span>
-                            {group.sources.length > 1 ? (
-                              <span className="source-bulk-actions">
-                                <Button type="button" variant="ghost" size="sm" data-source-action="enable" disabled={disabled} onClick={() => {
-                                  mutate((current) => {
-                                    const groupIds = group.sources.map((source) => source.id);
-                                    const selected = sourceIdsFor(categories, category.id).filter((id) => sourceEnabled(current, category.id, id));
-                                    setSelectedSources(current, categories, category.id, [...new Set([...selected, ...groupIds])]);
-                                  });
-                                }}>全选</Button>
-                                <Button type="button" variant="ghost" size="sm" data-source-action="disable" disabled={disabled} onClick={() => {
-                                  mutate((current) => {
-                                    const groupIds = new Set(group.sources.map((source) => source.id));
-                                    const selected = sourceIdsFor(categories, category.id).filter((id) => sourceEnabled(current, category.id, id));
-                                    setSelectedSources(current, categories, category.id, selected.filter((id) => !groupIds.has(id)));
-                                  });
-                                }}>清空</Button>
-                              </span>
-                            ) : null}
-                          </div>
-                          <div className="source-list">
-                            {group.sources.map((source) => {
-                              const sourceInputId = `${category.id}-${source.id}`;
-                              return (
-                              <div key={source.id} className="source-row">
-                                <Checkbox
-                                  id={sourceInputId}
-                                  className="source-toggle"
-                                  data-source={source.id}
-                                  checked={sourceEnabled(draft, category.id, source.id)}
-                                  disabled={disabled}
-                                  onCheckedChange={(checked) => {
-                                    mutate((current) => {
-                                      const ids = sourceIds(category).filter((id) => id === source.id ? checked === true : sourceEnabled(current, category.id, id));
-                                      setSelectedSources(current, categories, category.id, ids);
-                                    });
-                                  }}
-                                />
-                                <Label htmlFor={sourceInputId} className="font-medium">{source.label}</Label>
-                              </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
                     {category.id === "earthquake_warning" ? (
                       <div className="rule-section">
                         <div className="rule-section-header">

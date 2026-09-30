@@ -10,7 +10,7 @@
 | --- | --- |
 | `SubscribeWorkspace.tsx` | 加载已保存订阅、保存、取消订阅、重置规则确认 |
 | `LocationPanel.tsx` | Leaflet 地图与监测地点编辑 |
-| `AlertRulesPanel.tsx` | 灾害类别、来源、烈度规则 |
+| `AlertRulesPanel.tsx` | 灾害类别、烈度规则 |
 | `alertLogic.ts` | 规则校验、sanitize、烈度分段 |
 | `statusSources.ts` | `/api/subscription/status` 已连接数据源标签 |
 | `notify.ts` | sonner 提示 |

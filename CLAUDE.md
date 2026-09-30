@@ -48,7 +48,7 @@ Login identity is a BFF `HttpOnly` session cookie (`src/auth/session.ts`), **not
 
 ### Subscribe workspace (`/devices/:id/subscribe`) — the most complex module
 
-`SubscribePage` owns session/device-ownership/terms-dialog and shell; `src/subscribe/SubscribeWorkspace.tsx` owns the shared draft state and hydrate/save/unsubscribe/reset-rules logic, passed down to `LocationPanel.tsx` (Leaflet map + up to 3 monitored locations) and `AlertRulesPanel.tsx` (disaster type/source/severity rules) via `setDraft`. Pure logic lives in `alertLogic.ts`, `draft.ts`, `geo.ts`, `http.ts`, `statusSources.ts`, `notify.ts` (sonner wrapper), `types.ts`.
+`SubscribePage` owns session/device-ownership/terms-dialog and shell; `src/subscribe/SubscribeWorkspace.tsx` owns the shared draft state and hydrate/save/unsubscribe/reset-rules logic, passed down to `LocationPanel.tsx` (Leaflet map + up to 3 monitored locations) and `AlertRulesPanel.tsx` (disaster type/severity rules) via `setDraft`. Pure logic lives in `alertLogic.ts`, `draft.ts`, `geo.ts`, `http.ts`, `statusSources.ts`, `notify.ts` (sonner wrapper), `types.ts`.
 
 This page used to be built by mounting imperative DOM (`innerHTML` + `mountSubscribeApp`) onto a static HTML shell; it has since been fully converted to React, but two things from that era remain and matter when editing this code:
 
@@ -69,7 +69,7 @@ Standard React, shares no code with the subscribe workspace except `src/api.ts`.
 
 All API responses share the envelope `{ success: boolean, message: string, data?: T }`. `src/subscribe/http.ts`'s `parseApiResponse` is the single place that normalizes failures: non-JSON responses degrade to a failure envelope instead of throwing, `cleanApiMessage` strips HTML-looking messages (so a gateway error page never gets shown verbatim), and `httpFailureMessage` maps status codes to Chinese user-facing copy.
 
-`GET /api/subscription/subscription-options` still supplies source groups and default rules. The frontend keeps only earthquake early warning (`earthquake_warning`) and earthquake rapid reports (`earthquake_report`). Weather, tsunami, and typhoon categories are dropped even if the API returns them, and they are not written back on save. Don't hardcode source lists; fetch them. Do not reintroduce the removed alert categories. Numeric checks stay on `min_magnitude` (0–10) and earthquake intensity bands.
+`GET /api/subscription/subscription-options` still supplies default rules (it may also return source groups, which the frontend ignores). The frontend keeps only earthquake early warning (`earthquake_warning`) and earthquake rapid reports (`earthquake_report`). Weather, tsunami, and typhoon categories are dropped even if the API returns them, and they are not written back on save. The frontend does not display or select data sources and never sends `sources` in the subscribe payload (it is stripped from rules); the backend defaults to all sources. Do not reintroduce the removed alert categories. Numeric checks stay on `min_magnitude` (0–10) and earthquake intensity bands.
 
 Contract snapshot: `docs/openapi.yaml`, maintained by hand — update it when you change how the frontend calls the API.
 

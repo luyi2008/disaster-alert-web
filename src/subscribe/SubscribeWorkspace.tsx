@@ -133,7 +133,7 @@ export function SubscribeWorkspace({
         return;
       }
     }
-    const alertRuleError = validateAlertRules(draft, categories);
+    const alertRuleError = validateAlertRules(draft);
     if (alertRuleError) {
       notify(alertRuleError, "error");
       return;

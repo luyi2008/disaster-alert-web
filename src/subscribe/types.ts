@@ -22,11 +22,6 @@ export type SubscriptionTarget = {
   region: SubscriptionRegion;
 };
 
-export type SourceSelection = {
-  mode: "all" | "include";
-  ids?: string[];
-};
-
 export const EARTHQUAKE_ALERT_CATEGORIES = ["earthquake_warning", "earthquake_report"] as const;
 
 export type EarthquakeAlertCategory = (typeof EARTHQUAKE_ALERT_CATEGORIES)[number];
@@ -45,7 +40,6 @@ export type IntensityBand = {
 
 export type AlertRuleDraft = {
   category: string;
-  sources?: SourceSelection;
   estimated_intensity_bands?: IntensityBand[];
   min_magnitude?: number | string;
 };
@@ -88,21 +82,9 @@ export type SubscriptionDraft = {
   legacy_disabled_alerts?: AlertRuleDraft[];
 };
 
-export type SourceOption = {
-  id: string;
-  label: string;
-};
-
-export type SourceGroup = {
-  id: string;
-  label: string;
-  sources: SourceOption[];
-};
-
 export type CategoryOption = {
   id: string;
   label: string;
-  source_groups: SourceGroup[];
   default_alert: AlertRuleDraft;
 };
 
