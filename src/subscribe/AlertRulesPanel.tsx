@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Activity } from "lucide-react";
+import { Activity, ChevronDown } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -125,6 +125,7 @@ export function AlertRulesPanel({
                     <span className="category-title">{category.label}</span>
                     <span className="category-meta">{ruleSummary}</span>
                   </span>
+                  <ChevronDown className="category-chevron size-4" aria-hidden="true" />
                 </AccordionTrigger>
               </div>
               <AccordionContent>
