@@ -252,8 +252,8 @@ describe("SubscribeWorkspace", () => {
     const submit = await screen.findByRole("button", { name: "保存订阅" });
     await waitFor(() => expect(submit).toBeEnabled());
     expect(screen.queryByText("无法加载已保存的订阅")).not.toBeInTheDocument();
-    const toggle = document.querySelector(".category-toggle[data-category='earthquake_report']");
-    expect(toggle).toHaveAttribute("data-state", "checked");
+    expect(document.querySelector(".category-toggle")).toBeNull();
+    expect(document.querySelector("[data-category-card='earthquake_report']")).not.toBeNull();
   });
 
   it("keeps only earthquake categories when options still include removed alert types", async () => {
@@ -283,14 +283,12 @@ describe("SubscribeWorkspace", () => {
     vi.stubGlobal("fetch", fetchMock);
     renderWorkspace();
     await waitFor(() => expect(screen.getByRole("button", { name: "保存订阅" })).toBeEnabled());
-    const checked = (category: string) => (
-      document.querySelector(`.category-toggle[data-category='${category}']`)?.getAttribute("data-state") === "checked"
-    );
-    expect(checked("earthquake_warning")).toBe(true);
-    expect(checked("earthquake_report")).toBe(false);
-    expect(document.querySelector(".category-toggle[data-category='typhoon']")).toBeNull();
-    expect(document.querySelector(".category-toggle[data-category='weather_warning']")).toBeNull();
-    expect(document.querySelector(".category-toggle[data-category='tsunami']")).toBeNull();
+    expect(document.querySelector(".category-toggle")).toBeNull();
+    expect(document.querySelector("[data-category-card='earthquake_warning']")).not.toBeNull();
+    expect(document.querySelector("[data-category-card='earthquake_report']")).not.toBeNull();
+    expect(document.querySelector("[data-category-card='typhoon']")).toBeNull();
+    expect(document.querySelector("[data-category-card='weather_warning']")).toBeNull();
+    expect(document.querySelector("[data-category-card='tsunami']")).toBeNull();
     expect(screen.queryByText("台风信息")).not.toBeInTheDocument();
     expect(screen.queryByText("气象预警")).not.toBeInTheDocument();
     expect(screen.queryByText("海啸预警")).not.toBeInTheDocument();
@@ -302,7 +300,7 @@ describe("SubscribeWorkspace", () => {
       ));
       if (!subscribeCall) throw new Error("missing subscribe request");
       const body = JSON.parse(String((subscribeCall[1] as RequestInit).body));
-      expect(body.alerts.map((alert: { category: string }) => alert.category)).toEqual(["earthquake_warning"]);
+      expect(body.alerts.map((alert: { category: string }) => alert.category)).toEqual(["earthquake_warning", "earthquake_report"]);
       expect(body.alerts.every((alert: object) => !("sources" in alert))).toBe(true);
     });
   });

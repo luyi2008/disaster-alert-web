@@ -70,12 +70,10 @@ export function SubscribeWorkspace({
           return;
         }
         let nextDraft = createEmptyDraft();
-        let savedRowApplied = false;
         if (saved.status === 200 && saved.body.success) {
           const row = selectSavedSubscription(saved.body.data?.subscriptions);
           if (row) {
             nextDraft = draftFromSavedSubscription(row);
-            savedRowApplied = true;
           }
         } else if (saved.status !== 200) {
           notify(saved.body.message || "无法加载已保存的订阅", "error");
@@ -96,7 +94,6 @@ export function SubscribeWorkspace({
           nextDraft.alerts_by_category && typeof nextDraft.alerts_by_category === "object"
             ? nextDraft.alerts_by_category
             : {},
-          !savedRowApplied,
           sanitizeAlertRule,
         );
         delete nextDraft.legacy_alerts;

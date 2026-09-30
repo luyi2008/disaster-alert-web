@@ -5,7 +5,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
-import { Switch } from "@/components/ui/switch";
 import { X } from "lucide-react";
 import { Field } from "../components/Field";
 import { cn } from "@/lib/utils";
@@ -106,14 +105,13 @@ export function AlertRulesPanel({
       >
         {categories.map((category) => {
           const entry = alertEntry(draft, category.id);
-          const disabled = !entry?.enabled;
           const ruleSummary = categoryRuleSummary(draft, category.id);
           const selected = openCategory === category.id;
           return (
             <AccordionItem
               key={category.id}
               value={category.id}
-              className={cn("disaster-category border-0", disabled && "is-disabled")}
+              className={"disaster-category border-0"}
               data-category-card={category.id}
             >
               <div className="disaster-category-header">
@@ -128,26 +126,6 @@ export function AlertRulesPanel({
                     <span className="category-meta">{ruleSummary}</span>
                   </span>
                 </AccordionTrigger>
-                <Switch
-                  className="category-toggle mx-3"
-                  data-category={category.id}
-                  aria-label={disabled ? `启用${category.label}` : `停用${category.label}`}
-                  checked={!disabled}
-                  onCheckedChange={(checked) => {
-                    if (category.id === "earthquake_warning" && checked) {
-                      const error = commitBands(draft);
-                      if (error) {
-                        setNotifyWarning(error);
-                        return;
-                      }
-                    }
-                    mutate((current) => {
-                      const row = current.alerts_by_category[category.id];
-                      if (row) row.enabled = checked;
-                    });
-                    setNotifyWarning("");
-                  }}
-                />
               </div>
               <AccordionContent>
                 <div className="disaster-detail">
@@ -156,7 +134,7 @@ export function AlertRulesPanel({
                         <div className="rule-section-header">
                           <span className="rule-section-title">通知规则</span>
                           <span className="intensity-actions">
-                            <Button type="button" variant="ghost" size="sm" data-intensity-action="add" disabled={disabled} onClick={() => {
+                            <Button type="button" variant="ghost" size="sm" data-intensity-action="add" onClick={() => {
                               const error = commitBands(draft);
                               if (error) {
                                 setNotifyWarning(error);
@@ -181,7 +159,7 @@ export function AlertRulesPanel({
                                 rule.estimated_intensity_bands = bands.map((band) => ({ min: band.min, max: band.max, interruption_level: band.level }));
                               });
                             }}>添加规则</Button>
-                            <Button type="button" variant="ghost" size="sm" data-intensity-action="reset" disabled={disabled} onClick={() => {
+                            <Button type="button" variant="ghost" size="sm" data-intensity-action="reset" onClick={() => {
                               const error = commitBands(draft);
                               if (error) {
                                 setNotifyWarning(error);
@@ -210,7 +188,7 @@ export function AlertRulesPanel({
                                 <div className="intensity-rule-fields">
                                   <Field label="预估烈度范围">
                                     <span className="intensity-range">
-                                      <Input className="band-min text-center" type="number" min={0} max={7} step={1} value={String(band.min ?? "")} aria-label="起始烈度" disabled={disabled} onChange={(event) => {
+                                      <Input className="band-min text-center" type="number" min={0} max={7} step={1} value={String(band.min ?? "")} aria-label="起始烈度" onChange={(event) => {
                                         mutate((current) => {
                                           const row = current.alerts_by_category.earthquake_warning?.rule.estimated_intensity_bands?.[index];
                                           if (row) row.min = event.target.value;
@@ -218,7 +196,7 @@ export function AlertRulesPanel({
                                         setNotifyWarning(validateBands(collectBands(draft)));
                                       }} />
                                       <span>至</span>
-                                      <Input className="band-max text-center" type="number" min={0} max={7} step={1} value={String(band.max ?? "")} aria-label="最高烈度" disabled={disabled} onChange={(event) => {
+                                      <Input className="band-max text-center" type="number" min={0} max={7} step={1} value={String(band.max ?? "")} aria-label="最高烈度" onChange={(event) => {
                                         mutate((current) => {
                                           const row = current.alerts_by_category.earthquake_warning?.rule.estimated_intensity_bands?.[index];
                                           if (row) row.max = event.target.value;
@@ -228,7 +206,7 @@ export function AlertRulesPanel({
                                     </span>
                                   </Field>
                                   <Field label="通知级别">
-                                    <NativeSelect className={`band-select level-${level}`} disabled={disabled} value={level} onChange={(event) => {
+                                    <NativeSelect className={`band-select level-${level}`} value={level} onChange={(event) => {
                                       mutate((current) => {
                                         const row = current.alerts_by_category.earthquake_warning?.rule.estimated_intensity_bands?.[index];
                                         if (row) row.interruption_level = event.target.value;
@@ -240,7 +218,7 @@ export function AlertRulesPanel({
                                     </NativeSelect>
                                   </Field>
                                 </div>
-                                <Button className="remove-intensity-rule" type="button" variant="ghost" size="icon" data-action="remove-rule" aria-label={`删除规则 ${index + 1}`} title="删除规则" disabled={disabled} onClick={() => {
+                                <Button className="remove-intensity-rule" type="button" variant="ghost" size="icon" data-action="remove-rule" aria-label={`删除规则 ${index + 1}`} title="删除规则" onClick={() => {
                                   mutate((current) => {
                                     const rule = current.alerts_by_category.earthquake_warning?.rule;
                                     if (!rule) return;
@@ -267,7 +245,7 @@ export function AlertRulesPanel({
                     ) : (
                       <ThresholdFields
                         categoryId={category.id}
-                        disabled={disabled}
+                       
                         draft={draft}
                         onChange={(rule, value) => {
                           mutate((current) => {
@@ -289,12 +267,10 @@ export function AlertRulesPanel({
 
 function ThresholdFields({
   categoryId,
-  disabled,
   draft,
   onChange,
 }: {
   categoryId: string;
-  disabled: boolean;
   draft: SubscriptionDraft;
   onChange: (rule: string, value: string) => void;
 }) {
@@ -306,7 +282,7 @@ function ThresholdFields({
       <div className="rule-section-header"><span className="rule-section-title">匹配规则</span></div>
       <div className="rule-grid">
         <Field label="最低震级" htmlFor={`${categoryId}-min-magnitude`} hint="仅筛选地震信息，不影响地震预警。">
-          <Input id={`${categoryId}-min-magnitude`} data-rule="min_magnitude" type="number" min={0} max={10} step="0.1" value={String(alert.min_magnitude ?? "")} disabled={disabled} onChange={(event) => onChange("min_magnitude", event.target.value)} />
+          <Input id={`${categoryId}-min-magnitude`} data-rule="min_magnitude" type="number" min={0} max={10} step="0.1" value={String(alert.min_magnitude ?? "")} onChange={(event) => onChange("min_magnitude", event.target.value)} />
         </Field>
       </div>
     </div>
