@@ -303,6 +303,7 @@ describe("SubscribeWorkspace", () => {
       if (!subscribeCall) throw new Error("missing subscribe request");
       const body = JSON.parse(String((subscribeCall[1] as RequestInit).body));
       expect(body.alerts.map((alert: { category: string }) => alert.category)).toEqual(["earthquake_warning"]);
+      expect(body.alerts.every((alert: object) => !("sources" in alert))).toBe(true);
     });
   });
 

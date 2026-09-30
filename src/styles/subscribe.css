@@ -445,15 +445,6 @@
     .rule-section-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
     .rule-section-title { min-width: 0; font-size: 12px; font-weight: 600; color: var(--muted-foreground); }
     .rule-section { display: grid; gap: 10px; }
-    .source-overview + .rule-section { padding-top: 13px; border-top: 1px solid color-mix(in srgb, var(--border) 68%, transparent); }
-    .source-overview { display: grid; gap: 10px; }
-    .source-section { display: grid; gap: 8px; }
-    .source-section + .source-section { padding-top: 12px; border-top: 1px solid color-mix(in srgb, var(--border) 68%, transparent); }
-    .source-section-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-    .source-section-title { font-size: 12px; font-weight: 600; color: var(--muted-foreground); }
-    .source-bulk-actions { display: flex; gap: 4px; }
-    .source-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 7px; }
-    .source-row { display: flex; align-items: center; gap: 8px; min-width: 0; margin: 0; padding: 8px 9px; border-radius: 6px; background: var(--muted); font-size: 13px; font-weight: 600; }
     .rule-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
     .rule-field { display: grid; gap: 5px; min-width: 0; margin: 0; }
     .rule-field-title { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; color: var(--foreground); font-size: 13px; font-weight: 600; }

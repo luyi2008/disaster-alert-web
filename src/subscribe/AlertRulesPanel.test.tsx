@@ -57,10 +57,17 @@ describe("AlertRulesPanel list design", () => {
     expect(document.querySelector("[data-category-icon='earthquake_warning']")).toHaveAttribute("data-active", "true");
   });
 
-  it("keeps source and rule summary when a category switch is off", () => {
+  it("keeps the rule summary when a category switch is off", () => {
     renderPanel(["earthquake_report"]);
     expect(screen.queryByText("已关闭")).not.toBeInTheDocument();
-    expect(screen.getByText("全部 1 个来源 · M ≥ 4.5")).toBeInTheDocument();
+    expect(screen.getByText("M ≥ 4.5")).toBeInTheDocument();
+  });
+
+  it("does not render selectable data sources even when options include them", () => {
+    renderPanel();
+    expect(document.querySelector("[data-source], [data-source-group], .source-list")).toBeNull();
+    expect(screen.queryByText("Wolfx")).not.toBeInTheDocument();
+    expect(screen.queryByText(/个来源/)).not.toBeInTheDocument();
   });
 
   it("hides the accordion chevron on category rows", () => {

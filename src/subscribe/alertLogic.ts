@@ -14,15 +14,6 @@ export function cloneJson<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
-export function sourceIds(category: CategoryOption): string[] {
-  return (category.source_groups || []).flatMap((group) => group.sources.map((source) => source.id));
-}
-
-export function sourceIdsFor(categories: CategoryOption[], categoryId: string): string[] {
-  const option = categories.find((item) => item.id === categoryId);
-  return option ? sourceIds(option) : [];
-}
-
 export function alertEntry(draft: SubscriptionDraft, category: string): AlertEntry | null {
   return draft.alerts_by_category[category] || null;
 }
@@ -37,31 +28,17 @@ export function enabledAlertRules(draft: SubscriptionDraft): AlertRuleDraft[] {
     .map(([, entry]) => entry.rule);
 }
 
-export function alertRuleForPayload(rule: AlertRuleDraft): AlertRuleDraft {
-  const result = cloneJson(rule);
-  if (result.category === "earthquake_report") result.min_magnitude = Number(result.min_magnitude);
+// The backend applies all data sources by default, so `sources` is never sent.
+function withoutSources(rule: AlertRuleDraft): AlertRuleDraft {
+  const result = cloneJson(rule) as AlertRuleDraft & { sources?: unknown };
+  delete result.sources;
   return result;
 }
 
-export function sourceEnabled(draft: SubscriptionDraft, category: string, source: string): boolean {
-  const selection = alertEntry(draft, category)?.rule.sources;
-  return selection?.mode === "all"
-    || Boolean(selection?.mode === "include" && Array.isArray(selection.ids) && selection.ids.includes(source));
-}
-
-export function setSelectedSources(
-  draft: SubscriptionDraft,
-  categories: CategoryOption[],
-  category: string,
-  ids: string[],
-): void {
-  const allIds = sourceIdsFor(categories, category);
-  const selected = allIds.filter((id) => ids.includes(id));
-  const rule = alertEntry(draft, category)?.rule;
-  if (!rule) return;
-  rule.sources = selected.length === allIds.length
-    ? { mode: "all" }
-    : { mode: "include", ids: selected };
+export function alertRuleForPayload(rule: AlertRuleDraft): AlertRuleDraft {
+  const result = withoutSources(rule);
+  if (result.category === "earthquake_report") result.min_magnitude = Number(result.min_magnitude);
+  return result;
 }
 
 export function defaultNotifyBands(): Array<{ min: number; max: number; level: NotifyLevel; label: string }> {
@@ -101,18 +78,8 @@ export function normalizeBands(bands: IntensityBand[] | undefined): Array<{ min:
 }
 
 export function sanitizeAlertRule(category: CategoryOption, candidate: AlertRuleDraft | undefined): AlertRuleDraft {
-  const fallback = cloneJson(category.default_alert);
+  const fallback = withoutSources(category.default_alert);
   if (!candidate || typeof candidate !== "object" || candidate.category !== category.id) return fallback;
-  const knownSources = new Set(sourceIds(category));
-  const selection = candidate.sources;
-  if (selection?.mode === "all") {
-    fallback.sources = { mode: "all" };
-  } else if (selection?.mode === "include" && Array.isArray(selection.ids)) {
-    fallback.sources = {
-      mode: "include",
-      ids: [...new Set(selection.ids.filter((id) => typeof id === "string" && knownSources.has(id)))],
-    };
-  }
   const numberInRange = (value: unknown, defaultValue: number | string | undefined, min: number, max: number) => {
     if ((typeof value !== "number" && typeof value !== "string")
       || (typeof value === "string" && !value.trim())) return defaultValue;
@@ -179,15 +146,11 @@ export function commitBands(draft: SubscriptionDraft): string {
   return "";
 }
 
-export function validateAlertRules(draft: SubscriptionDraft, categories: CategoryOption[]): string {
+export function validateAlertRules(draft: SubscriptionDraft): string {
   const alerts = enabledAlertRules(draft);
   if (!alerts.length) return "请至少启用一种灾害类别";
   const numeric = (value: unknown) => String(value ?? "").trim() ? Number(value) : Number.NaN;
   const magnitude = numeric(alertEntry(draft, "earthquake_report")?.rule.min_magnitude);
   if (alertEntry(draft, "earthquake_report")?.enabled && (!Number.isFinite(magnitude) || magnitude < 0 || magnitude > 10)) return "最低震级必须在 0 到 10 之间";
-  for (const category of categories) {
-    const entry = alertEntry(draft, category.id);
-    if (entry?.enabled && entry.rule.sources?.mode === "include" && !entry.rule.sources.ids?.length) return `${category.label}请至少启用一个来源`;
-  }
   return "";
 }

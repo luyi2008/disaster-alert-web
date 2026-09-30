@@ -148,8 +148,6 @@ paths:
                         district: 浦东新区
                   alerts:
                     - category: earthquake_warning
-                      sources:
-                        mode: all
                       estimated_intensity_bands:
                         - min: 1
                           max: 1
@@ -718,13 +716,14 @@ components:
     EarthquakeWarningRule:
       type: object
       additionalProperties: false
-      required: [category, sources, estimated_intensity_bands]
+      required: [category, estimated_intensity_bands]
       properties:
         category:
           type: string
           const: earthquake_warning
         sources:
           $ref: "#/components/schemas/SourceSelection"
+          description: 前端不再展示、选择或提交该字段；省略时后端默认使用全部来源。
         estimated_intensity_bands:
           type: array
           minItems: 1
@@ -751,13 +750,14 @@ components:
     EarthquakeReportRule:
       type: object
       additionalProperties: false
-      required: [category, sources, min_magnitude]
+      required: [category, min_magnitude]
       properties:
         category:
           type: string
           const: earthquake_report
         sources:
           $ref: "#/components/schemas/SourceSelection"
+          description: 前端不再展示、选择或提交该字段；省略时后端默认使用全部来源。
         min_magnitude:
           type: number
           format: double

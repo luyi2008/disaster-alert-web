@@ -136,7 +136,7 @@ graph TB
     Page["SubscribePage"]
     Work["SubscribeWorkspace.tsx"]
     Loc["LocationPanel.tsx<br/>Leaflet + 监测地点"]
-    Alerts["AlertRulesPanel.tsx<br/>灾种 / 来源 / 烈度"]
+    Alerts["AlertRulesPanel.tsx<br/>灾种 / 烈度"]
     Logic["alertLogic.ts"]
     Status["statusSources.ts"]
     Notify["notify.ts → sonner"]
@@ -160,7 +160,7 @@ graph TB
 | --- | --- |
 | `SubscribeWorkspace.tsx` | hydrate、保存、取消订阅、重置规则 |
 | `LocationPanel.tsx` | Leaflet 地图与监测地点 |
-| `AlertRulesPanel.tsx` | 地震预警与地震速报的来源、烈度或震级规则 |
+| `AlertRulesPanel.tsx` | 地震预警与地震速报的烈度或震级规则 |
 | `alertLogic.ts` | 规则 sanitize / 校验 |
 | `statusSources.ts` | `/api/subscription/status` 已连接数据源标签 |
 | `notify.ts` | sonner 提示 |
@@ -291,7 +291,7 @@ graph LR
 | 方法 | 路径 | 调用方 | 用途 |
 | --- | --- | --- | --- |
 | GET | `/api/subscription/status` | `statusSources.ts` | 数据源健康、订阅数、队列深度 |
-| GET | `/api/subscription/subscription-options` | `SubscribeWorkspace.tsx` | 灾种、来源分组、默认规则 |
+| GET | `/api/subscription/subscription-options` | `SubscribeWorkspace.tsx` | 灾种、默认规则（来源分组前端忽略） |
 | GET | `/api/subscription/reverse-geocode` | `LocationPanel.tsx` | 坐标 → 省/市/区 |
 | GET | `/api/subscription/:device_key/subscription` | `api.ts` | 读取该设备已保存订阅 |
 | POST | `/api/subscription/:device_key/subscribe` | `api.ts` | 覆盖保存订阅 |
@@ -302,7 +302,7 @@ graph LR
 | POST | `/api/captcha/verify` | `auth/captcha.ts`、登录弹层 | 边缘验图形码后回源发短信 |
 | GET | `/health` | 仅反代/开发代理 | 进程健康检查 |
 
-`/api/subscription/subscription-options` 仍由服务端下发来源分组和默认规则。前端只接受 `earthquake_warning`（地震预警）和 `earthquake_report`（地震速报）；气象预警、海啸预警和台风信息即使出现在响应里也会被丢掉，保存时不会写回。数值校验只保留地震速报的 `min_magnitude`（0–10）和地震预警烈度分段。
+`/api/subscription/subscription-options` 仍由服务端下发默认规则（可能含来源分组，前端不展示、不选择，也不在保存时提交 `sources`，后端默认使用全部来源）。前端只接受 `earthquake_warning`（地震预警）和 `earthquake_report`（地震速报）；气象预警、海啸预警和台风信息即使出现在响应里也会被丢掉，保存时不会写回。数值校验只保留地震速报的 `min_magnitude`（0–10）和地震预警烈度分段。
 
 ### 6.2 API 基址解析
 
@@ -437,7 +437,7 @@ Leaflet 在测试中被 `vi.mock` 替换，jsdom 无需真实地图实现。
 | 订阅页改为 React 组件 | shadcn 弹窗必须挂在 React 树里，不能继续 `innerHTML` + `confirm()` | Leaflet 仍在 effect 里，闭包要用 ref |
 | 共享草稿在 `SubscribeWorkspace` | 地点与规则面板通过 `setDraft` 更新，避免再引入 runtime 对象 | 面板仍共享一份草稿形状 |
 | 生成代次 + revision 守卫 | 防止过期 hydrate / 逆地理编码写入 | 每个异步入口都必须记得比对 |
-| 灾种/来源由服务端下发 | 后端扩展数据源无需改前端 | 前端需处理下发数据缺失/异常的降级 |
+| 灾种与默认规则由服务端下发 | 后端扩展数据源无需改前端 | 前端需处理下发数据缺失/异常的降级 |
 | 服务端订阅 hydrate 与本机会话分离 | 刷新读取权威已保存配置；登录是 BFF cookie | 未提交编辑只在内存中，刷新会丢失 |
 | shadcn + 现有 tokens | 控件成熟，视觉仍是 zinc + 蓝主色 | 页面级布局 CSS 仍要手写 |
 | 构建时注入 `VITE_API_BASE` | 同源部署下零配置 | 同一镜像无法在运行时切换 API 地址 |
