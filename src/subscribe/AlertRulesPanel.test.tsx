@@ -57,8 +57,9 @@ describe("AlertRulesPanel list design", () => {
     expect(document.querySelector("[data-category-icon='earthquake_warning']")).toHaveAttribute("data-active", "true");
   });
 
-  it("keeps the rule summary when a category switch is off", () => {
-    renderPanel(["earthquake_report"]);
+  it("has no per-category switch and keeps the rule summary", () => {
+    renderPanel();
+    expect(document.querySelector(".category-toggle")).toBeNull();
     expect(screen.queryByText("已关闭")).not.toBeInTheDocument();
     expect(screen.getByText("M ≥ 4.5")).toBeInTheDocument();
   });
