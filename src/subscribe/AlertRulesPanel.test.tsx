@@ -71,10 +71,10 @@ describe("AlertRulesPanel list design", () => {
     expect(screen.queryByText(/个来源/)).not.toBeInTheDocument();
   });
 
-  it("hides the accordion chevron on category rows", () => {
+  it("shows an expand chevron on category rows", () => {
     renderPanel();
     const trigger = document.querySelector("[data-expand-category='earthquake_warning']");
-    expect(trigger?.querySelector("svg.lucide-chevron-down")).toBeNull();
+    expect(trigger?.querySelectorAll("svg.lucide-chevron-down")).toHaveLength(1);
   });
 
   it("expands a row when its header is clicked", () => {
